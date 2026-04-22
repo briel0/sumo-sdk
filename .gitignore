@@ -1,0 +1,18 @@
+# Arquivos de Build do PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+*.bin
+*.elf
+*.hex
+
+# Arquivos de IDE e LSP (Ccls, clangd para Neovim)
+.vscode/
+.idea/
+.cache/
+compile_commands.json
+.clangd/
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
