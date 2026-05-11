@@ -1,14 +1,17 @@
 #pragma once
 
-namespace Profiles{
-    namespace Caipora{
+namespace Profiles {
+    namespace Caipora {
         static constexpr int RIGHT_POS_PIN = 16;
         static constexpr int RIGHT_NEG_PIN = 17;
         static constexpr int LEFT_POS_PIN = 18;
         static constexpr int LEFT_NEG_PIN = 19;
+
+        // depois vou colocar parametros de curva e etc
+
     }
 
-    namespace Smoker{
+    namespace Smoker {
         static constexpr int RIGHT_POS_PIN = 19;
         static constexpr int RIGHT_NEG_PIN = 18;
         static constexpr int LEFT_POS_PIN = 17;
@@ -18,9 +21,9 @@ namespace Profiles{
 }
 
 #if defined(ROBOT_CAIPORA)
-    using namespace Profiles::Caipora;
+using namespace Profiles::Caipora;
 #elif defined(ROBOT_SMOKER)
-    using namespace Profiles::Smoker;
+using namespace Profiles::Smoker;
 #else
-    #error "Nenhum robô definido!"
+#error "No robot profile defined!"
 #endif

@@ -1,34 +1,24 @@
+#include "Receiver.hpp"
 #include <Arduino.h>
-#include <Drive.hpp>
-#include <Config.hpp>
 
-Drive drive(RIGHT_POS_PIN, RIGHT_NEG_PIN, LEFT_POS_PIN, LEFT_NEG_PIN);
+Receiver receptor;
 
-void setup(){
+void setup() {
     Serial.begin(115200);
-    Serial.println("Teste do MCPWM");
-    Serial.println("Iniciando em 3 segundos...");
-    delay(3000);
+
+    // Dá 2 segundos de respiro no boot.
+    // É o tempo exato para você clicar no monitor serial do VS Code e não perder os primeiros prints.
+    delay(2000);
+
+    Serial.println("\n=========================================");
+    Serial.println("   SISTEMA DE RÁDIO INICIADO (MODO TESTE)  ");
+    Serial.println("=========================================\n");
+
+    receptor.init();
 }
 
-void loop(){
-    // 1. TESTE: FRENTE (60% de potência para não sair voando da bancada)
-    Serial.println("Movimento: FRENTE");
-    drive.setSpeed(60, 60);
-    delay(2000);
+void loop() {
+    receptor.update();
 
-    // 2. TESTE: FREIO ATIVO (Deve travar as rodas instantaneamente)
-    Serial.println("Estado: FREIO");
-    drive.setSpeed(0, 0); 
-    delay(1000);
-
-    // 3. TESTE: TRÁS (A função setSpeed deve aplicar o dead-time automaticamente)
-    Serial.println("Movimento: TRÁS");
-    drive.setSpeed(-60, -60);
-    delay(2000);
-
-    // 4. TESTE: PARADA EM COAST (Rodas soltas)
-    Serial.println("Estado: RELEASE (Coast)");
-    drive.release();
-    delay(2000);
+    delay(1500);
 }

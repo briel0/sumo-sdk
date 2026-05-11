@@ -1,7 +1,7 @@
 PIO = pio
 UPLOAD = -t upload
 
-.PHONY: all caipora tupan clean monitor
+.PHONY: all caipora clean monitor
 
 caipora:
 	@echo "Robô Selecionado: CAIPORA"

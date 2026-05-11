@@ -5,9 +5,8 @@
     @brief Core logic to control the robot's movement and A4950 motor drivers.
  */
 
-class Drive{
-public:
-
+class Drive {
+  public:
     /**
     @brief Constructs the Drive object and initializes the MCPWM hardware timers.
     @param rightPosPin GPIO pin connected to IN1 of the right motor.
@@ -34,7 +33,7 @@ public:
     */
     void release();
 
-private:
+  private:
     int _lastLeftSpeed;
     int _lastRightSpeed;
 
@@ -44,5 +43,4 @@ private:
     @param rightPWM Duty cycle percentage for the right motor (-100 to 100).
     */
     void _applyPWM(int leftPWM, int rightPWM);
-
 };

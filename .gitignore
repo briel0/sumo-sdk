@@ -16,3 +16,7 @@ compile_commands.json
 # Arquivos de Sistema Operacional
 .DS_Store
 Thumbs.db
+
+# Formatação e Boas Práticas
+.clang-format
+.clang-tidy
