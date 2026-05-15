@@ -20,3 +20,6 @@ Thumbs.db
 # Formatação e Boas Práticas
 .clang-format
 .clang-tidy
+
+# Para trabalhar com IAs
+repomix-output.xml

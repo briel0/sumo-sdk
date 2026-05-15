@@ -2,44 +2,58 @@
 
 #include <Arduino.h>
 #include <Bluepad32.h>
-#include <algorithm>
+#include <Preferences.h>
 
 /**
     @class Receiver
-    @brief Handles Bluetooth connection, input mapping, and safety fail-safes for wireless controllers.
-*/
-
+    @brief Manages Bluetooth connections, analog input mapping, and the anti-hijacking security system for the robot's
+   radio.
+ */
 class Receiver {
   public:
     /**
-    @brief Constructs the Receiver object and initializes the static instance pointer for the OS.
+    @brief Constructs the Receiver object and establishes the static instance pointer.
     */
     Receiver();
 
     /**
-    @brief Initializes the Bluepad32 Bluetooth stack and registers connection callbacks.
+    @brief Initializes the Bluepad32 Bluetooth stack and loads the saved MAC address from non-volatile memory.
     */
     void init();
 
     /**
-    @brief Polls the controller inputs, processes deadzones, and sends drive commands to the robot.
-    @param robo Reference to the active Robo instance that will receive movement commands.
+    @brief Polls the controller inputs, processes deadzones, and handles the raw data stream.
     */
     void update();
 
     /**
-    @brief System callback executed by FreeRTOS when a Bluetooth controller pairs with the ESP32.
-    @param ctl Pointer to the controller object containing hardware and input states.
+    @brief Locks the radio receiver. Only the controller with the MAC address saved in Flash memory is allowed to
+    connect.
+    */
+    void lockToSavedController();
+
+    /**
+    @brief Opens the radio receiver, forcibly disconnects the current controller, and accepts the first new controller
+    that attempts to pair.
+    */
+    void openForNewController();
+
+    /**
+    @brief System callback executed by the Bluetooth stack when a controller attempts to connect.
+    @param ctl Pointer to the controller object attempting the connection.
     */
     static void onConnected(ControllerPtr ctl);
 
     /**
-    @brief System callback executed by FreeRTOS when a paired controller disconnects or loses signal.
+    @brief System callback executed by the Bluetooth stack when a paired controller disconnects or loses its signal.
     @param ctl Pointer to the controller object that was disconnected.
     */
     static void onDisconnected(ControllerPtr ctl);
 
   private:
+    /**
+    @brief Pointer to the currently active and authorized Bluetooth controller.
+    */
     ControllerPtr controller = nullptr;
 
     /**
@@ -53,9 +67,17 @@ class Receiver {
     static Receiver *instance;
 
     /**
-    @brief Converts raw analog axis inputs to clean percentage values.
-    @param rawValue Raw axis value from the controller (-511 to +511).
-    @return Normalized percentage value (-100 to +100).
+    @brief Interface for the ESP32's non-volatile storage (Flash) to save security data.
     */
-    int mapAxis(int rawValue);
+    Preferences prefs;
+
+    /**
+    @brief Array storing the 6-byte MAC address of the officially paired controller.
+    */
+    uint8_t savedMac[6] = {0};
+
+    /**
+    @brief Security flag defining if the receiver is open to new pairings or locked to the saved MAC.
+    */
+    bool isPairingMode = false;
 };

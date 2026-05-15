@@ -1,6 +1,4 @@
-#include <Bluepad32.h>
-#include <Receiver.hpp>
-#include <algorithm>
+#include "Receiver.hpp"
 
 Receiver *Receiver::instance = nullptr;
 
@@ -9,21 +7,65 @@ Receiver::Receiver() {
 }
 
 void Receiver::init() {
+    pinMode(0, INPUT_PULLUP);
+
+    prefs.begin("radio", false);
+
+    prefs.getBytes("mac_dono", savedMac, 6);
+
+    if(digitalRead(0) == LOW) {
+        Serial.println("[Receiver] Botão BOOT detectado! Abrindo para NOVO controle...");
+        isPairingMode = true;
+    }
+    else {
+        Serial.println("[Receiver] Boot normal. Trancando rádio para o piloto oficial.");
+        isPairingMode = false;
+    }
+
     BP32.setup(&Receiver::onConnected, &Receiver::onDisconnected);
     Serial.println("[Receiver] Bluetooth Stack started. Looking for controllers...");
 }
 
+void Receiver::lockToSavedController() {
+    isPairingMode = false;
+    Serial.println("[Receiver] MODO SEGURO ATIVADO: Apenas o dono pode conectar.");
+}
+
+void Receiver::openForNewController() {
+    isPairingMode = true;
+
+    if(controller && controller->isConnected()) {
+        controller->disconnect();
+        controller = nullptr;
+    }
+    Serial.println("[Receiver] MODO ABERTO: Aguardando pareamento de um NOVO controle...");
+}
+
 void Receiver::onConnected(ControllerPtr ctl) {
-    ControllerProperties propriedades = ctl->getProperties();
+    const uint8_t *incomingMac = ctl->getProperties().btaddr;
 
-    // Extrai o array de bytes do MAC Address de dentro da estrutura
-    const uint8_t *mac = propriedades.btaddr;
+    if(instance->isPairingMode) {
+        Serial.printf("[Receiver] ✅ NOVO DONO ACEITO! MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", incomingMac[0],
+                      incomingMac[1], incomingMac[2], incomingMac[3], incomingMac[4], incomingMac[5]);
 
-    Serial.printf("[Receiver] ✅ Controller Connected! Address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1],
-                  mac[2], mac[3], mac[4], mac[5]);
+        instance->prefs.putBytes("mac_dono", incomingMac, 6);
+        memcpy(instance->savedMac, incomingMac, 6);
 
-    if(instance) {
         instance->controller = ctl;
+
+        instance->lockToSavedController();
+    }
+    else {
+        if(memcmp(incomingMac, instance->savedMac, 6) == 0) {
+            Serial.println("[Receiver] ✅ Piloto oficial reconhecido! Conexão restabelecida.");
+            instance->controller = ctl;
+        }
+        else {
+            Serial.printf("[Receiver] ❌ ALERTA! Invasor bloqueado. MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                          incomingMac[0], incomingMac[1], incomingMac[2], incomingMac[3], incomingMac[4],
+                          incomingMac[5]);
+            ctl->disconnect();
+        }
     }
 }
 
@@ -34,18 +76,6 @@ void Receiver::onDisconnected(ControllerPtr ctl) {
     }
 }
 
-int Receiver::mapAxis(int rawValue) {
-    if(abs(rawValue) < DEADZONE) {
-        return 0;
-    }
-
-    // Converte a resolução e inverte o eixo Y do analógico (nativamente invertido no PS4)
-    int percentage = -(rawValue * 100) / 511;
-
-    // depois tem que substituir por umas matematica doida
-    return percentage;
-}
-
 void Receiver::update() {
     BP32.update();
 
@@ -53,12 +83,14 @@ void Receiver::update() {
     int steer = 0;
 
     if(controller && controller->isConnected()) {
-        // Eixo Y do Analógico Esquerdo: Acelerador (frente/trás)
-        throttle = mapAxis(controller->axisY());
-
-        // Eixo X do Analógico Direito: Direção (volante)
-        steer = mapAxis(controller->axisRX());
+        throttle = controller->axisY();
+        steer = controller->axisRX();
     }
 
-    Serial.printf("Analógico Esquerdo (Throttle): %d | Analógico Direito (Steer): %d\n", throttle, steer);
+    // Filtro temporal: Evita o Watchdog Reset do ESP32 permitindo prints apenas a cada 100ms
+    static unsigned long lastPrint = 0;
+    if(millis() - lastPrint > 100) {
+        Serial.printf("Throttle: %d | Steer: %d\n", throttle, steer);
+        lastPrint = millis();
+    }
 }

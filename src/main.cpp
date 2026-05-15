@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Auto.hpp>
 #include <RC.hpp>
 
 #include <IRrecv.h>
@@ -11,18 +10,11 @@ enum class RobotState {
     AUTO
 };
 
-enum class Mode {
-    RC,
-    AUTO,
-    SELECTION
-};
-
-Mode currentMode = Mode::SELECTION;
+// É aqui que muda pra ir direto pra RC, auto, etc.
 RobotState currentState = RobotState::IDLE;
 
 int IR_PIN = 13;
 IRrecv irrecv(IR_PIN);
-decode_results results;
 
 void idle();
 
@@ -30,7 +22,6 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Inicializando subsistemas.");
     irrecv.enableIRIn();
-    currentState = RobotState::IDLE;
 }
 
 void loop() {
@@ -43,10 +34,10 @@ void loop() {
         case RobotState::AUTO:
             break;
     }
-    delay(5);
 }
 
 RobotState lerIR() {
+    decode_results results;
     if(irrecv.decode(&results)) {
         uint32_t codigo = results.value;
         irrecv.resume();
@@ -64,15 +55,5 @@ RobotState lerIR() {
 }
 
 void idle() {
-    if(currentMode == Mode::RC) {
-        Serial.println("Modo RC forçado pelo código.");
-        currentState = RobotState::RC;
-        return;
-    }
-    else if(currentMode == Mode::AUTO) {
-        Serial.println("Modo AUTO forçado pelo código.");
-        currentState = RobotState::AUTO;
-        return;
-    }
     currentState = lerIR();
 }

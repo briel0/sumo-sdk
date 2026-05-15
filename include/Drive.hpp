@@ -34,8 +34,8 @@ class Drive {
     void release();
 
   private:
-    int _lastLeftSpeed;
-    int _lastRightSpeed;
+    int _lastLeftSpeed = 0;
+    int _lastRightSpeed = 0;
 
     /**
     @brief Internal helper to send the calculated PWM duty cycle to the hardware timers.
