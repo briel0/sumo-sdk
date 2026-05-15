@@ -50,6 +50,14 @@ class Receiver {
     */
     static void onDisconnected(ControllerPtr ctl);
 
+    int getThrottle();
+
+    int getSteer();
+
+    int mapAxis(int rawValue);
+
+    int mapTrigger(int rawValue);
+
   private:
     /**
     @brief Pointer to the currently active and authorized Bluetooth controller.
@@ -59,7 +67,13 @@ class Receiver {
     /**
     @brief Raw input value threshold below which joystick movements are ignored to prevent drift.
     */
-    static constexpr int DEADZONE = 40;
+    static constexpr int STICKER_DEADZONE = 40;
+
+    static constexpr int TRIGGER_DEADZONE = 15;
+
+    int currentThrottle = 0;
+
+    int currentSteer = 0;
 
     /**
     @brief Static self-pointer used by C-style OS callbacks to access this object instance in RAM.

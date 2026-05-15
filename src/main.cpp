@@ -1,5 +1,6 @@
 #include <Arduino.h>
-#include <RC.hpp>
+#include <Config.hpp>
+#include <RCMode.hpp>
 
 #include <IRrecv.h>
 #include <IRutils.h>
@@ -11,10 +12,17 @@ enum class RobotState {
 };
 
 // É aqui que muda pra ir direto pra RC, auto, etc.
-RobotState currentState = RobotState::IDLE;
+RobotState currentState = RobotState::RC;
 
+// Configurando o IR
 int IR_PIN = 13;
 IRrecv irrecv(IR_PIN);
+
+// Esse é o objeto que comanda os motores
+Drive motores(RIGHT_POS_PIN, RIGHT_NEG_PIN, LEFT_POS_PIN, LEFT_NEG_PIN);
+
+// Esse é o objeto que combina os comando do controle com os motores
+RCMode modoRC;
 
 void idle();
 
@@ -22,6 +30,7 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Inicializando subsistemas.");
     irrecv.enableIRIn();
+    modoRC.init();
 }
 
 void loop() {
@@ -30,10 +39,12 @@ void loop() {
             idle();
             break;
         case RobotState::RC:
+            modoRC.run(motores);
             break;
         case RobotState::AUTO:
             break;
     }
+    vTaskDelay(1);
 }
 
 RobotState lerIR() {

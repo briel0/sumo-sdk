@@ -14,3 +14,7 @@ smoker:
 monitor:
 	@echo "Monitor Serial (Ctrl+C para sair)"
 	$(PIO) device monitor -b 115200
+
+copia:
+	@echo "Criando novo repomix"
+	npx repomix
