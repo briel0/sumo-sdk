@@ -16,17 +16,6 @@ void Receiver::init() {
 
     isPairingMode = true; // always open
 
-    /*
-    if(digitalRead(0) == LOW) {
-        Serial.println("[Receiver] BOOT button detected! Opening for NEW controller...");
-        isPairingMode = true;
-    }
-    else {
-        Serial.println("[Receiver] Normal boot. Locking radio to the official pilot.");
-        isPairingMode = false;
-    }
-    */
-
     BP32.setup(&Receiver::onConnected, &Receiver::onDisconnected);
     Serial.println("[Receiver] Bluetooth Stack started. Looking for controllers...");
 }
