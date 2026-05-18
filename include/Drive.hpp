@@ -3,7 +3,7 @@
 /**
     @class Drive
     @brief Core logic to control the robot's movement and A4950 motor drivers.
- */
+*/
 
 class Drive {
   public:
@@ -34,7 +34,14 @@ class Drive {
     void release();
 
   private:
+    /**
+    @brief Stores the last applied speed for the left motor. Used to optimize PWM updates and detect direction changes.
+    */
     int _lastLeftSpeed = 0;
+
+    /**
+    @brief Stores the last applied speed for the right motor. Used to optimize PWM updates and detect direction changes.
+    */
     int _lastRightSpeed = 0;
 
     /**

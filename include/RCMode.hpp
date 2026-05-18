@@ -2,11 +2,12 @@
 
 #include "Drive.hpp"
 #include "Receiver.hpp"
+#include "WeaponSystem.hpp"
 
 /**
     @class RCMode
     @brief Actor responsible for managing all robot logic during manual control.
- */
+*/
 
 class RCMode {
   public:
@@ -19,11 +20,31 @@ class RCMode {
     @brief Executes the manual control logic. Dependency injection: The FSM "lends" the motors for RCMode to drive.
     @param motores Reference to the Drive object to control the motors.
     */
-    void run(Drive &motores);
+    void run(Drive &motores, WeaponSystem &armas);
 
   private:
     /**
     @brief The radio receiver instance. Composition: The radio is a private tool of RCMode.
     */
     Receiver receptor;
+
+    /**
+    @brief Flag indicating whether the weapon system is currently deployed.
+    */
+    bool _isDeployed = false;
+
+    /**
+    @brief Flag indicating whether the servos have been relaxed (detached) after deployment to prevent overheating.
+    */
+    bool _isRelaxed = false;
+
+    /**
+    @brief Flag to lock the automatic disarm logic, preventing the weapon from retracting.
+    */
+    bool _autoDisarmLocked = false;
+
+    /**
+    @brief Timestamp tracking when the weapon system was deployed, used to calculate the relax timeout.
+    */
+    unsigned long _deployTime = 0;
 };

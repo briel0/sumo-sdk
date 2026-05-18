@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <Config.hpp>
+#include <Drive.hpp>
 #include <RCMode.hpp>
+#include <ServoMechanism.hpp>
+#include <WeaponSystem.hpp>
 
 #include <IRrecv.h>
 #include <IRutils.h>
@@ -11,35 +14,45 @@ enum class RobotState {
     AUTO
 };
 
-// É aqui que muda pra ir direto pra RC, auto, etc.
 RobotState currentState = RobotState::RC;
 
 // Configurando o IR
-int IR_PIN = 13;
+constexpr int IR_PIN = 13;
 IRrecv irrecv(IR_PIN);
 
-// Esse é o objeto que comanda os motores
-Drive motores(RIGHT_POS_PIN, RIGHT_NEG_PIN, LEFT_POS_PIN, LEFT_NEG_PIN);
+// Configurando o objeto que controla os motores
+Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
 
-// Esse é o objeto que combina os comando do controle com os motores
 RCMode modoRC;
+WeaponSystem sistemaDeArmas;
 
-void idle();
+void handleIdle();
+RobotState lerIR();
+
+static ServoMechanism servos[4];
 
 void setup() {
     Serial.begin(115200);
-    Serial.println("Inicializando subsistemas.");
+    Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
+
     irrecv.enableIRIn();
+
+    for(int i = 0; i < Config::NUM_SERVOS; i++) {
+        servos[i] =
+            ServoMechanism(Config::SERVOS[i].pin, Config::SERVOS[i].retractAngle, Config::SERVOS[i].deployAngle);
+        servos[i].init();
+        sistemaDeArmas.addServo(&servos[i]);
+    }
     modoRC.init();
 }
 
 void loop() {
     switch(currentState) {
         case RobotState::IDLE:
-            idle();
+            handleIdle();
             break;
         case RobotState::RC:
-            modoRC.run(motores);
+            modoRC.run(motores, sistemaDeArmas);
             break;
         case RobotState::AUTO:
             break;
@@ -54,17 +67,17 @@ RobotState lerIR() {
         irrecv.resume();
 
         if(codigo == 0x7) {
-            Serial.println("Modo AUTÔNOMO.");
+            Serial.println("[IR] Comando recebido: MODO AUTÔNOMO.");
             return RobotState::AUTO;
         }
         else if(codigo == 0x8) {
-            Serial.println("Modo RC.");
+            Serial.println("[IR] Comando recebido: MODO RC (RÁDIO).");
             return RobotState::RC;
         }
     }
-    return RobotState::IDLE;
+    return currentState;
 }
 
-void idle() {
+void handleIdle() {
     currentState = lerIR();
 }

@@ -2,13 +2,12 @@
 
 #include <Arduino.h>
 #include <Bluepad32.h>
-#include <Preferences.h>
 
 /**
-    @class Receiver
-    @brief Manages Bluetooth connections, analog input mapping, and the anti-hijacking security system for the robot's
-   radio.
- */
+  @class Receiver
+  @brief Manages Bluetooth connections, analog input mapping, and the anti-hijacking security system for the robot's
+  radio.
+*/
 class Receiver {
   public:
     /**
@@ -27,18 +26,6 @@ class Receiver {
     void update();
 
     /**
-    @brief Locks the radio receiver. Only the controller with the MAC address saved in Flash memory is allowed to
-    connect.
-    */
-    void lockToSavedController();
-
-    /**
-    @brief Opens the radio receiver, forcibly disconnects the current controller, and accepts the first new controller
-    that attempts to pair.
-    */
-    void openForNewController();
-
-    /**
     @brief System callback executed by the Bluetooth stack when a controller attempts to connect.
     @param ctl Pointer to the controller object attempting the connection.
     */
@@ -50,48 +37,52 @@ class Receiver {
     */
     static void onDisconnected(ControllerPtr ctl);
 
-    int getThrottle();
+    int rightTrigger() const {
+        return rightTriggerVal;
+    }
+    int leftTrigger() const {
+        return leftTriggerVal;
+    }
+    int leftStickX() const {
+        return leftStickXVal;
+    }
 
-    int getSteer();
-
-    int mapAxis(int rawValue);
-
-    int mapTrigger(int rawValue);
+    bool dpadUp() const {
+        return dpadUpFlag;
+    }
+    bool dpadDown() const {
+        return dpadDownFlag;
+    }
+    bool btnCircle() const {
+        return circleFlag;
+    }
 
   private:
-    /**
-    @brief Pointer to the currently active and authorized Bluetooth controller.
-    */
     ControllerPtr controller = nullptr;
-
-    /**
-    @brief Raw input value threshold below which joystick movements are ignored to prevent drift.
-    */
     static constexpr int STICKER_DEADZONE = 40;
-
     static constexpr int TRIGGER_DEADZONE = 15;
 
-    int currentThrottle = 0;
+    uint8_t lastDpad = 0;
+    bool lastCircle = false;
 
-    int currentSteer = 0;
+    bool dpadUpFlag = false;
+    bool dpadDownFlag = false;
+    bool circleFlag = false;
 
-    /**
-    @brief Static self-pointer used by C-style OS callbacks to access this object instance in RAM.
-    */
+    int rightTriggerVal = 0;
+    int leftTriggerVal = 0;
+
+    int leftStickXVal = 0;
+
     static Receiver *instance;
-
-    /**
-    @brief Interface for the ESP32's non-volatile storage (Flash) to save security data.
-    */
-    Preferences prefs;
-
-    /**
-    @brief Array storing the 6-byte MAC address of the officially paired controller.
-    */
     uint8_t savedMac[6] = {0};
+    bool isPairingMode = true;
 
-    /**
-    @brief Security flag defining if the receiver is open to new pairings or locked to the saved MAC.
-    */
-    bool isPairingMode = false;
+    static constexpr uint8_t MASK_DPAD_UP = 0x01;
+    static constexpr uint8_t MASK_DPAD_DOWN = 0x02;
+    static constexpr uint16_t MASK_BTN_CIRCLE = 0x0002;
+
+    void updateAxes();
+    void updateButtons();
+    void applyFailsafe();
 };
