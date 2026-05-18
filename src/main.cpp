@@ -1,12 +1,11 @@
 #include <Arduino.h>
 #include <Config.hpp>
 #include <Drive.hpp>
+#include <IRrecv.h>
+#include <IRutils.h>
 #include <RCMode.hpp>
 #include <ServoMechanism.hpp>
 #include <WeaponSystem.hpp>
-
-#include <IRrecv.h>
-#include <IRutils.h>
 
 enum class RobotState {
     IDLE,
@@ -14,51 +13,21 @@ enum class RobotState {
     AUTO
 };
 
+// É que onde definimos se vai começar como auto, RC, ou modo seleção por IR.
 RobotState currentState = RobotState::RC;
 
-// Configurando o IR
+// Configuração do IR.
 constexpr int IR_PIN = 13;
 IRrecv irrecv(IR_PIN);
 
-// Configurando o objeto que controla os motores
+// Esse é o objeto que administra os motores.
 Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
 
+// Esse é o objeto que administra o modo RC.
 RCMode modoRC;
+
+// Esse é o objeto que administra todos os servos do robô.
 WeaponSystem sistemaDeArmas;
-
-void handleIdle();
-RobotState lerIR();
-
-static ServoMechanism servos[4];
-
-void setup() {
-    Serial.begin(115200);
-    Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
-
-    irrecv.enableIRIn();
-
-    for(int i = 0; i < Config::NUM_SERVOS; i++) {
-        servos[i] =
-            ServoMechanism(Config::SERVOS[i].pin, Config::SERVOS[i].retractAngle, Config::SERVOS[i].deployAngle);
-        servos[i].init();
-        sistemaDeArmas.addServo(&servos[i]);
-    }
-    modoRC.init();
-}
-
-void loop() {
-    switch(currentState) {
-        case RobotState::IDLE:
-            handleIdle();
-            break;
-        case RobotState::RC:
-            modoRC.run(motores, sistemaDeArmas);
-            break;
-        case RobotState::AUTO:
-            break;
-    }
-    vTaskDelay(1);
-}
 
 RobotState lerIR() {
     decode_results results;
@@ -78,6 +47,34 @@ RobotState lerIR() {
     return currentState;
 }
 
-void handleIdle() {
-    currentState = lerIR();
+void setup() {
+    Serial.begin(115200);
+    Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
+
+    irrecv.enableIRIn();
+
+    // Colocando todos os servos no sistema de armas.
+    for(int i = 0; i < Config::NUM_SERVOS; i++) {
+        ServoMechanism *s =
+            new ServoMechanism(Config::SERVOS[i].pin, Config::SERVOS[i].retractAngle, Config::SERVOS[i].deployAngle);
+        s->init();
+        sistemaDeArmas.addServo(s);
+    }
+
+    modoRC.init();
+    Serial.println("[MAIN] Setup concluído. Aguardando comando IR...");
+}
+
+void loop() {
+    switch(currentState) {
+        case RobotState::IDLE:
+            currentState = lerIR();
+            break;
+        case RobotState::RC:
+            modoRC.run(motores, sistemaDeArmas);
+            break;
+        case RobotState::AUTO:
+            break;
+    }
+    vTaskDelay(1);
 }

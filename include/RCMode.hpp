@@ -29,16 +29,6 @@ class RCMode {
     Receiver receptor;
 
     /**
-    @brief Flag indicating whether the weapon system is currently deployed.
-    */
-    bool _isDeployed = false;
-
-    /**
-    @brief Flag indicating whether the servos have been relaxed (detached) after deployment to prevent overheating.
-    */
-    bool _isRelaxed = false;
-
-    /**
     @brief Flag to lock the automatic disarm logic, preventing the weapon from retracting.
     */
     bool _autoDisarmLocked = false;
