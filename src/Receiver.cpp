@@ -76,15 +76,29 @@ void Receiver::updateAxes() {
 }
 
 void Receiver::updateButtons() {
-    uint8_t currentDpad = controller->dpad();
 
+    uint8_t currentDpad = controller->dpad();
     dpadUpFlag = (currentDpad & MASK_DPAD_UP) && !(lastDpad & MASK_DPAD_UP);
     dpadDownFlag = (currentDpad & MASK_DPAD_DOWN) && !(lastDpad & MASK_DPAD_DOWN);
     lastDpad = currentDpad;
 
-    bool currentCircle = controller->buttons() & MASK_BTN_CIRCLE;
+    uint16_t currentBtns = controller->buttons();
+
+    bool currentCircle = currentBtns & MASK_BTN_CIRCLE;
     circleFlag = currentCircle && !lastCircle;
     lastCircle = currentCircle;
+
+    bool currentCross = currentBtns & MASK_BTN_CROSS;
+    crossFlag = currentCross && !lastCross;
+    lastCross = currentCross;
+
+    bool currentSquare = currentBtns & MASK_BTN_SQUARE;
+    squareFlag = currentSquare && !lastSquare;
+    lastSquare = currentSquare;
+
+    bool currentTriangle = currentBtns & MASK_BTN_TRIANGLE;
+    triangleFlag = currentTriangle && !lastTriangle;
+    lastTriangle = currentTriangle;
 }
 
 void Receiver::applyFailsafe() {
@@ -93,7 +107,13 @@ void Receiver::applyFailsafe() {
     leftStickXVal = 0;
     lastDpad = 0;
     lastCircle = false;
+    lastCross = false;
+    lastSquare = false;
+    lastTriangle = false;
     dpadUpFlag = false;
     dpadDownFlag = false;
     circleFlag = false;
+    crossFlag = false;
+    squareFlag = false;
+    triangleFlag = false;
 }

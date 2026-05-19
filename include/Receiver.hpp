@@ -53,8 +53,20 @@ class Receiver {
     bool dpadDown() const {
         return dpadDownFlag;
     }
-    bool btnCircle() const {
+    bool Circle() const {
         return circleFlag;
+    }
+
+    bool Cross() const {
+        return crossFlag;
+    }
+
+    bool Square() const {
+        return squareFlag;
+    }
+
+    bool Triangle() const {
+        return triangleFlag;
     }
 
   private:
@@ -64,10 +76,16 @@ class Receiver {
 
     uint8_t lastDpad = 0;
     bool lastCircle = false;
+    bool lastCross = false;
+    bool lastSquare = false;
+    bool lastTriangle = false;
 
     bool dpadUpFlag = false;
     bool dpadDownFlag = false;
     bool circleFlag = false;
+    bool crossFlag = false;
+    bool squareFlag = false;
+    bool triangleFlag = false;
 
     int rightTriggerVal = 0;
     int leftTriggerVal = 0;
@@ -80,7 +98,11 @@ class Receiver {
 
     static constexpr uint8_t MASK_DPAD_UP = 0x01;
     static constexpr uint8_t MASK_DPAD_DOWN = 0x02;
-    static constexpr uint16_t MASK_BTN_CIRCLE = 0x0002;
+
+    static constexpr uint16_t MASK_BTN_CROSS = 0x0001;    // X do PS4 / A do Xbox
+    static constexpr uint16_t MASK_BTN_CIRCLE = 0x0002;   // Bolinha do PS4 / B do Xbox
+    static constexpr uint16_t MASK_BTN_SQUARE = 0x0004;   // Quadrado do PS4 / X do Xbox
+    static constexpr uint16_t MASK_BTN_TRIANGLE = 0x0008; // Triângulo do PS4 / Y do Xbox
 
     void updateAxes();
     void updateButtons();

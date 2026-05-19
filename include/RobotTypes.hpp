@@ -2,18 +2,22 @@
 
 // Esta struct é apenas um envelope de dados. Não aciona hardware nenhum.
 struct ServoConfig {
-    /**
-    @brief The GPIO pin to which the servo is connected.
-    */
     int pin;
-
-    /**
-    @brief The default angle in degrees when the servo is in the retracted/disarmed position.
-    */
     int retractAngle;
-
-    /**
-    @brief The default angle in degrees when the servo is in the deployed/armed position.
-    */
     int deployAngle;
 };
+
+// Representa um único passo de movimento no tempo
+struct MotionStep {
+    int leftSpeed;
+    int rightSpeed;
+    unsigned long durationMs;
+};
+
+// Representa uma fita cassete completa (uma lista de passos)
+struct MotionSequence {
+    const MotionStep *steps;
+    int numSteps;
+};
+
+#define MOTION_SEQ(steps_array) {steps_array, (int)(sizeof(steps_array) / sizeof(steps_array[0]))}

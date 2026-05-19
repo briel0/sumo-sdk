@@ -1,5 +1,5 @@
 #pragma once
-#include <./RobotTypes.hpp>
+#include "./RobotTypes.hpp"
 
 namespace Config {
     static constexpr int RIGHT_POS_PIN = 18;
@@ -15,5 +15,11 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {};
+
+    static constexpr MotionStep FRENTAO_STEPS[] = {
+        {100, 100, 300},
+    };
+
+    static constexpr MotionSequence MACRO_FRENTAO = MOTION_SEQ(FRENTAO_STEPS);
 
 }

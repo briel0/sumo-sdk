@@ -1,5 +1,5 @@
 #pragma once
-#include <./RobotTypes.hpp>
+#include "./RobotTypes.hpp"
 
 namespace Config {
     static constexpr int RIGHT_POS_PIN = 26;
@@ -18,4 +18,10 @@ namespace Config {
         {22, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
         {23, 180, 45}  // Pino 23 | Começa em 180°| Arma em 45°
     };
+
+    static constexpr MotionStep FRENTAO_STEPS[] = {
+        {100, 100, 300},
+    };
+
+    static constexpr MotionSequence MACRO_FRENTAO = MOTION_SEQ(FRENTAO_STEPS);
 }

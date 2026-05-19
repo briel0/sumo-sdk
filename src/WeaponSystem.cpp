@@ -1,4 +1,5 @@
 #include "WeaponSystem.hpp"
+#include "ServoMechanism.hpp"
 #include <Arduino.h>
 
 void WeaponSystem::init() {

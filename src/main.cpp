@@ -1,11 +1,12 @@
 #include <Arduino.h>
-#include <Config.hpp>
-#include <Drive.hpp>
 #include <IRrecv.h>
 #include <IRutils.h>
-#include <RCMode.hpp>
-#include <ServoMechanism.hpp>
-#include <WeaponSystem.hpp>
+
+#include "Config.hpp"
+#include "Drive.hpp"
+#include "RCMode.hpp"
+#include "ServoMechanism.hpp"
+#include "WeaponSystem.hpp"
 
 enum class RobotState {
     IDLE,
@@ -44,6 +45,7 @@ RobotState lerIR() {
             return RobotState::RC;
         }
     }
+    // Mantém o estado atual se for uma opção inválida
     return currentState;
 }
 

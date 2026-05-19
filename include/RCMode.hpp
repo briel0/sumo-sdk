@@ -1,8 +1,10 @@
 #pragma once
 
-#include "Drive.hpp"
+#include "MotionPlayer.hpp"
 #include "Receiver.hpp"
-#include "WeaponSystem.hpp"
+
+class Drive;
+class WeaponSystem;
 
 /**
     @class RCMode
@@ -27,14 +29,12 @@ class RCMode {
     @brief The radio receiver instance. Composition: The radio is a private tool of RCMode.
     */
     Receiver receptor;
+    MotionPlayer macroPlayer;
 
     /**
     @brief Flag to lock the automatic disarm logic, preventing the weapon from retracting.
     */
     bool _autoDisarmLocked = false;
 
-    /**
-    @brief Timestamp tracking when the weapon system was deployed, used to calculate the relax timeout.
-    */
-    unsigned long _deployTime = 0;
+    void handleWeapons(WeaponSystem &armas, int throttle, int steer);
 };

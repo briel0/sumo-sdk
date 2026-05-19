@@ -1,0 +1,67 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# --- Switch e Case ---
+# Indenta os rótulos 'case' um nível à frente do 'switch'
+IndentCaseLabels: true
+
+# --- Alinhamentos ---
+# Alinha comentários no final da linha (ideal para documentar a máquina de estados)
+AlignTrailingComments: true
+
+# Garante que os itens do enum sempre quebrem linha, 
+# evitando que o formatador tente espremer estados em uma única linha
+AllowShortEnumsOnASingleLine: false
+
+# --- Indentação ---
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 120 # Um limite um pouco maior para evitar quebra de linhas no meio de funções longas
+
+# --- Chaves e Quebras de Linha ---
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: true       # Isso garante o seu "}\n    else{"
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# --- Espaçamentos ---
+# Remove o espaço depois do 'if', 'for', 'while', etc. Resulta em "if(" em vez de "if ("
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: false
+  AfterFunctionDeclarationName: false
+  AfterFunctionDefinitionName: false
+
+# Garante que os argumentos fiquem com um espaço após a vírgula: "int a, int b"
+SpaceBeforeComma: false
+SpaceAfterCStyleCast: false
+
+# --- Blocos e Linhas em Branco ---
+# Mantém a linha em branco que você deixou no início do construtor Drive::Drive
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 2
+
+# Permite que funções vazias fiquem em uma linha só, caso você tenha um release(){} no futuro
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+
+# --- Indentação de Namespaces ---
+NamespaceIndentation: All
+FixNamespaceComments: false
+
+---

@@ -1,5 +1,6 @@
 #pragma once
-#include <ServoMechanism.hpp>
+
+class ServoMechanism;
 
 class WeaponSystem {
   public:
