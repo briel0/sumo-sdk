@@ -1,6 +1,5 @@
 #include <Arduino.h>
-#include <IRrecv.h>
-#include <IRutils.h>
+#include <IRremote.hpp>
 
 #include "Config.hpp"
 #include "Drive.hpp"
@@ -14,38 +13,30 @@ enum class RobotState {
     AUTO
 };
 
-// É que onde definimos se vai começar como auto, RC, ou modo seleção por IR.
-RobotState currentState = RobotState::RC;
+RobotState currentState = RobotState::IDLE;
 
-// Configuração do IR.
 constexpr int IR_PIN = 13;
-IRrecv irrecv(IR_PIN);
 
-// Esse é o objeto que administra os motores.
 Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
-
-// Esse é o objeto que administra o modo RC.
 RCMode modoRC;
-
-// Esse é o objeto que administra todos os servos do robô.
 WeaponSystem sistemaDeArmas;
 
 RobotState lerIR() {
-    decode_results results;
-    if(irrecv.decode(&results)) {
-        uint32_t codigo = results.value;
-        irrecv.resume();
+    if(IrReceiver.decode()) {
+        uint32_t codigo = IrReceiver.decodedIRData.decodedRawData;
+        IrReceiver.resume();
 
-        if(codigo == 0x7) {
-            Serial.println("[IR] Comando recebido: MODO AUTÔNOMO.");
+        Serial.printf("[IR] Código: 0x%X\n", codigo);
+
+        if(codigo == 0x86) {
+            Serial.println("[IR] MODO AUTÔNOMO.");
             return RobotState::AUTO;
         }
-        else if(codigo == 0x8) {
-            Serial.println("[IR] Comando recebido: MODO RC (RÁDIO).");
+        else if(codigo == 0x87) {
+            Serial.println("[IR] MODO RC.");
             return RobotState::RC;
         }
     }
-    // Mantém o estado atual se for uma opção inválida
     return currentState;
 }
 
@@ -53,9 +44,8 @@ void setup() {
     Serial.begin(115200);
     Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
 
-    irrecv.enableIRIn();
+    IrReceiver.begin(IR_PIN, DISABLE_LED_FEEDBACK);
 
-    // Colocando todos os servos no sistema de armas.
     for(int i = 0; i < Config::NUM_SERVOS; i++) {
         ServoMechanism *s =
             new ServoMechanism(Config::SERVOS[i].pin, Config::SERVOS[i].retractAngle, Config::SERVOS[i].deployAngle);

@@ -37,4 +37,6 @@ class RCMode {
     bool _autoDisarmLocked = false;
 
     void handleWeapons(WeaponSystem &armas, int throttle, int steer);
+
+    void handleMacros(Drive &motores, WeaponSystem &armas);
 };

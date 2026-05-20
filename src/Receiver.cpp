@@ -52,10 +52,12 @@ void Receiver::update() {
     }
 
     static unsigned long lastPrint = 0;
+    /*
     if(millis() - lastPrint > 100) {
         Serial.printf("RT: %d | LT: %d | StickX: %d\n", rightTriggerVal, leftTriggerVal, leftStickXVal);
         lastPrint = millis();
     }
+    */
 }
 
 void Receiver::updateAxes() {
@@ -76,7 +78,6 @@ void Receiver::updateAxes() {
 }
 
 void Receiver::updateButtons() {
-
     uint8_t currentDpad = controller->dpad();
     dpadUpFlag = (currentDpad & MASK_DPAD_UP) && !(lastDpad & MASK_DPAD_UP);
     dpadDownFlag = (currentDpad & MASK_DPAD_DOWN) && !(lastDpad & MASK_DPAD_DOWN);

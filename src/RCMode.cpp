@@ -14,19 +14,40 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
         Serial.printf("[SUMÔ] Auto-desarme: %s\n", _autoDisarmLocked ? "TRAVADO" : "ATIVO");
     }
 
-    // Arma na primeira movimentação ou pelo dpad
     if(!armas.isDeployed() && (throttle != 0 || steer != 0 || receptor.dpadUp())) {
         armas.deploy();
     }
 
-    // Desarme manual pelo dpad
     if(receptor.dpadDown() && armas.isDeployed() && !_autoDisarmLocked) {
         armas.retract();
     }
 
-    // Desarme automático ao soltar joystick
-    if(!_autoDisarmLocked && armas.isDeployed() && throttle == 0 && steer == 0) {
+    if(!_autoDisarmLocked && armas.isDeployed() && throttle == 0 && steer == 0 && !macroPlayer.isPlaying()) {
         armas.retract();
+    }
+}
+
+void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
+    if(macroPlayer.isPlaying()) {
+        macroPlayer.update(motores);
+        return;
+    }
+
+    auto triggerMacro = [&](const MotionSequence &seq) {
+        if(!_autoDisarmLocked) {
+            armas.deploy();
+        }
+        macroPlayer.play(seq);
+    };
+
+    if(receptor.Cross()) {
+        triggerMacro(Config::MACRO_FRENTAO);
+    }
+    else if(receptor.Square()) {
+        // triggerMacro(Config::MACRO_CURVAO_ESQ);
+    }
+    else if(receptor.Triangle()) {
+        // triggerMacro(Config::MACRO_CURVAO_DIR);
     }
 }
 
@@ -34,23 +55,16 @@ void RCMode::run(Drive &motores, WeaponSystem &armas) {
     receptor.update();
     armas.update();
 
-    if(macroPlayer.isPlaying()) {
-        macroPlayer.update(motores);
-        return;
-    }
-
-    if(receptor.Cross()) {
-        if(!armas.isDeployed()) {
-            armas.deploy();
-        }
-        macroPlayer.play(Config::MACRO_FRENTAO);
-        return;
-    }
-
     int throttle = receptor.rightTrigger() - receptor.leftTrigger();
     int steer = receptor.leftStickX();
 
     handleWeapons(armas, throttle, steer);
+
+    handleMacros(motores, armas);
+
+    if(macroPlayer.isPlaying()) {
+        return;
+    }
 
     throttle = (throttle * Config::MAX_THROTTLE) / 100;
     if(throttle == 0) {
