@@ -51,68 +51,79 @@ void Receiver::update() {
         applyFailsafe();
     }
 
-    static unsigned long lastPrint = 0;
+    // Opcional: Descomente para debugar os novos eixos
     /*
+    static unsigned long lastPrint = 0;
     if(millis() - lastPrint > 100) {
-        Serial.printf("RT: %d | LT: %d | StickX: %d\n", rightTriggerVal, leftTriggerVal, leftStickXVal);
+        Serial.printf("LX: %d | LY: %d | RX: %d | RY: %d | LT: %d | RT: %d\n",
+                      leftStickXVal, leftStickYVal, rightStickXVal, rightStickYVal, leftTriggerVal, rightTriggerVal);
         lastPrint = millis();
     }
     */
 }
 
 void Receiver::updateAxes() {
-    int rawRight = controller->throttle();
-    int rawLeft = controller->brake();
-    int rawStick = controller->axisX();
+    int rawLT = controller->brake();
+    int rawRT = controller->throttle();
+    int rawLX = controller->axisX();
+    int rawLY = controller->axisY();
+    int rawRX = controller->axisRX();
+    int rawRY = controller->axisRY();
 
-    rightTriggerVal = (rawRight < TRIGGER_DEADZONE) ? 0 : (rawRight * 100) / 1023;
-    leftTriggerVal = (rawLeft < TRIGGER_DEADZONE) ? 0 : (rawLeft * 100) / 1023;
+    leftTriggerVal = (rawLT < TRIGGER_DEADZONE) ? 0 : (rawLT * 100) / 1023;
+    rightTriggerVal = (rawRT < TRIGGER_DEADZONE) ? 0 : (rawRT * 100) / 1023;
 
-    if(abs(rawStick) < STICKER_DEADZONE) {
-        leftStickXVal = 0;
-    }
-    else {
-        leftStickXVal = (rawStick * 100) / 511;
-        leftStickXVal = constrain(leftStickXVal, -100, 100);
-    }
+    leftStickXVal = (abs(rawLX) < STICKER_DEADZONE) ? 0 : constrain((rawLX * 100) / 511, -100, 100);
+    leftStickYVal = (abs(rawLY) < STICKER_DEADZONE) ? 0 : constrain((rawLY * 100) / 511, -100, 100);
+    rightStickXVal = (abs(rawRX) < STICKER_DEADZONE) ? 0 : constrain((rawRX * 100) / 511, -100, 100);
+    rightStickYVal = (abs(rawRY) < STICKER_DEADZONE) ? 0 : constrain((rawRY * 100) / 511, -100, 100);
 }
 
 void Receiver::updateButtons() {
     uint8_t currentDpad = controller->dpad();
-    dpadUpFlag = (currentDpad & MASK_DPAD_UP) && !(lastDpad & MASK_DPAD_UP);
-    dpadDownFlag = (currentDpad & MASK_DPAD_DOWN) && !(lastDpad & MASK_DPAD_DOWN);
+    dpadUpFlag = (currentDpad & DPAD_UP) && !(lastDpad & DPAD_UP);
+    dpadDownFlag = (currentDpad & DPAD_DOWN) && !(lastDpad & DPAD_DOWN);
+    dpadLeftFlag = (currentDpad & DPAD_LEFT) && !(lastDpad & DPAD_LEFT);
+    dpadRightFlag = (currentDpad & DPAD_RIGHT) && !(lastDpad & DPAD_RIGHT);
     lastDpad = currentDpad;
 
     uint16_t currentBtns = controller->buttons();
 
-    bool currentCircle = currentBtns & MASK_BTN_CIRCLE;
+    bool currentCircle = currentBtns & BUTTON_B;
     circleFlag = currentCircle && !lastCircle;
     lastCircle = currentCircle;
 
-    bool currentCross = currentBtns & MASK_BTN_CROSS;
+    bool currentCross = currentBtns & BUTTON_A;
     crossFlag = currentCross && !lastCross;
     lastCross = currentCross;
 
-    bool currentSquare = currentBtns & MASK_BTN_SQUARE;
+    bool currentSquare = currentBtns & BUTTON_X;
     squareFlag = currentSquare && !lastSquare;
     lastSquare = currentSquare;
 
-    bool currentTriangle = currentBtns & MASK_BTN_TRIANGLE;
+    bool currentTriangle = currentBtns & BUTTON_Y;
     triangleFlag = currentTriangle && !lastTriangle;
     lastTriangle = currentTriangle;
 }
 
 void Receiver::applyFailsafe() {
-    rightTriggerVal = 0;
     leftTriggerVal = 0;
+    rightTriggerVal = 0;
     leftStickXVal = 0;
+    leftStickYVal = 0;
+    rightStickXVal = 0;
+    rightStickYVal = 0;
+
     lastDpad = 0;
     lastCircle = false;
     lastCross = false;
     lastSquare = false;
     lastTriangle = false;
+
     dpadUpFlag = false;
     dpadDownFlag = false;
+    dpadLeftFlag = false;
+    dpadRightFlag = false;
     circleFlag = false;
     crossFlag = false;
     squareFlag = false;

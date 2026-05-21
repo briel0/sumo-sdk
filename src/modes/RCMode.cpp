@@ -9,22 +9,24 @@ void RCMode::init() {
 }
 
 void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
-    if(receptor.Circle()) {
+    if(receptor.circle()) {
         _autoDisarmLocked = !_autoDisarmLocked;
         Serial.printf("[SUMÔ] Auto-desarme: %s\n", _autoDisarmLocked ? "TRAVADO" : "ATIVO");
     }
 
-    if(!armas.isDeployed() && (throttle != 0 || steer != 0 || receptor.dpadUp())) {
+    bool playerIsMoving = throttle != 0 || steer != 0;
+    bool weaponsArmed = armas.isDeployed();
+    bool macroRunning = macroPlayer.isPlaying();
+    bool autoDisarmFree = !_autoDisarmLocked;
+
+    if(!weaponsArmed && (playerIsMoving || receptor.dpadUp()))
         armas.deploy();
-    }
 
-    if(receptor.dpadDown() && armas.isDeployed() && !_autoDisarmLocked) {
+    if(receptor.dpadDown() && weaponsArmed && autoDisarmFree)
         armas.retract();
-    }
 
-    if(!_autoDisarmLocked && armas.isDeployed() && throttle == 0 && steer == 0 && !macroPlayer.isPlaying()) {
+    if(autoDisarmFree && weaponsArmed && !playerIsMoving && !macroRunning)
         armas.retract();
-    }
 }
 
 void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
@@ -40,13 +42,13 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
         macroPlayer.play(seq);
     };
 
-    if(receptor.Cross()) {
+    if(receptor.cross()) {
         triggerMacro(Config::MACRO_FRENTAO);
     }
-    else if(receptor.Square()) {
+    else if(receptor.square()) {
         // triggerMacro(Config::MACRO_CURVAO_ESQ);
     }
-    else if(receptor.Triangle()) {
+    else if(receptor.triangle()) {
         // triggerMacro(Config::MACRO_CURVAO_DIR);
     }
 }

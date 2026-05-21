@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SUMO AUTO</title>
+    <style>
+        :root {
+            --sea-green: #2c9246;
+            --dark-spruce: #124925;
+            --lemon-chiffon: #eeecc5;
+            --grey-olive: #847f79;
+            --dim-grey: #6e6965;
+            --void-bg: #05140a; 
+        }
+
+        * { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        
+        body { 
+            background-color: var(--void-bg); 
+            color: var(--lemon-chiffon); 
+            margin: 0; 
+            padding: 15px;
+            padding-bottom: 40px; 
+            user-select: none; 
+        }
+        
+        h1 { 
+            color: var(--sea-green); 
+            font-size: 1.2rem; 
+            text-align: center; 
+            border-bottom: 2px solid var(--dark-spruce); 
+            padding-bottom: 10px; 
+            margin-top: 5px; 
+        }
+        
+        h2 { 
+            font-size: 0.9rem; 
+            color: var(--lemon-chiffon); 
+            margin-top: 25px; 
+            margin-bottom: 10px; 
+            border-left: 4px solid var(--sea-green); 
+            padding-left: 8px; 
+        }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-full { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+        
+        button {
+            background-color: transparent;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.1s;
+            padding: 18px 5px;
+        }
+        
+        button:active { filter: brightness(1.5); }
+
+        .btn-macro {
+            border: 2px solid var(--sea-green);
+            color: var(--lemon-chiffon);
+        }
+        .btn-macro.selected { 
+            background-color: var(--sea-green); 
+            color: var(--void-bg);
+        }
+
+        .btn-direction { 
+            border: 2px solid var(--dim-grey);
+            color: var(--lemon-chiffon);
+        }
+        .btn-direction.selected { 
+            background-color: var(--dim-grey); 
+            color: var(--void-bg); 
+        }
+
+        .btn-search { 
+            border: 2px solid var(--grey-olive);
+            color: var(--lemon-chiffon); 
+        }
+        .btn-search.selected { 
+            background-color: var(--grey-olive); 
+            color: var(--void-bg); 
+        }
+
+        .btn-weapon { 
+            border: 2px solid var(--lemon-chiffon);
+            color: var(--lemon-chiffon);
+        }
+        .btn-weapon.selected { 
+            background-color: var(--lemon-chiffon); 
+            color: var(--dark-spruce); 
+        }
+
+        .btn-submit {
+            margin-top: 30px;
+            background-color: var(--dark-spruce);
+            border: 3px solid var(--sea-green);
+            color: var(--lemon-chiffon);
+            font-size: 1.2rem;
+            padding: 20px;
+            letter-spacing: 2px;
+        }
+        .btn-submit:active {
+            background-color: var(--sea-green);
+            color: var(--void-bg);
+        }
+    </style>
+</head>
+<body>
+    <h1>SUMO AUTO</h1>
+
+    <h2>MOVIMENTAÇÃO INICIAL</h2>
+    <div class="grid">
+        <button class="btn-macro" data-category="macro" data-val="1" data-label="FRENTÃO">FRENTÃO</button>
+        <button class="btn-macro" data-category="macro" data-val="2" data-label="FRENTÃO [FAST]">FRENTÃO [FAST]</button>
+        <button class="btn-macro" data-category="macro" data-val="3" data-label="FRENTINHO">FRENTINHO</button>
+        <button class="btn-macro" data-category="macro" data-val="4" data-label="CURVÃO">CURVÃO</button>
+        <button class="btn-macro" data-category="macro" data-val="5" data-label="CURVINHA">CURVINHA</button>
+        <button class="btn-macro" data-category="macro" data-val="6" data-label="EM V">EM V</button>
+        <button class="btn-macro" data-category="macro" data-val="7" data-label="COSTAS">COSTAS</button>
+        <button class="btn-macro" data-category="macro" data-val="8" data-label="DEFENSIVO">DEFENSIVO</button>
+    </div>
+
+    <h2>DIREÇÃO</h2>
+    <div class="grid">
+        <button class="btn-direction" data-category="direction" data-val="E" data-label="ESQUERDA">ESQUERDA</button>
+        <button class="btn-direction" data-category="direction" data-val="D" data-label="DIREITA">DIREITA</button>
+    </div>
+
+    <h2>BUSCA E TÁTICA</h2>
+    <div class="grid">
+        <button class="btn-search" data-category="search" data-val="1" data-label="BUSCA PADRÃO">BUSCA PADRÃO</button>
+        <button class="btn-search" data-category="search" data-val="2" data-label="BUSCA LENTA">BUSCA LENTA</button>
+    </div>
+
+    <h2>SISTEMA DE ARMAS</h2>
+    <div class="grid">
+        <button class="btn-weapon" data-category="weapon" data-val="0" data-label="DESARMAR">DESARMAR</button>
+        <button class="btn-weapon" data-category="weapon" data-val="1" data-label="NÃO DESARMAR">NÃO DESARMAR</button>
+    </div>
+
+    <button class="btn-submit" onclick="transmitConfig()">[SUBMETER]</button>
+
+    <script>
+        const stratState = {
+            macro: { val: '', label: 'NENHUM' },
+            direction: { val: '', label: 'NENHUM' },
+            search: { val: '', label: 'NENHUM' },
+            weapon: { val: '', label: 'NENHUM' }
+        };
+
+    document.querySelectorAll('button[data-category]').forEach(function(btn) {
+        btn.addEventListener('click', 
+        function() {
+            const category = this.getAttribute('data-category');
+            const val = this.getAttribute('data-val');
+            const label = this.getAttribute('data-label');
+            
+            if (this.classList.contains('selected')) {
+                this.classList.remove('selected');
+                stratState[category] = { val: '', label: 'NENHUM' };
+            }
+            else {
+                document.querySelectorAll(`button[data-category="${category}"]`).forEach(
+                function(b) {
+                    b.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                stratState[category] = { val: val, label: label };
+            }
+        });
+    });
+
+    function transmitConfig() {
+        
+        if (!stratState.macro.val) {
+            alert("[!] ERRO CRÍTICO:\nSelecione obrigatoriamente a Movimentação Inicial.");
+            return;
+        }
+
+        const confirmMsg = 
+            ">>> CONFIRMAÇÃO TÁTICA <<<\n\n" +
+            "MOVIMENTO: " + stratState.macro.label + "\n" +
+            "DIREÇÃO  : " + stratState.direction.label + "\n" +
+            "BUSCA    : " + stratState.search.label + "\n" +
+            "ARMA     : " + stratState.weapon.label + "\n\n" +
+            "Transmitir configuração para o robô?";
+
+        if (!confirm(confirmMsg)) {
+            console.log("> TX CANCELADO PELO USUÁRIO");
+            return;
+        }
+
+        const params = new URLSearchParams();
+        Object.keys(stratState).forEach(
+            function(key) {
+                if (stratState[key].val !== '') {
+                    params.append(key, stratState[key].val);
+                }
+            });
+
+        const endpoint = '/set-strat?' + params.toString();
+        console.log("> TX PAYLOAD ENVIADO: " + endpoint);
+        
+        alert("Pacote transmitido com sucesso!\nStatus: 200 OK");
+
+        fetch(endpoint, { method: 'GET' })
+            .then(function(response) {
+                if(response.ok) {
+                    alert("> [OK 200] ROBÔ CONFIGURADO");
+                } else {
+                    alert("> [ERRO] STATUS: " + response.status);
+                }
+            })
+            .catch(function(err) {
+                alert("> [ERRO FATAL] ROBÔ NÃO RESPONDE. VERIFIQUE O WI-FI.");
+            });
+    }
+    </script>
+</body>
+</html>

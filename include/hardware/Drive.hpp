@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: Migrar para MCPWM V2 no futuro
+
 /**
     @class Drive
     @brief Core logic to control the robot's movement and A4950 motor drivers.

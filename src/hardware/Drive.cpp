@@ -47,7 +47,7 @@ void Drive::setSpeed(int leftSpeed, int rightSpeed) {
 
     if(leftSpeed == 0 && rightSpeed == 0) {
         brake();
-        delayMicroseconds(25); // Valor mágico
+        delayMicroseconds(25);
         _lastLeftSpeed = 0;
         _lastRightSpeed = 0;
         return;

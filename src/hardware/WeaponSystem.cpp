@@ -11,7 +11,7 @@ void WeaponSystem::init() {
 }
 
 void WeaponSystem::addServo(ServoMechanism *servo) {
-    if(servoCount < MAX_SERVOS && servo != nullptr) {
+    if(servoCount < MAX_SERVO && servo != nullptr) {
         servos[servoCount] = servo;
         servoCount++;
     }
@@ -26,7 +26,6 @@ void WeaponSystem::deploy() {
     isDeployedFlag = true;
     isRelaxedFlag = false;
     deployTimeStart = millis();
-    Serial.println("[ARMAS] Deploy.");
 }
 
 void WeaponSystem::retract() {
@@ -38,14 +37,12 @@ void WeaponSystem::retract() {
     isDeployedFlag = false;
     isRelaxedFlag = false;
     deployTimeStart = 0;
-    Serial.println("[ARMAS] Retract.");
 }
 
 void WeaponSystem::update() {
     if(isDeployedFlag && !isRelaxedFlag && (millis() - deployTimeStart > RELAX_TIMEOUT_MS)) {
         relaxAll();
         isRelaxedFlag = true;
-        Serial.println("[ARMAS] Servos relaxados.");
     }
 }
 

@@ -2,6 +2,9 @@
 #include "./RobotTypes.hpp"
 
 namespace Config {
+
+    static constexpr const char *ROBOT_NAME = "Arruela";
+
     static constexpr int RIGHT_POS_PIN = 18;
     static constexpr int RIGHT_NEG_PIN = 19;
     static constexpr int LEFT_POS_PIN = 16;

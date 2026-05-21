@@ -20,4 +20,13 @@ struct MotionSequence {
     int numSteps;
 };
 
+// Valores padrão definidos conforme os comentários
+struct AutoStrategy {
+    int macro = 1;        // Frentão (Padrão)
+    char direction = 'X'; // 'X' para NENHUM
+    int search = 1;       // Busca Padrão
+    int weapon = 0;       // Não desarmar
+    bool isNew = false;   // Flag para a máquina de estados saber que tem pacote novo
+};
+
 #define MOTION_SEQ(steps_array) {steps_array, (int)(sizeof(steps_array) / sizeof(steps_array[0]))}
