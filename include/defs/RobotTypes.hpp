@@ -29,4 +29,8 @@ struct AutoStrategy {
     bool isNew = false;   // Flag para a máquina de estados saber que tem pacote novo
 };
 
-#define MOTION_SEQ(steps_array) {steps_array, (int)(sizeof(steps_array) / sizeof(steps_array[0]))}
+#define MACRO(...)                                                                                                     \
+    []() -> MotionSequence {                                                                                           \
+        static constexpr MotionStep steps[] = {__VA_ARGS__};                                                           \
+        return {steps, (int)(sizeof(steps) / sizeof(steps[0]))};                                                       \
+    }()

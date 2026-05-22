@@ -64,4 +64,10 @@ AllowShortFunctionsOnASingleLine: Empty
 NamespaceIndentation: All
 FixNamespaceComments: false
 
+# --- Macros Sensíveis a Espaçamento ---
+# Diz ao formatador para NUNCA alterar as quebras de linha e os espaços em 
+# branco dentro dos parênteses dessas macros específicas.
+WhitespaceSensitiveMacros:
+  - 'MACRO'
+
 ---

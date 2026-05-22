@@ -21,17 +21,8 @@ namespace Config {
         {22, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
-    static constexpr MotionStep FRENTAO_STEPS[] = {
-        {100, 100, 300},
-    };
+    static const MotionSequence MACRO_FRENTAO = MACRO({100, 100, 300});
 
-    static constexpr MotionSequence MACRO_FRENTAO = MOTION_SEQ(FRENTAO_STEPS);
-
-    static constexpr MotionStep DIAGONAL_STEPS[] = {
-        {-100, 100, 50},
-        {100, 100, 100},
-    };
-
-    static constexpr MotionSequence MACRO_DIAGONAL = MOTION_SEQ(DIAGONAL_STEPS);
+    static const MotionSequence MACRO_DIAGONAL = MACRO({-100, 100, 50}, {100, 100, 100});
 
 }

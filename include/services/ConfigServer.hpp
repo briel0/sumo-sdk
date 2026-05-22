@@ -11,6 +11,10 @@ class ConfigServer {
     void shutdown();
     void update();
 
+    void teardownBluetooth();
+    bool setupAccessPoint();
+    void setupWebRoutes();
+
     bool consumePayload(AutoStrategy &outStrategy);
 
   private:

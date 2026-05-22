@@ -9,14 +9,27 @@ const byte DNS_PORT = 53;
 ConfigServer::ConfigServer(uint16_t port) : server(port) {}
 
 void ConfigServer::begin() {
-    btStop();
+    teardownBluetooth();
 
+    if(!setupAccessPoint()) {
+        return;
+    }
+
+    setupWebRoutes();
+
+    server.begin();
+    Serial.println("[WIFI] Servidores HTTP e DNS ativos.");
+}
+
+void ConfigServer::teardownBluetooth() {
+    btStop();
     esp_bt_controller_disable();
     esp_bt_controller_deinit();
     esp_bt_mem_release(ESP_BT_MODE_BTDM);
-
     delay(100);
+}
 
+bool ConfigServer::setupAccessPoint() {
     WiFi.mode(WIFI_AP);
 
     IPAddress ip(4, 3, 2, 1);
@@ -29,19 +42,19 @@ void ConfigServer::begin() {
 
     if(WiFi.softAPIP() == IPAddress(0, 0, 0, 0)) {
         Serial.println("[WIFI] ERRO: softAP falhou!");
-        return;
+        return false;
     }
 
     dnsServer.start(DNS_PORT, "*", ip);
+    return true;
+}
 
-    // 1. DRY: Criamos um handler reutilizável para servir o painel HTML
+void ConfigServer::setupWebRoutes() {
     auto serveDashboard = [](AsyncWebServerRequest *request) { request->send(200, "text/html", DASHBOARD_HTML); };
 
-    // 2. Aplicamos o handler nas rotas padrão e de Captive Portal de forma limpa
     server.on("/", HTTP_GET, serveDashboard);
     server.on("/generate_204", HTTP_GET, serveDashboard);
     server.on("/fwlink", HTTP_GET, serveDashboard);
-
     server.on("/hotspot-detect.html", HTTP_GET, serveDashboard);
     server.on("/library/test/success.html", HTTP_GET, serveDashboard);
     server.on("/success.txt", HTTP_GET, serveDashboard);
@@ -52,7 +65,6 @@ void ConfigServer::begin() {
 
     server.onNotFound(serveDashboard);
 
-    // 3. A Rota de configuração isolada e com quebras de linha respeitadas
     server.on("/set-strat", HTTP_GET, [this](AsyncWebServerRequest *request) {
         if(!request->hasParam("macro")) {
             request->send(400, "text/plain", "ERRO FATAL: Faltou Macro Inicial");
@@ -81,9 +93,6 @@ void ConfigServer::begin() {
 
         request->send(200, "text/plain", "CONFIGURADO");
     });
-
-    server.begin();
-    Serial.println("[WIFI] Servidores HTTP e DNS ativos.");
 }
 
 void ConfigServer::update() {

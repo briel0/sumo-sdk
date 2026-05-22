@@ -51,6 +51,12 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     else if(receptor.triangle()) {
         // triggerMacro(Config::MACRO_CURVAO_DIR);
     }
+    else if(receptor.dpadRight()) {
+        // triggerMacro(Config::MACRO_CURVAO_DIR);
+    }
+    else if(receptor.dpadLeft()) {
+        // triggerMacro(Config::MACRO_CURVAO_DIR);
+    }
 }
 
 void RCMode::run(Drive &motores, WeaponSystem &armas) {
