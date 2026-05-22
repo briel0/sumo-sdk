@@ -2,16 +2,37 @@
 #include "Config.hpp"
 #include "RobotTypes.hpp"
 #include "WebUI.hpp"
+#include "esp_bt.h"
 
 const byte DNS_PORT = 53;
 
 ConfigServer::ConfigServer(uint16_t port) : server(port) {}
 
 void ConfigServer::begin() {
-    WiFi.softAP(Config::ROBOT_NAME, "sumo1234");
-    Serial.println("[WIFI] AP Aberto: 192.168.4.1");
+    btStop();
 
-    dnsServer.start(DNS_PORT, "*", IPAddress(192, 168, 4, 1));
+    esp_bt_controller_disable();
+    esp_bt_controller_deinit();
+    esp_bt_mem_release(ESP_BT_MODE_BTDM);
+
+    delay(100);
+
+    WiFi.mode(WIFI_AP);
+
+    IPAddress ip(4, 3, 2, 1);
+    IPAddress netmask(255, 255, 255, 0);
+    WiFi.softAPConfig(ip, ip, netmask);
+
+    WiFi.softAP(Config::ROBOT_NAME, "sumo1234", 1, 0, 4);
+
+    Serial.printf("[WIFI] IP: %s\n", WiFi.softAPIP().toString().c_str());
+
+    if(WiFi.softAPIP() == IPAddress(0, 0, 0, 0)) {
+        Serial.println("[WIFI] ERRO: softAP falhou!");
+        return;
+    }
+
+    dnsServer.start(DNS_PORT, "*", ip);
 
     // 1. DRY: Criamos um handler reutilizável para servir o painel HTML
     auto serveDashboard = [](AsyncWebServerRequest *request) { request->send(200, "text/html", DASHBOARD_HTML); };
@@ -20,6 +41,15 @@ void ConfigServer::begin() {
     server.on("/", HTTP_GET, serveDashboard);
     server.on("/generate_204", HTTP_GET, serveDashboard);
     server.on("/fwlink", HTTP_GET, serveDashboard);
+
+    server.on("/hotspot-detect.html", HTTP_GET, serveDashboard);
+    server.on("/library/test/success.html", HTTP_GET, serveDashboard);
+    server.on("/success.txt", HTTP_GET, serveDashboard);
+
+    server.on("/ncsi.txt", HTTP_GET, [](AsyncWebServerRequest *r) { r->send(200, "text/plain", "Microsoft NCSI"); });
+    server.on("/connecttest.txt", HTTP_GET,
+              [](AsyncWebServerRequest *r) { r->send(200, "text/plain", "Microsoft Connect Test"); });
+
     server.onNotFound(serveDashboard);
 
     // 3. A Rota de configuração isolada e com quebras de linha respeitadas

@@ -11,25 +11,21 @@ void AutoMode::init() {
     configServer.begin();
 }
 
-void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irArmed, bool irStart) {
+void AutoMode::run(Drive &motores, WeaponSystem &armas) {
     switch(subState) {
         case SubState::SELECTING_SAQUE:
             configServer.update();
 
             if(configServer.consumePayload(autoConfig)) {
-                // delay(200);
-                // Se o servidor der ruim descomente a linha acima.
                 subState = SubState::ARMED_READY;
                 configServer.shutdown();
             }
             break;
 
         case SubState::ARMED_READY:
-            handleArmedReady(irStart);
             break;
 
         case SubState::EXECUTING_SAQUE:
-            handleExecutingSaque(motores, armas);
             break;
 
         case SubState::HUNTING:

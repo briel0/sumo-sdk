@@ -77,7 +77,7 @@ void loop() {
             modoRC.run(motores, sistemaDeArmas);
             break;
         case RobotState::AUTO:
-            // modoAuto.run(motores, sistemaDeArmas);
+            modoAuto.run(motores, sistemaDeArmas);
             break;
         default:
             break;

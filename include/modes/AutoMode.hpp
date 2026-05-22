@@ -25,7 +25,7 @@ class AutoMode {
     };
 
     void init();
-    void run(Drive &motores, WeaponSystem &armas, bool irArmed, bool irStart);
+    void run(Drive &motores, WeaponSystem &armas);
 
     SubState getSubState() const {
         return subState;
