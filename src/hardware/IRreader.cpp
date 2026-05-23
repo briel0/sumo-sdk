@@ -1,0 +1,30 @@
+#include "IRreader.hpp"
+#include <IRremote.hpp>
+
+void IRReader::init(int pin) {
+    IrReceiver.begin(pin, DISABLE_LED_FEEDBACK);
+}
+
+void IRReader::update() {
+    _modeRC = false;
+    _modeAuto = false;
+    _start = false;
+
+    if(!IrReceiver.decode())
+        return;
+
+    uint32_t code = IrReceiver.decodedIRData.decodedRawData;
+    IrReceiver.resume();
+
+    Serial.printf("[IR] Código: 0x%X\n", code);
+
+    if(code == 0x87) {
+        _modeAuto = true;
+    }
+    if(code == 0x88) {
+        _modeRC = true;
+    }
+    if(code == 0x89) {
+        _start = true;
+    }
+}

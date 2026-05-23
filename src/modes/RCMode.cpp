@@ -42,6 +42,7 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
         macroPlayer.play(seq);
     };
 
+    // CONFIGURE AS MACROS AQUI!!!
     if(receptor.cross()) {
         triggerMacro(Config::MACRO_FRENTAO);
     }

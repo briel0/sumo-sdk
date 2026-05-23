@@ -6,23 +6,21 @@
 
 void AutoMode::init() {
     Serial.println("Modo Auto Iniciado.");
-    subState = SubState::SELECTING_SAQUE;
+    subState = SubState::SELECTING_ESTRATEGIA;
     autoConfig = AutoStrategy();
     configServer.begin();
 }
 
-void AutoMode::run(Drive &motores, WeaponSystem &armas) {
+void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart) {
     switch(subState) {
-        case SubState::SELECTING_SAQUE:
+        case SubState::SELECTING_ESTRATEGIA:
             configServer.update();
-
             if(configServer.consumePayload(autoConfig)) {
-                subState = SubState::ARMED_READY;
+                subState = SubState::READY;
                 configServer.shutdown();
             }
             break;
-
-        case SubState::ARMED_READY:
+        case SubState::READY:
             break;
 
         case SubState::EXECUTING_SAQUE:

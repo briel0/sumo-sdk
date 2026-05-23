@@ -10,8 +10,8 @@
 class AutoMode {
   public:
     enum class SubState {
-        SELECTING_SAQUE,
-        ARMED_READY,
+        SELECTING_ESTRATEGIA,
+        READY,
         EXECUTING_SAQUE,
         HUNTING,
         ATTACKING
@@ -25,14 +25,14 @@ class AutoMode {
     };
 
     void init();
-    void run(Drive &motores, WeaponSystem &armas);
+    void run(Drive &motores, WeaponSystem &armas, bool irStart);
 
     SubState getSubState() const {
         return subState;
     }
 
   private:
-    SubState subState = SubState::SELECTING_SAQUE;
+    SubState subState = SubState::SELECTING_ESTRATEGIA;
     Saque saque = Saque::FRENTAO;
     MotionPlayer player;
     ConfigServer configServer;

@@ -19,8 +19,11 @@ namespace Config {
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {};
 
-    static const MotionSequence MACRO_FRENTAO = MACRO({100, 100, 200}, );
+    static const MotionSequence MACRO_FRENTAO = MACRO(
+        {100, 100, 200},);
 
-    static const MotionSequence MACRO_DIAGONAL = MACRO({-100, 100, 50}, {100, 100, 100});
+    static const MotionSequence MACRO_DIAGONAL = MACRO(
+        {-100, 100, 50},
+        {100, 100, 100});
 
 }
