@@ -1,5 +1,4 @@
 #pragma once
-#include "IRreader.hpp"
 
 class IRReader {
   public:

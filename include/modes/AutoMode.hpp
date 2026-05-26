@@ -1,27 +1,20 @@
 #pragma once
 #include "ConfigServer.hpp"
 #include "Drive.hpp"
+#include "JS40F.hpp"
 #include "MotionPlayer.hpp"
 #include "RobotTypes.hpp"
 #include "WeaponSystem.hpp"
 
-// class Sensors;
-
 class AutoMode {
   public:
+    AutoMode();
     enum class SubState {
         SELECTING_ESTRATEGIA,
         READY,
-        EXECUTING_SAQUE,
+        EXECUTING_ESTRATEGIA,
         HUNTING,
         ATTACKING
-    };
-
-    enum class Saque {
-        FRENTAO,
-        CURVAO_ESQ,
-        CURVAO_DIR,
-        RECUADO
     };
 
     void init();
@@ -33,13 +26,22 @@ class AutoMode {
 
   private:
     SubState subState = SubState::SELECTING_ESTRATEGIA;
-    Saque saque = Saque::FRENTAO;
-    MotionPlayer player;
+    MotionPlayer estrategiaPlayer;
     ConfigServer configServer;
     AutoStrategy autoConfig;
     // Sensors sensores;
 
-    void handleArmedReady(bool irStart);
-    void handleExecutingSaque(Drive &motores, WeaponSystem &armas);
-    void handleCombat(Drive &motores, WeaponSystem &armas);
+    JS40F sensorEsq;
+    JS40F sensorDir;
+    JS40F sensorFrontal;
+
+    void executingEstrategia(Drive &motores);
+    void buscaPadrao(Drive &motores);
+    void ataquePadrao(Drive &motores);
+
+    Direction _ultimoLado = Direction::left;
+
+    static constexpr int VEL_BUSCA_GIRO = 60;
+    static constexpr int VEL_ATAQUE_MAX = 100;
+    static constexpr int VEL_ATAQUE_REDUZIDA = 50;
 };

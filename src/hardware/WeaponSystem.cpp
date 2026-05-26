@@ -21,7 +21,6 @@ void WeaponSystem::deploy() {
     if(isDeployedFlag) {
         return;
     }
-
     deployAll();
     isDeployedFlag = true;
     isRelaxedFlag = false;
@@ -32,7 +31,6 @@ void WeaponSystem::retract() {
     if(!isDeployedFlag) {
         return;
     }
-
     retractAll();
     isDeployedFlag = false;
     isRelaxedFlag = false;

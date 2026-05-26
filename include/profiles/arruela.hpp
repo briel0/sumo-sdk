@@ -16,11 +16,15 @@ namespace Config {
 
     static constexpr int NUM_SERVOS = 0;
 
+    static constexpr int PIN_JS_ESQ = 32;
+    static constexpr int PIN_JS_DIR = 33;
+    static constexpr int PIN_JS_FRONT = 34;
+
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {};
 
     static const MotionSequence MACRO_FRENTAO = MACRO(
-        {100, 100, 200},);
+        {100, 100, 150},);
 
     static const MotionSequence MACRO_DIAGONAL = MACRO(
         {-100, 100, 50},

@@ -22,11 +22,16 @@ struct MotionSequence {
 
 // Valores padrão definidos conforme os comentários
 struct AutoStrategy {
-    int macro = 1;        // Frentão (Padrão)
+    int macro = 0;        // Frentão (Padrão)
     char direction = 'X'; // 'X' para NENHUM
     int search = 1;       // Busca Padrão
     int weapon = 0;       // 0 é não desarmar
     bool isNew = false;   // Flag para a máquina de estados saber que tem pacote novo
+};
+
+enum class Direction {
+    left,
+    right
 };
 
 // Isso serve pra deixar mais fácil na hora de escrever as macros no profile

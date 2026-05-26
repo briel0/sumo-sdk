@@ -54,7 +54,6 @@ void loop() {
         }
     }
 
-    // 3. Execução Implacável do Subsistema Ativo
     switch(currentState) {
         case RobotState::RC:
             modoRC.run(motores, sistemaDeArmas);
@@ -63,9 +62,8 @@ void loop() {
             modoAuto.run(motores, sistemaDeArmas, ir.start());
             break;
         case RobotState::IDLE:
-            // Opcional: Colocar um LED de heartbeat respirando aqui
+            // Task: Codar um LED de heartbeat
             break;
     }
-
-    vTaskDelay(1);
+    yield();
 }

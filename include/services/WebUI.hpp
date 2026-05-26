@@ -193,20 +193,20 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
     <h2>MOVIMENTAÇÃO INICIAL</h2>
     <div class="grid">
-        <button class="btn-macro" data-category="macro" data-val="1" data-label="FRENTÃO">FRENTÃO</button>
-        <button class="btn-macro" data-category="macro" data-val="2" data-label="FRENTÃO [FAST]">FRENTÃO [FAST]</button>
-        <button class="btn-macro" data-category="macro" data-val="3" data-label="FRENTINHO">FRENTINHO</button>
-        <button class="btn-macro" data-category="macro" data-val="4" data-label="CURVÃO">CURVÃO</button>
-        <button class="btn-macro" data-category="macro" data-val="5" data-label="CURVINHA">CURVINHA</button>
-        <button class="btn-macro" data-category="macro" data-val="6" data-label="EM V">EM V</button>
-        <button class="btn-macro" data-category="macro" data-val="7" data-label="COSTAS">COSTAS</button>
-        <button class="btn-macro" data-category="macro" data-val="8" data-label="DEFENSIVO">DEFENSIVO</button>
+        <button class="btn-macro" data-category="macro" data-val="0" data-label="FRENTÃO">FRENTÃO</button>
+        <button class="btn-macro" data-category="macro" data-val="1" data-label="FRENTÃO [FAST]">FRENTÃO [FAST]</button>
+        <button class="btn-macro" data-category="macro" data-val="2" data-label="FRENTINHO">FRENTINHO</button>
+        <button class="btn-macro" data-category="macro" data-val="3" data-label="CURVÃO">CURVÃO</button>
+        <button class="btn-macro" data-category="macro" data-val="4" data-label="CURVINHA">CURVINHA</button>
+        <button class="btn-macro" data-category="macro" data-val="5" data-label="EM V">EM V</button>
+        <button class="btn-macro" data-category="macro" data-val="6" data-label="COSTAS">COSTAS</button>
+        <button class="btn-macro" data-category="macro" data-val="7" data-label="DEFENSIVO">DEFENSIVO</button>
     </div>
 
     <h2>DIREÇÃO</h2>
     <div class="grid">
         <button class="btn-direction" data-category="direction" data-val="E" data-label="ESQUERDA">ESQUERDA</button>
-        <button class="btn-direction" data-category="direction" data-val="D" data-label="DIREITA">DIREITA</button>
+        <button class="btn-direction" data-category="direction" data-val="D" data-label="right">right</button>
     </div>
 
     <h2>BUSCA E TÁTICA</h2>
