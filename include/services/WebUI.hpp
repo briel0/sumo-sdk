@@ -165,10 +165,30 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             font-size: 1.1rem; 
             font-weight: bold; 
             line-height: 1.5;
-            letter-spacing: 1.5px; /* O respiro tático nas letras */
+            letter-spacing: 1.5px;
             margin-bottom: 25px;
-            white-space: pre-wrap;
             color: var(--lemon-chiffon); 
+        }
+        
+        /* ESTILO DOS "MINI-BOTÕES" NO MODAL */
+        .modal-chip {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            pointer-events: none; /* Impede clique */
+        }
+        
+        /* Texto final antes dos botões de ação */
+        .modal-prompt {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--grey-olive);
         }
 
         .modal-actions {
@@ -262,7 +282,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             mContainer.className = isError ? "modal-box error-mode" : "modal-box";
             mTitle.innerText = title;
             mTitle.style.color = isError ? 'var(--alert-red)' : 'var(--sea-green)';
-            mBody.innerText = text;
+            mBody.innerHTML = `<div style="text-align:center;">${text}</div>`;
             mActions.className = "modal-actions single-btn";
             mActions.innerHTML = `<button class="btn-confirm" onclick="closeModal()">OK</button>`;
             modal.style.display = 'flex';
@@ -270,7 +290,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
         document.querySelectorAll('button[data-category]').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                if (navigator.vibrate) navigator.vibrate(20); // Vibração Restaurada
+                if (navigator.vibrate) navigator.vibrate(20); 
                 
                 const category = this.getAttribute('data-category');
                 const val = this.getAttribute('data-val');
@@ -299,16 +319,29 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
                 return;
             }
 
-            const report = 
-                "MOVIMENTO : " + stratState.macro.label + "\n" +
-                "DIREÇÃO   : " + stratState.direction.label + "\n" +
-                "BUSCA     : " + stratState.search.label + "\n" +
-                "ARMA      : " + stratState.weapon.label;
+            // Construção do Relatório Visual com Caixinhas Coloridas
+            let reportHtml = "";
+            
+            reportHtml += `<div class="modal-chip btn-macro selected">${stratState.macro.label}</div>`;
+            
+            if (stratState.direction.val) {
+                reportHtml += `<div class="modal-chip btn-direction selected">${stratState.direction.label}</div>`;
+            }
+            
+            if (stratState.search.val) {
+                reportHtml += `<div class="modal-chip btn-search selected">${stratState.search.label}</div>`;
+            }
+            
+            if (stratState.weapon.val) {
+                reportHtml += `<div class="modal-chip btn-weapon selected">${stratState.weapon.label}</div>`;
+            }
+
+            reportHtml += `<div class="modal-prompt">Transmitir parâmetros para o robô?</div>`;
 
             mContainer.className = "modal-box";
             mTitle.innerText = "CONFIRMAÇÃO TÁTICA";
             mTitle.style.color = 'var(--lemon-chiffon)';
-            mBody.innerText = report + "\n\nTransmitir parâmetros para o robô?";
+            mBody.innerHTML = reportHtml;
             
             mActions.className = "modal-actions";
             mActions.innerHTML = `
@@ -319,7 +352,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         }
 
         function executeTransmit() {
-            if (navigator.vibrate) navigator.vibrate([40, 50, 40]); // Vibração Restaurada
+            if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
 
             closeModal();
             printLog("> EXECUTANDO UPLINK...");
@@ -337,15 +370,15 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             fetch(endpoint, { method: 'GET' })
                 .then(function(response) {
                     if(response.ok) {
-                        showUiAlert("UPLINK SUCCESS", "Configuração salva com sucesso!\nStatus: 200 OK", false);
+                        showUiAlert("UPLINK SUCCESS", "Configuração salva com sucesso!<br><br>Status: 200 OK", false);
                         printLog("> [OK 200] PARÂMETROS TRAVADOS NO ROBÔ");
                     } else {
-                        showUiAlert("UPLINK FAILURE", "O robô recebeu os dados mas retornou erro: " + response.status, true);
+                        showUiAlert("UPLINK FAILURE", "O robô recebeu os dados mas retornou erro:<br><br>STATUS " + response.status, true);
                         printLog("> [ERRO] STATUS HTTP: " + response.status, true);
                     }
                 })
                 .catch(function(err) {
-                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.\nVerifique se o celular ainda está conectado no Wi-Fi do robô.", true);
+                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.<br><br>Verifique se o celular ainda está conectado no Wi-Fi do robô.", true);
                     printLog("> [ERRO FATAL] SEM RESPOSTA DA REDE", true);
                 });
         }
