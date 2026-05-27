@@ -16,9 +16,9 @@ namespace Config {
 
     static constexpr int NUM_SERVOS = 0;
 
-    static constexpr int PIN_JS_ESQ = 32;
-    static constexpr int PIN_JS_DIR = 33;
-    static constexpr int PIN_JS_FRONT = 34;
+    static constexpr int PIN_JS_ESQ = 39;
+    static constexpr int PIN_JS_DIR = 36;
+    static constexpr int PIN_JS_FRONT = 39;
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {};

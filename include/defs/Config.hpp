@@ -10,6 +10,8 @@
 #include "profiles/marola.hpp"
 #elif defined(ROBOT_SMOKERAUTO)
 #include "profiles/smokerauto.hpp"
+#elif defined(ROBOT_FUEGUITO)
+#include "profiles/fueguito.hpp"
 #else
 #error "ERRO CRÍTICO: Nenhum perfil de robô foi definido na compilação!"
 #endif

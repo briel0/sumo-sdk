@@ -150,19 +150,40 @@
             font-size: 1.1rem;
             font-weight: bold;
             text-align: center;
+            letter-spacing: 2px;
             margin-bottom: 20px;
             border-bottom: 2px solid var(--dim-grey);
             padding-bottom: 8px;
         }
 
         .modal-body {
-            font-size: 1.1rem; /* Aumentado de 0.85rem para 1.1rem */
-            font-weight: bold; /* Deixa o relatório tático mais visível */
+            font-size: 1.1rem; 
+            font-weight: bold; 
             line-height: 1.5;
-            line-height: 1.5;
+            letter-spacing: 1.5px;
             margin-bottom: 25px;
-            white-space: pre-wrap;
-            color: var(--lemon-chiffon); /* Garante contraste total */
+            color: var(--lemon-chiffon); 
+        }
+        
+        /* ESTILO DOS "MINI-BOTÕES" NO MODAL */
+        .modal-chip {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            pointer-events: none; /* Impede clique */
+        }
+        
+        /* Texto final antes dos botões de ação */
+        .modal-prompt {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--grey-olive);
         }
 
         .modal-actions {
@@ -175,10 +196,10 @@
             grid-template-columns: 1fr;
         }
 
-        .btn-abort { border: 2px solid var(--alert-red); color: var(--alert-red); }
+        .btn-abort { border: 2px solid var(--alert-red); color: var(--alert-red); letter-spacing: 1px; }
         .btn-abort:active { background-color: var(--alert-red); color: #fff; }
         
-        .btn-confirm { border: 2px solid var(--sea-green); color: var(--sea-green); }
+        .btn-confirm { border: 2px solid var(--sea-green); color: var(--sea-green); letter-spacing: 1px; }
         .btn-confirm:active { background-color: var(--sea-green); color: #000; }
     </style>
 </head>
@@ -188,20 +209,20 @@
 
     <h2>MOVIMENTAÇÃO INICIAL</h2>
     <div class="grid">
-        <button class="btn-macro" data-category="macro" data-val="1" data-label="FRENTÃO">FRENTÃO</button>
-        <button class="btn-macro" data-category="macro" data-val="2" data-label="FRENTÃO [FAST]">FRENTÃO [FAST]</button>
-        <button class="btn-macro" data-category="macro" data-val="3" data-label="FRENTINHO">FRENTINHO</button>
-        <button class="btn-macro" data-category="macro" data-val="4" data-label="CURVÃO">CURVÃO</button>
-        <button class="btn-macro" data-category="macro" data-val="5" data-label="CURVINHA">CURVINHA</button>
-        <button class="btn-macro" data-category="macro" data-val="6" data-label="EM V">EM V</button>
-        <button class="btn-macro" data-category="macro" data-val="7" data-label="COSTAS">COSTAS</button>
-        <button class="btn-macro" data-category="macro" data-val="8" data-label="DEFENSIVO">DEFENSIVO</button>
+        <button class="btn-macro" data-category="macro" data-val="0" data-label="FRENTÃO">FRENTÃO</button>
+        <button class="btn-macro" data-category="macro" data-val="1" data-label="FRENTÃO [FAST]">FRENTÃO [FAST]</button>
+        <button class="btn-macro" data-category="macro" data-val="2" data-label="FRENTINHO">FRENTINHO</button>
+        <button class="btn-macro" data-category="macro" data-val="3" data-label="CURVÃO">CURVÃO</button>
+        <button class="btn-macro" data-category="macro" data-val="4" data-label="CURVINHA">CURVINHA</button>
+        <button class="btn-macro" data-category="macro" data-val="5" data-label="EM V">EM V</button>
+        <button class="btn-macro" data-category="macro" data-val="6" data-label="COSTAS">COSTAS</button>
+        <button class="btn-macro" data-category="macro" data-val="7" data-label="DEFENSIVO">DEFENSIVO</button>
     </div>
 
     <h2>DIREÇÃO</h2>
     <div class="grid">
         <button class="btn-direction" data-category="direction" data-val="E" data-label="ESQUERDA">ESQUERDA</button>
-        <button class="btn-direction" data-category="direction" data-val="D" data-label="right">right</button>
+        <button class="btn-direction" data-category="direction" data-val="D" data-label="DIREITA">DIREITA</button>
     </div>
 
     <h2>BUSCA E TÁTICA</h2>
@@ -218,10 +239,8 @@
 
     <button class="btn-submit" onclick="openTacticalConfirm()">[SUBMETER]</button>
 
-    <!-- HUB DE LOG NO RODAPÉ -->
     <div id="terminal-log">> SYS STANDBY // UPLINK READY</div>
 
-    <!-- WINDOW MODAL SYSTEM -->
     <div id="custom-modal" class="modal-overlay">
         <div id="modal-container" class="modal-box">
             <div id="modal-title" class="modal-title">CONFIRMAÇÃO TÁTICA</div>
@@ -258,7 +277,7 @@
             mContainer.className = isError ? "modal-box error-mode" : "modal-box";
             mTitle.innerText = title;
             mTitle.style.color = isError ? 'var(--alert-red)' : 'var(--sea-green)';
-            mBody.innerText = text;
+            mBody.innerHTML = `<div style="text-align:center;">${text}</div>`;
             mActions.className = "modal-actions single-btn";
             mActions.innerHTML = `<button class="btn-confirm" onclick="closeModal()">OK</button>`;
             modal.style.display = 'flex';
@@ -266,6 +285,8 @@
 
         document.querySelectorAll('button[data-category]').forEach(function(btn) {
             btn.addEventListener('click', function() {
+                if (navigator.vibrate) navigator.vibrate(20); 
+                
                 const category = this.getAttribute('data-category');
                 const val = this.getAttribute('data-val');
                 const label = this.getAttribute('data-label');
@@ -293,16 +314,29 @@
                 return;
             }
 
-            const report = 
-                "MOVIMENTO : " + stratState.macro.label + "\n" +
-                "DIREÇÃO   : " + stratState.direction.label + "\n" +
-                "BUSCA     : " + stratState.search.label + "\n" +
-                "ARMA      : " + stratState.weapon.label;
+            // Construção do Relatório Visual com Caixinhas Coloridas
+            let reportHtml = "";
+            
+            reportHtml += `<div class="modal-chip btn-macro selected">${stratState.macro.label}</div>`;
+            
+            if (stratState.direction.val) {
+                reportHtml += `<div class="modal-chip btn-direction selected">${stratState.direction.label}</div>`;
+            }
+            
+            if (stratState.search.val) {
+                reportHtml += `<div class="modal-chip btn-search selected">${stratState.search.label}</div>`;
+            }
+            
+            if (stratState.weapon.val) {
+                reportHtml += `<div class="modal-chip btn-weapon selected">${stratState.weapon.label}</div>`;
+            }
+
+            reportHtml += `<div class="modal-prompt">Transmitir parâmetros para o robô?</div>`;
 
             mContainer.className = "modal-box";
             mTitle.innerText = "CONFIRMAÇÃO TÁTICA";
             mTitle.style.color = 'var(--lemon-chiffon)';
-            mBody.innerText = report + "\n\nTransmitir parâmetros para o robô?";
+            mBody.innerHTML = reportHtml;
             
             mActions.className = "modal-actions";
             mActions.innerHTML = `
@@ -313,6 +347,8 @@
         }
 
         function executeTransmit() {
+            if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
+
             closeModal();
             printLog("> EXECUTANDO UPLINK...");
 
@@ -329,15 +365,15 @@
             fetch(endpoint, { method: 'GET' })
                 .then(function(response) {
                     if(response.ok) {
-                        showUiAlert("UPLINK SUCCESS", "Configuração salva com sucesso!\nStatus: 200 OK", false);
+                        showUiAlert("UPLINK SUCCESS", "Configuração salva com sucesso!<br><br>Status: 200 OK", false);
                         printLog("> [OK 200] PARÂMETROS TRAVADOS NO ROBÔ");
                     } else {
-                        showUiAlert("UPLINK FAILURE", "O robô recebeu os dados mas retornou erro: " + response.status, true);
+                        showUiAlert("UPLINK FAILURE", "O robô recebeu os dados mas retornou erro:<br><br>STATUS " + response.status, true);
                         printLog("> [ERRO] STATUS HTTP: " + response.status, true);
                     }
                 })
                 .catch(function(err) {
-                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.\nVerifique se o iPhone ainda está conectado no Wi-Fi do robô.", true);
+                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.<br><br>Verifique se o celular ainda está conectado no Wi-Fi do robô.", true);
                     printLog("> [ERRO FATAL] SEM RESPOSTA DA REDE", true);
                 });
         }

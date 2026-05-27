@@ -23,9 +23,6 @@ void ConfigServer::begin() {
 
 void ConfigServer::teardownBluetooth() {
     btStop();
-    esp_bt_controller_disable();
-    esp_bt_controller_deinit();
-    esp_bt_mem_release(ESP_BT_MODE_BTDM);
     delay(100);
 }
 
@@ -91,7 +88,9 @@ void ConfigServer::setupWebRoutes() {
                       currentAutoStrategy.macro, currentAutoStrategy.direction, currentAutoStrategy.search,
                       currentAutoStrategy.weapon);
 
-        request->send(200, "text/plain", "CONFIGURADO");
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "CONFIGURADO");
+        response->addHeader("Connection", "close");
+        request->send(response);
     });
 }
 
@@ -102,12 +101,8 @@ void ConfigServer::update() {
 }
 
 void ConfigServer::shutdown() {
-    Serial.println("[WIFI] Desligando rede por comando do AutoMode...");
-    dnsServer.stop();
-    server.end();
-    WiFi.softAPdisconnect(true);
-    WiFi.mode(WIFI_OFF);
-    Serial.println("[WIFI] Rádio 2.4GHz totalmente desligado.");
+    Serial.println("[WIFI] Encerrando conexões com o piloto...");
+    // Futuramente vamos utilizar essa função pra recuperar o core 0
 }
 
 bool ConfigServer::consumePayload(AutoStrategy &outStrategy) {

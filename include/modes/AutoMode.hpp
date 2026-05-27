@@ -11,6 +11,7 @@ class AutoMode {
     AutoMode();
     enum class SubState {
         SELECTING_ESTRATEGIA,
+        DISCONNECTING_WIFI,
         READY,
         EXECUTING_ESTRATEGIA,
         HUNTING,
@@ -40,6 +41,7 @@ class AutoMode {
     void ataquePadrao(Drive &motores);
 
     Direction _ultimoLado = Direction::left;
+    unsigned long _tempoDesligamento = 0;
 
     static constexpr int VEL_BUSCA_GIRO = 60;
     static constexpr int VEL_ATAQUE_MAX = 100;

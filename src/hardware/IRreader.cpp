@@ -24,7 +24,7 @@ void IRReader::update() {
     if(code == 0x88) {
         _modeRC = true;
     }
-    if(code == 0x89) {
+    if(code == 0x81) {
         _start = true;
     }
 }

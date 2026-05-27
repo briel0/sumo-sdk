@@ -155,19 +155,20 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             font-size: 1.1rem;
             font-weight: bold;
             text-align: center;
+            letter-spacing: 2px;
             margin-bottom: 20px;
             border-bottom: 2px solid var(--dim-grey);
             padding-bottom: 8px;
         }
 
         .modal-body {
-            font-size: 1.1rem; /* Aumentado de 0.85rem para 1.1rem */
-            font-weight: bold; /* Deixa o relatório tático mais visível */
+            font-size: 1.1rem; 
+            font-weight: bold; 
             line-height: 1.5;
-            line-height: 1.5;
+            letter-spacing: 1.5px; /* O respiro tático nas letras */
             margin-bottom: 25px;
             white-space: pre-wrap;
-            color: var(--lemon-chiffon); /* Garante contraste total */
+            color: var(--lemon-chiffon); 
         }
 
         .modal-actions {
@@ -180,10 +181,10 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             grid-template-columns: 1fr;
         }
 
-        .btn-abort { border: 2px solid var(--alert-red); color: var(--alert-red); }
+        .btn-abort { border: 2px solid var(--alert-red); color: var(--alert-red); letter-spacing: 1px; }
         .btn-abort:active { background-color: var(--alert-red); color: #fff; }
         
-        .btn-confirm { border: 2px solid var(--sea-green); color: var(--sea-green); }
+        .btn-confirm { border: 2px solid var(--sea-green); color: var(--sea-green); letter-spacing: 1px; }
         .btn-confirm:active { background-color: var(--sea-green); color: #000; }
     </style>
 </head>
@@ -206,7 +207,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
     <h2>DIREÇÃO</h2>
     <div class="grid">
         <button class="btn-direction" data-category="direction" data-val="E" data-label="ESQUERDA">ESQUERDA</button>
-        <button class="btn-direction" data-category="direction" data-val="D" data-label="right">right</button>
+        <button class="btn-direction" data-category="direction" data-val="D" data-label="DIREITA">DIREITA</button>
     </div>
 
     <h2>BUSCA E TÁTICA</h2>
@@ -223,10 +224,8 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
     <button class="btn-submit" onclick="openTacticalConfirm()">[SUBMETER]</button>
 
-    <!-- HUB DE LOG NO RODAPÉ -->
     <div id="terminal-log">> SYS STANDBY // UPLINK READY</div>
 
-    <!-- WINDOW MODAL SYSTEM -->
     <div id="custom-modal" class="modal-overlay">
         <div id="modal-container" class="modal-box">
             <div id="modal-title" class="modal-title">CONFIRMAÇÃO TÁTICA</div>
@@ -271,6 +270,8 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
         document.querySelectorAll('button[data-category]').forEach(function(btn) {
             btn.addEventListener('click', function() {
+                if (navigator.vibrate) navigator.vibrate(20); // Vibração Restaurada
+                
                 const category = this.getAttribute('data-category');
                 const val = this.getAttribute('data-val');
                 const label = this.getAttribute('data-label');
@@ -318,6 +319,8 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         }
 
         function executeTransmit() {
+            if (navigator.vibrate) navigator.vibrate([40, 50, 40]); // Vibração Restaurada
+
             closeModal();
             printLog("> EXECUTANDO UPLINK...");
 
@@ -342,7 +345,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
                     }
                 })
                 .catch(function(err) {
-                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.\nVerifique se o iPhone ainda está conectado no Wi-Fi do robô.", true);
+                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.\nVerifique se o celular ainda está conectado no Wi-Fi do robô.", true);
                     printLog("> [ERRO FATAL] SEM RESPOSTA DA REDE", true);
                 });
         }

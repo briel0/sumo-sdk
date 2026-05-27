@@ -28,9 +28,16 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart) {
         case SubState::SELECTING_ESTRATEGIA:
             configServer.update();
             if(configServer.consumePayload(autoConfig)) {
-                subState = SubState::READY;
+                _tempoDesligamento = millis();
+                subState = SubState::DISCONNECTING_WIFI;
+                Serial.println("[AUTO] Estratégia recebida. Dando tempo para o rádio responder...");
+            }
+            break;
+        case SubState::DISCONNECTING_WIFI:
+            if(millis() - _tempoDesligamento > 500) {
                 configServer.shutdown();
-                Serial.println("[AUTO] Estratégia recebida. Aguardando largada.");
+                subState = SubState::READY;
+                Serial.println("[AUTO] Rádio morto. Aguardando largada IR.");
             }
             break;
         case SubState::READY:
