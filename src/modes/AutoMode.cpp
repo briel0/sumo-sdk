@@ -55,9 +55,11 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart) {
             break;
 
         case SubState::HUNTING:
+            Serial.println("Caçando!");
             buscaPadrao(motores);
             break;
         case SubState::ATTACKING:
+            Serial.println("Atacando!");
             ataquePadrao(motores);
             break;
     }

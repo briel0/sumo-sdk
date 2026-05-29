@@ -34,7 +34,19 @@ void setup() {
         sistemaDeArmas.addServo(s);
     }
 
-    Serial.println("[MAIN] Setup concluído. Aguardando comando IR...");
+    switch(currentState) {
+        case RobotState::RC:
+            modoRC.init();
+            Serial.println("[MAIN] BOOT DIRETO: Modo RC engatilhado.");
+            break;
+        case RobotState::AUTO:
+            modoAuto.init();
+            Serial.println("[MAIN] BOOT DIRETO: Modo AUTO engatilhado.");
+            break;
+        case RobotState::IDLE:
+            Serial.println("[MAIN] Setup concluído. Aguardando sinal IR do juiz...");
+            break;
+    }
 }
 
 void loop() {
