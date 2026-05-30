@@ -9,6 +9,7 @@ void IRReader::update() {
     _modeRC = false;
     _modeAuto = false;
     _start = false;
+    _stop = false;
 
     if(!IrReceiver.decode())
         return;
@@ -27,4 +28,11 @@ void IRReader::update() {
     if(code == 0x81) {
         _start = true;
     }
+    if(code == 0x82) {
+        _stop = true;
+    }
+}
+
+void IRReader::shutdown() {
+    IrReceiver.stop();
 }

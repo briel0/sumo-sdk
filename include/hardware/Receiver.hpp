@@ -2,12 +2,16 @@
 
 #include <Arduino.h>
 #include <Bluepad32.h>
+#include <Preferences.h>
 
 class Receiver {
   public:
     Receiver();
     void init();
     void update();
+
+    void lockToSavedController();
+    void openForNewController();
 
     static void onConnected(ControllerPtr ctl);
     static void onDisconnected(ControllerPtr ctl);
@@ -88,6 +92,7 @@ class Receiver {
     static Receiver *instance;
     uint8_t savedMac[6] = {0};
     bool isPairingMode = true;
+    Preferences prefs;
 
     void updateAxes();
     void updateButtons();

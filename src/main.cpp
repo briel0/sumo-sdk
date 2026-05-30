@@ -22,6 +22,9 @@ RCMode modoRC;
 AutoMode modoAuto;
 
 void setup() {
+
+    // digitalWrite(25, HIGH);
+
     Serial.begin(115200);
     Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
 
@@ -37,6 +40,7 @@ void setup() {
     switch(currentState) {
         case RobotState::RC:
             modoRC.init();
+            ir.shutdown();
             Serial.println("[MAIN] BOOT DIRETO: Modo RC engatilhado.");
             break;
         case RobotState::AUTO:
@@ -52,10 +56,23 @@ void setup() {
 void loop() {
     ir.update();
 
+    // Essa é uma solução provisoria!!!
+
+    if(ir.stop()) {
+        motores.setSpeed(0, 0);
+        Serial.println("[MAIN] COMANDO DE PARAGEM (3). Reiniciando o sistema...");
+        delay(50);
+        ESP.restart();
+    }
+
+    // Essa é uma solução provisoria!!!
+
     // Arbitragem de Estado Inicial (Só permite trocar de modo se o robô estiver parado)
+
     if(currentState == RobotState::IDLE) {
         if(ir.modeRC()) {
             modoRC.init();
+            ir.shutdown();
             currentState = RobotState::RC;
             Serial.println("[MAIN] -> MODO RC ENGATILHADO");
         }
@@ -65,7 +82,6 @@ void loop() {
             Serial.println("[MAIN] -> MODO AUTO ENGATILHADO");
         }
     }
-
     switch(currentState) {
         case RobotState::RC:
             modoRC.run(motores, sistemaDeArmas);

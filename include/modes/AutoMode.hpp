@@ -43,7 +43,7 @@ class AutoMode {
     Direction _ultimoLado = Direction::left;
     unsigned long _tempoDesligamento = 0;
 
-    static constexpr int VEL_BUSCA_GIRO = 60;
+    static constexpr int VEL_BUSCA_GIRO = 80;
     static constexpr int VEL_ATAQUE_MAX = 100;
     static constexpr int VEL_ATAQUE_REDUZIDA = 50;
 };
