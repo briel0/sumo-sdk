@@ -7,11 +7,10 @@ struct ServoConfig {
     int deployAngle;
 };
 
-// Representa um único passo de movimento no tempo
 struct MotionStep {
-    int leftSpeed;
-    int rightSpeed;
-    unsigned long durationMs;
+    int leftSpeed;            // Velocidade do motor esquerdo (-100 a 100). Negativo = ré.
+    int rightSpeed;           // Velocidade do motor direito  (-100 a 100). Negativo = ré.
+    unsigned long durationMs; // Quanto tempo manter essa velocidade (em milissegundos).
 };
 
 // Representa uma fita cassete completa (uma lista de passos)
@@ -20,13 +19,12 @@ struct MotionSequence {
     int numSteps;
 };
 
-// Valores padrão definidos conforme os comentários
 struct AutoStrategy {
-    int macro = 0;        // Frentão (Padrão)
-    char direction = 'X'; // 'X' para NENHUM
-    int search = 1;       // Busca Padrão
-    int weapon = 0;       // 0 é não desarmar
-    bool isNew = false;   // Flag para a máquina de estados saber que tem pacote novo
+    int macro = 0;        // Índice na TABELA_DE_ESTRATEGIAS[] do AutoMode.cpp
+    char direction = 'X'; // 'E' = esquerda, 'D' = direita, 'X' = sem preferência
+    int search = 1;       // 1 = busca padrão, 2 = busca lenta
+    int weapon = 0;       // 0 = não armar, 1 = armar no começo da luta
+    bool isNew = false;   // Sinaliza que chegou novos dados do celular
 };
 
 enum class Direction {

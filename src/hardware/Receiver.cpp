@@ -1,4 +1,5 @@
 #include "Receiver.hpp"
+#include <Preferences.h>
 #include <esp_mac.h>
 
 Receiver *Receiver::instance = nullptr;
@@ -8,26 +9,53 @@ Receiver::Receiver() {
 }
 
 void Receiver::init() {
+    pinMode(0, INPUT_PULLUP);
+
+    // Inicia a memória não-volátil para guardar o MAC do dono
+    prefs.begin("radio", false);
+    prefs.getBytes("mac_dono", savedMac, 6);
+
+    isPairingMode = true; // always open no boot
+
     BP32.setup(&Receiver::onConnected, &Receiver::onDisconnected);
     Serial.println("[Receiver] Bluetooth Stack started. Looking for controllers...");
+}
+
+void Receiver::lockToSavedController() {
+    isPairingMode = false;
+    Serial.println("[Receiver] SECURE MODE ACTIVATED: Only the owner can connect.");
+}
+
+void Receiver::openForNewController() {
+    isPairingMode = true;
+
+    if(controller && controller->isConnected()) {
+        controller->disconnect();
+        controller = nullptr;
+    }
+    Serial.println("[Receiver] OPEN MODE: Waiting to pair a NEW controller...");
 }
 
 void Receiver::onConnected(ControllerPtr ctl) {
     const uint8_t *incomingMac = ctl->getProperties().btaddr;
 
     if(instance->isPairingMode) {
-        Serial.printf("[Receiver] ✅ PILOTO OFICIAL REGISTRADO! MAC: " MACSTR "\n", MAC2STR(incomingMac));
+        Serial.printf("[Receiver] ✅ NEW OWNER ACCEPTED! MAC: " MACSTR "\n", MAC2STR(incomingMac));
+
+        // Grava na memória NVS para persistir entre reboots e quedas
+        instance->prefs.putBytes("mac_dono", incomingMac, 6);
         memcpy(instance->savedMac, incomingMac, 6);
-        instance->isPairingMode = false;
+
         instance->controller = ctl;
+        instance->lockToSavedController();
     }
     else {
         if(memcmp(incomingMac, instance->savedMac, 6) == 0) {
-            Serial.println("[Receiver] ✅ Piloto oficial retornou. Conexão restabelecida.");
+            Serial.println("[Receiver] ✅ Official pilot recognized! Connection restored.");
             instance->controller = ctl;
         }
         else {
-            Serial.printf("[Receiver] ❌ ALERTA! Invasor bloqueado. MAC: " MACSTR "\n", MAC2STR(incomingMac));
+            Serial.printf("[Receiver] ❌ ALERT! Invader blocked. MAC: " MACSTR "\n", MAC2STR(incomingMac));
             ctl->disconnect();
         }
     }
@@ -51,12 +79,12 @@ void Receiver::update() {
         applyFailsafe();
     }
 
-    // Opcional: Descomente para debugar os novos eixos
     /*
+    // Opcional: Descomente para debugar os eixos na serial
     static unsigned long lastPrint = 0;
-    if(millis() - lastPrint > 100) {
-        Serial.printf("LX: %d | LY: %d | RX: %d | RY: %d | LT: %d | RT: %d\n",
-                      leftStickXVal, leftStickYVal, rightStickXVal, rightStickYVal, leftTriggerVal, rightTriggerVal);
+    if(millis() - lastPrint > 2000) {
+        Serial.printf("LX: %d | LY: %d | RX: %d | RY: %d | LT: %d | RT: %d\n", leftStickXVal, leftStickYVal,
+                      rightStickXVal, rightStickYVal, leftTriggerVal, rightTriggerVal);
         lastPrint = millis();
     }
     */
@@ -70,6 +98,7 @@ void Receiver::updateAxes() {
     int rawRX = controller->axisRX();
     int rawRY = controller->axisRY();
 
+    // Mapeamento idêntico à versão mais recente (compatível com os getters do RCMode)
     leftTriggerVal = (rawLT < TRIGGER_DEADZONE) ? 0 : (rawLT * 100) / 1023;
     rightTriggerVal = (rawRT < TRIGGER_DEADZONE) ? 0 : (rawRT * 100) / 1023;
 

@@ -5,7 +5,7 @@
 #include <Arduino.h>
 
 static const MotionSequence *TABELA_DE_ESTRATEGIAS[] = {
-    &Config::MACRO_FRENTAO, // Index 0
+    &Config::MACRO_FRENTAO,
 };
 
 AutoMode::AutoMode()
@@ -16,14 +16,27 @@ void AutoMode::init() {
     subState = SubState::SELECTING_ESTRATEGIA;
     autoConfig = AutoStrategy();
     configServer.begin();
+
+    sensorEsq.init();
+    sensorDir.init();
+    sensorFrontal.init();
 }
 
 // autoConfig é a struct com as configurações que vem do site :)
 
-// Esqueci de codar a parada :)
+unsigned int tempotempo = 0;
 
 void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart) {
     armas.update();
+
+    /*
+    if(millis() - tempotempo > 2000) {
+        Serial.printf("Situação: Direita: %d, Esquerda: %d, Frontal: %d\n", sensorDir.temAlvo(), sensorEsq.temAlvo(),
+                      sensorFrontal.temAlvo());
+        tempotempo = millis();
+    }
+    */
+
     switch(subState) {
         case SubState::SELECTING_ESTRATEGIA:
             configServer.update();
@@ -55,9 +68,11 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart) {
             break;
 
         case SubState::HUNTING:
+            Serial.println("Caçando!");
             buscaPadrao(motores);
             break;
         case SubState::ATTACKING:
+            Serial.println("Atacando!");
             ataquePadrao(motores);
             break;
     }

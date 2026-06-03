@@ -9,7 +9,7 @@
 #elif defined(ROBOT_MAROLA)
 #include "profiles/marola.hpp"
 #elif defined(ROBOT_SMOKERAUTO)
-#include "profiles/smokerauto.hpp"
+#include "profiles/smokerAuto.hpp"
 #elif defined(ROBOT_FUEGUITO)
 #include "profiles/fueguito.hpp"
 #else
