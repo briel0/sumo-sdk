@@ -3,7 +3,7 @@
 
 namespace Config {
 
-    static constexpr const char *ROBOT_NAME = "Smoker";
+    static constexpr const char *ROBOT_NAME = "Fuego Wu";
 
     static constexpr int RIGHT_POS_PIN = 16;
     static constexpr int RIGHT_NEG_PIN = 17;

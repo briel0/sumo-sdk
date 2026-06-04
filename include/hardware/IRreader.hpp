@@ -12,6 +12,9 @@ class IRReader {
     bool modeAuto() const {
         return _modeAuto;
     }
+    bool ready() const {
+        return _ready;
+    }
     bool start() const {
         return _start;
     }
@@ -23,6 +26,7 @@ class IRReader {
   private:
     bool _modeRC = false;
     bool _modeAuto = false;
+    bool _ready = false;
     bool _start = false;
     bool _stop = false;
 };

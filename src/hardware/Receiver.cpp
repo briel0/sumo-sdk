@@ -11,11 +11,10 @@ Receiver::Receiver() {
 void Receiver::init() {
     pinMode(0, INPUT_PULLUP);
 
-    // Inicia a memória não-volátil para guardar o MAC do dono
     prefs.begin("radio", false);
     prefs.getBytes("mac_dono", savedMac, 6);
 
-    isPairingMode = true; // always open no boot
+    isPairingMode = true;
 
     BP32.setup(&Receiver::onConnected, &Receiver::onDisconnected);
     Serial.println("[Receiver] Bluetooth Stack started. Looking for controllers...");

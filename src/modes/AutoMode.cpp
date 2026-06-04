@@ -9,7 +9,11 @@ static const MotionSequence *TABELA_DE_ESTRATEGIAS[] = {
 };
 
 AutoMode::AutoMode()
-    : sensorEsq(Config::PIN_JS_ESQ), sensorDir(Config::PIN_JS_DIR), sensorFrontal(Config::PIN_JS_FRONT) {}
+    : sensorEsq(Config::PIN_JS_ESQ),
+      sensorDir(Config::PIN_JS_DIR),
+      sensorFrontal(Config::PIN_JS_FRONT),
+      sensorLinhaEsq(Config::PIN_LINHA_ESQ, Config::LINHA_THRESHOLD),
+      sensorLinhaDir(Config::PIN_LINHA_DIR, Config::LINHA_THRESHOLD) {}
 
 void AutoMode::init() {
     Serial.println("Modo Auto Iniciado.");
@@ -20,13 +24,16 @@ void AutoMode::init() {
     sensorEsq.init();
     sensorDir.init();
     sensorFrontal.init();
+
+    sensorLinhaEsq.init();
+    sensorLinhaDir.init();
 }
 
 // autoConfig é a struct com as configurações que vem do site :)
 
 unsigned int tempotempo = 0;
 
-void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart) {
+void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irReady) {
     armas.update();
 
     /*
@@ -54,7 +61,11 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart) {
             }
             break;
         case SubState::READY:
+            if(irReady) {
+                _readyReceived = true;
+            }
             if(irStart) {
+                _readyReceived = false;
                 subState = SubState::EXECUTING_ESTRATEGIA;
                 estrategiaPlayer.play(*TABELA_DE_ESTRATEGIAS[autoConfig.macro]);
                 Serial.println("[AUTO] LARGADA! Executando estratégia.");

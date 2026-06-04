@@ -21,8 +21,16 @@ class RCMode {
     /**
     @brief Executes the manual control logic. Dependency injection: The FSM "lends" the motors for RCMode to drive.
     @param motores Reference to the Drive object to control the motors.
+    @param armas   Reference to the WeaponSystem object to control the weapons.
     */
     void run(Drive &motores, WeaponSystem &armas);
+
+    /**
+    @brief Returns whether the controller is currently connected and recognized.
+    */
+    bool controllerConnected() const {
+        return receptor.isConnected();
+    }
 
   private:
     /**

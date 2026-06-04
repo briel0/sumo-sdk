@@ -16,6 +16,10 @@ class Receiver {
     static void onConnected(ControllerPtr ctl);
     static void onDisconnected(ControllerPtr ctl);
 
+    bool isConnected() const {
+        return controller != nullptr && controller->isConnected();
+    }
+
     int leftTrigger() const {
         return leftTriggerVal;
     }

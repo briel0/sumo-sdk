@@ -6,10 +6,11 @@ void IRReader::init(int pin) {
 }
 
 void IRReader::update() {
-    _modeRC = false;
+    _modeRC   = false;
     _modeAuto = false;
-    _start = false;
-    _stop = false;
+    _ready    = false;
+    _start    = false;
+    _stop     = false;
 
     if(!IrReceiver.decode())
         return;
@@ -19,17 +20,20 @@ void IRReader::update() {
 
     Serial.printf("[IR] Código: 0x%X\n", code);
 
-    if(code == 0x87) {
-        _modeAuto = true;
+    if(code == 0x80) { // Botão 1: ready
+        _ready = true;
     }
-    if(code == 0x88) {
-        _modeRC = true;
-    }
-    if(code == 0x81) {
+    if(code == 0x81) { // Botão 2: largada
         _start = true;
     }
-    if(code == 0x82) {
+    if(code == 0x82) { // Botão 3: stop
         _stop = true;
+    }
+    if(code == 0x87) { // Botão 8: modo auto
+        _modeAuto = true;
+    }
+    if(code == 0x88) { // Botão 9: modo RC
+        _modeRC = true;
     }
 }
 

@@ -4,6 +4,7 @@
 #include "IRreader.hpp"
 #include "RCMode.hpp"
 #include "ServoMechanism.hpp"
+#include "StatusLed.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
 
@@ -18,17 +19,18 @@ RobotState currentState = RobotState::IDLE;
 Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
 WeaponSystem sistemaDeArmas;
 IRReader ir;
+StatusLed statusLed;
 RCMode modoRC;
 AutoMode modoAuto;
 
 void setup() {
-
-    // digitalWrite(25, HIGH);
-
     Serial.begin(115200);
     Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
+    statusLed.init(LED_BUILTIN, Config::PIN_STATUS_LED, Config::STATUS_LED_COUNT);
+    delay(500);
 
     ir.init(IR_PIN);
+    statusLed.confirmStep();
 
     for(int i = 0; i < Config::NUM_SERVOS; i++) {
         ServoMechanism *s =
@@ -36,6 +38,7 @@ void setup() {
         s->init();
         sistemaDeArmas.addServo(s);
     }
+    statusLed.confirmStep();
 
     switch(currentState) {
         case RobotState::RC:
@@ -51,12 +54,19 @@ void setup() {
             Serial.println("[MAIN] Setup concluído. Aguardando sinal IR do juiz...");
             break;
     }
+
+    statusLed.confirmStep();
+    statusLed.confirmStep();
+    statusLed.confirmStep();
 }
 
 void loop() {
     ir.update();
 
-    // Essa é uma solução provisoria!!!
+    // Feedback visual para códigos IRs válidos (menos '1')
+    if(ir.modeRC() || ir.modeAuto() || ir.stop()) {
+        statusLed.blinkDebug(5, 20);
+    }
 
     if(ir.stop()) {
         motores.setSpeed(0, 0);
@@ -65,33 +75,54 @@ void loop() {
         ESP.restart();
     }
 
-    // Essa é uma solução provisoria!!!
-
-    // Arbitragem de Estado Inicial (Só permite trocar de modo se o robô estiver parado)
-
     if(currentState == RobotState::IDLE) {
         if(ir.modeRC()) {
             modoRC.init();
             ir.shutdown();
             currentState = RobotState::RC;
+            statusLed.setState(CRGB::Green);
             Serial.println("[MAIN] -> MODO RC ENGATILHADO");
         }
         else if(ir.modeAuto()) {
             modoAuto.init();
             currentState = RobotState::AUTO;
+            statusLed.setState(CRGB::Orange);
             Serial.println("[MAIN] -> MODO AUTO ENGATILHADO");
         }
     }
+
     switch(currentState) {
         case RobotState::RC:
+            if(!modoRC.controllerConnected()) {
+                statusLed.pairingWave();
+            } else {
+                statusLed.setState(CRGB::Green); // limpa o laranja residual
+            }
             modoRC.run(motores, sistemaDeArmas);
             break;
         case RobotState::AUTO:
-            modoAuto.run(motores, sistemaDeArmas, ir.start());
+            if(modoAuto.getSubState() == AutoMode::SubState::SELECTING_ESTRATEGIA ||
+            modoAuto.getSubState() == AutoMode::SubState::DISCONNECTING_WIFI) {
+                statusLed.strategyWave();
+            }
+            if(modoAuto.getSubState() == AutoMode::SubState::READY) {
+                if(ir.ready()) {
+                    statusLed.blinkDebug(1, 20);
+                    statusLed.setAll(CRGB::Red);
+                }
+                if(!modoAuto.readyReceived()) {
+                    statusLed.setState(CRGB::Orange);
+                }
+                if(ir.start()) {
+                    statusLed.setState(CRGB::Black);
+                }
+            }
+            modoAuto.run(motores, sistemaDeArmas, ir.start(), ir.ready());
             break;
         case RobotState::IDLE:
-            // Task: Codar um LED de heartbeat
+            statusLed.heartbeat();
             break;
     }
+
     yield();
 }

@@ -20,6 +20,9 @@ namespace Config {
     static constexpr int PIN_JS_DIR = 33;
     static constexpr int PIN_JS_FRONT = 34;
 
+    static constexpr int PIN_STATUS_LED   = 33;
+    static constexpr int STATUS_LED_COUNT = 5;
+
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
         {22, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
