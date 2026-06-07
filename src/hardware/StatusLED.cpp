@@ -1,9 +1,9 @@
-#include "StatusLed.hpp"
+#include "StatusLED.hpp"
 #include <Arduino.h>
 
 void StatusLed::init(int debugPin, int dataPin, int numLeds) {
-    _debugPin    = debugPin;
-    _numLeds     = (numLeds <= MAX_LEDS) ? numLeds : MAX_LEDS;
+    _debugPin = debugPin;
+    _numLeds = (numLeds <= MAX_LEDS) ? numLeds : MAX_LEDS;
     _currentStep = 0;
 
     pinMode(_debugPin, OUTPUT);
@@ -55,12 +55,14 @@ void StatusLed::setState(CRGB color) {
             changed = true;
         }
     }
-    if(changed) FastLED.show();
+    if(changed)
+        FastLED.show();
 }
 
 void StatusLed::heartbeat() {
     unsigned long now = millis();
-    if(now - _lastHeartbeatMs < 20) return; // ~50fps
+    if(now - _lastHeartbeatMs < 20)
+        return; // ~50fps
     _lastHeartbeatMs = now;
 
     uint8_t brilho = beatsin8(40, 10, 200);
@@ -73,7 +75,8 @@ void StatusLed::heartbeat() {
 
 void StatusLed::pairingWave() {
     unsigned long now = millis();
-    if(now - _lastWaveMs < 120) return; // velocidade da onda: 1 LED a cada 120ms
+    if(now - _lastWaveMs < 120)
+        return; // velocidade da onda: 1 LED a cada 120ms
     _lastWaveMs = now;
 
     // Restaura o LED anterior para verde
@@ -89,7 +92,8 @@ void StatusLed::pairingWave() {
 
 void StatusLed::strategyWave() {
     unsigned long now = millis();
-    if(now - _lastWaveMs < 120) return;
+    if(now - _lastWaveMs < 120)
+        return;
     _lastWaveMs = now;
 
     // Restaura o LED anterior para verde
@@ -102,7 +106,8 @@ void StatusLed::strategyWave() {
             _waveIndex = 4;
             _pingpongForward = false;
         }
-    } else {
+    }
+    else {
         _waveIndex--;
         if(_waveIndex <= 1) {
             _waveIndex = 1;

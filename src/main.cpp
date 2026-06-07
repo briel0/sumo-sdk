@@ -4,7 +4,7 @@
 #include "IRreader.hpp"
 #include "RCMode.hpp"
 #include "ServoMechanism.hpp"
-#include "StatusLed.hpp"
+#include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
 
@@ -14,7 +14,8 @@ enum class RobotState {
     AUTO
 };
 
-RobotState currentState = RobotState::IDLE;
+// Aqui mudamos pra ir pra RC ou AUTO direto
+RobotState currentState = RobotState::RC;
 
 Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
 WeaponSystem sistemaDeArmas;
@@ -95,14 +96,15 @@ void loop() {
         case RobotState::RC:
             if(!modoRC.controllerConnected()) {
                 statusLed.pairingWave();
-            } else {
+            }
+            else {
                 statusLed.setState(CRGB::Green); // limpa o laranja residual
             }
             modoRC.run(motores, sistemaDeArmas);
             break;
         case RobotState::AUTO:
             if(modoAuto.getSubState() == AutoMode::SubState::SELECTING_ESTRATEGIA ||
-            modoAuto.getSubState() == AutoMode::SubState::DISCONNECTING_WIFI) {
+               modoAuto.getSubState() == AutoMode::SubState::DISCONNECTING_WIFI) {
                 statusLed.strategyWave();
             }
             if(modoAuto.getSubState() == AutoMode::SubState::READY) {
@@ -123,6 +125,5 @@ void loop() {
             statusLed.heartbeat();
             break;
     }
-
     yield();
 }

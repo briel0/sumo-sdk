@@ -3,7 +3,7 @@
 
 namespace Config {
 
-    static constexpr const char *ROBOT_NAME = "Marola";
+    static constexpr const char *ROBOT_NAME = "Fueguito";
 
     static constexpr int RIGHT_POS_PIN = 17;
     static constexpr int RIGHT_NEG_PIN = 16;
@@ -14,16 +14,14 @@ namespace Config {
     static constexpr int TURN_COEFFICIENT = 93;
     static constexpr int PIVOT_COEFFICIENT = 75;
 
-    static constexpr int NUM_SERVOS = 1;
+    static constexpr int NUM_SERVOS = 0;
 
     static constexpr int PIN_JS_ESQ = 32;
     static constexpr int PIN_JS_DIR = 33;
     static constexpr int PIN_JS_FRONT = 34;
 
     // Cada linha { } é um servo físico!
-    static constexpr ServoConfig SERVOS[] = {
-        {22, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
-    };
+    static constexpr ServoConfig SERVOS[] = {};
 
     static const MotionSequence MACRO_FRENTAO = MACRO(
         {100, 100, 300});

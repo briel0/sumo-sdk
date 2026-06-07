@@ -2,6 +2,8 @@
 #include <Preferences.h>
 #include <esp_mac.h>
 
+// TO DO: REMOVER PREFS
+
 Receiver *Receiver::instance = nullptr;
 
 Receiver::Receiver() {
@@ -9,8 +11,6 @@ Receiver::Receiver() {
 }
 
 void Receiver::init() {
-    pinMode(0, INPUT_PULLUP);
-
     prefs.begin("radio", false);
     prefs.getBytes("mac_dono", savedMac, 6);
 

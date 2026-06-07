@@ -9,9 +9,7 @@ static const MotionSequence *TABELA_DE_ESTRATEGIAS[] = {
 };
 
 AutoMode::AutoMode()
-    : sensorEsq(Config::PIN_JS_ESQ),
-      sensorDir(Config::PIN_JS_DIR),
-      sensorFrontal(Config::PIN_JS_FRONT),
+    : sensorEsq(Config::PIN_JS_ESQ), sensorDir(Config::PIN_JS_DIR), sensorFrontal(Config::PIN_JS_FRONT),
       sensorLinhaEsq(Config::PIN_LINHA_ESQ, Config::LINHA_THRESHOLD),
       sensorLinhaDir(Config::PIN_LINHA_DIR, Config::LINHA_THRESHOLD) {}
 
@@ -31,18 +29,8 @@ void AutoMode::init() {
 
 // autoConfig é a struct com as configurações que vem do site :)
 
-unsigned int tempotempo = 0;
-
 void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irReady) {
     armas.update();
-
-    /*
-    if(millis() - tempotempo > 2000) {
-        Serial.printf("Situação: Direita: %d, Esquerda: %d, Frontal: %d\n", sensorDir.temAlvo(), sensorEsq.temAlvo(),
-                      sensorFrontal.temAlvo());
-        tempotempo = millis();
-    }
-    */
 
     switch(subState) {
         case SubState::SELECTING_ESTRATEGIA:
@@ -132,6 +120,50 @@ void AutoMode::buscaPadrao(Drive &motores) {
 }
 
 void AutoMode::ataquePadrao(Drive &motores) {
+    // 1. Tira a "fotografia" do mundo real no exato milissegundo (Evita leituras fantasmas)
+    bool viuEsq = sensorEsq.temAlvo();
+    bool viuDir = sensorDir.temAlvo();
+    bool viuFrente = sensorFrontal.temAlvo();
+
+    // 2. Atualiza a memória de rastreio
+    if(viuEsq) {
+        _ultimoLado = Direction::left;
+    }
+    else if(viuDir) {
+        _ultimoLado = Direction::right;
+    }
+
+    // 3. Perdeu contato total — volta para busca
+    if(!viuFrente && !viuEsq && !viuDir) {
+        subState = SubState::HUNTING;
+        return;
+    }
+
+    // 4. Frontal ativo — força bruta
+    if(viuFrente) {
+        motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
+        return;
+    }
+
+    // 5. Só lateral esquerdo — arco fechando para esquerda
+    if(viuEsq && !viuDir) {
+        motores.setSpeed(VEL_ATAQUE_REDUZIDA, VEL_ATAQUE_MAX);
+        return;
+    }
+
+    // 6. Só lateral direito — arco fechando para direita
+    if(viuDir && !viuEsq) {
+        motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_REDUZIDA);
+        return;
+    }
+
+    // 7. Dois laterais simultâneos sem frontal — força bruta para engolir o alvo
+    motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
+}
+
+/*
+ATAQUE DE ASA
+void AutoMode::ataquePadrao(Drive &motores) {
 
     if(sensorEsq.temAlvo()) {
         _ultimoLado = Direction::left;
@@ -161,3 +193,4 @@ void AutoMode::ataquePadrao(Drive &motores) {
     // Perdeu contato
     subState = SubState::HUNTING;
 }
+*/

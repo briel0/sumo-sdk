@@ -1,0 +1,324 @@
+diff --git a/.gitignore b/.gitignore
+index 2d12009..7749920 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -21,4 +21,8 @@ Thumbs.db
+ .clang-tidy
+ 
+ # Para trabalhar com IAs
+-repomix-output.xml
+\ No newline at end of file
++repomix-output.xml
++
++# O platformio puxa as bibliotecas de locais diferentes no windows e no linux. Isso serve pra resolver essa questão
++C:/pio/
++C:/Users/*/AppData/Local/Programs/platformio/
+\ No newline at end of file
+diff --git a/include/hardware/WeaponSystem.hpp b/include/hardware/WeaponSystem.hpp
+index f5a3a24..1f6c5c5 100644
+--- a/include/hardware/WeaponSystem.hpp
++++ b/include/hardware/WeaponSystem.hpp
+@@ -14,10 +14,10 @@ class WeaponSystem {
+     }
+ 
+   private:
+-    static constexpr int MAX_SERVO = 4;
++    static constexpr int MAX = 4;
+     static constexpr unsigned long RELAX_TIMEOUT_MS = 1000;
+ 
+-    ServoMechanism *servos[MAX_SERVO] = {nullptr};
++    ServoMechanism *servos[MAX] = {nullptr};
+     int servoCount = 0;
+ 
+     bool isDeployedFlag = false;
+diff --git a/include/profiles/fueguito.hpp b/include/profiles/fueguito.hpp
+index cf00adb..442a00e 100644
+--- a/include/profiles/fueguito.hpp
++++ b/include/profiles/fueguito.hpp
+@@ -3,7 +3,7 @@
+ 
+ namespace Config {
+ 
+-    static constexpr const char *ROBOT_NAME = "Marola";
++    static constexpr const char *ROBOT_NAME = "Fueguito";
+ 
+     static constexpr int RIGHT_POS_PIN = 17;
+     static constexpr int RIGHT_NEG_PIN = 16;
+@@ -14,16 +14,14 @@ namespace Config {
+     static constexpr int TURN_COEFFICIENT = 93;
+     static constexpr int PIVOT_COEFFICIENT = 75;
+ 
+-    static constexpr int NUM_SERVOS = 1;
++    static constexpr int NUM_SERVOS = 0;
+ 
+     static constexpr int PIN_JS_ESQ = 32;
+     static constexpr int PIN_JS_DIR = 33;
+     static constexpr int PIN_JS_FRONT = 34;
+ 
+     // Cada linha { } é um servo físico!
+-    static constexpr ServoConfig SERVOS[] = {
+-        {22, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
+-    };
++    static constexpr ServoConfig SERVOS[] = {};
+ 
+     static const MotionSequence MACRO_FRENTAO = MACRO(
+         {100, 100, 300});
+diff --git a/lib/README b/lib/README
+deleted file mode 100644
+index 9379397..0000000
+--- a/lib/README
++++ /dev/null
+@@ -1,46 +0,0 @@
+-
+-This directory is intended for project specific (private) libraries.
+-PlatformIO will compile them to static libraries and link into the executable file.
+-
+-The source code of each library should be placed in a separate directory
+-("lib/your_library_name/[Code]").
+-
+-For example, see the structure of the following example libraries `Foo` and `Bar`:
+-
+-|--lib
+-|  |
+-|  |--Bar
+-|  |  |--docs
+-|  |  |--examples
+-|  |  |--src
+-|  |     |- Bar.c
+-|  |     |- Bar.h
+-|  |  |- library.json (optional. for custom build options, etc) https://docs.platformio.org/page/librarymanager/config.html
+-|  |
+-|  |--Foo
+-|  |  |- Foo.c
+-|  |  |- Foo.h
+-|  |
+-|  |- README --> THIS FILE
+-|
+-|- platformio.ini
+-|--src
+-   |- main.c
+-
+-Example contents of `src/main.c` using Foo and Bar:
+-```
+-#include <Foo.h>
+-#include <Bar.h>
+-
+-int main (void)
+-{
+-  ...
+-}
+-
+-```
+-
+-The PlatformIO Library Dependency Finder will find automatically dependent
+-libraries by scanning project source files.
+-
+-More information about PlatformIO Library Dependency Finder
+-- https://docs.platformio.org/page/librarymanager/ldf.html
+diff --git a/platformio.ini b/platformio.ini
+index 64695f1..82c8fa7 100644
+--- a/platformio.ini
++++ b/platformio.ini
+@@ -1,6 +1,6 @@
+ [platformio]
+     libdeps_dir = .pio/shared_libdeps
+-    core_dir = C:/pio
++    ; core_dir = C:/pio
+ 
+ [env]
+ platform = espressif32@6.10.0
+@@ -17,7 +17,6 @@ lib_ldf_mode = deep+
+ build_flags =
+     -O3
+     -Wno-pragmas
+-    -Wno-pragmas
+     -DLED_BUILTIN=2
+     -DIR_PIN=13
+     -DCORE_DEBUG_LEVEL=0
+@@ -28,11 +27,6 @@ build_flags =
+     -I include/services
+     -I include/hardware/sensors
+ 
+-platform_packages =
+-    framework-arduinoespressif32@https://github.com/maxgerhardt/pio-framework-bluepad32.git
+-
+-lib_ldf_mode = deep+
+-
+ lib_deps =
+     z3t0/IRremote
+     fastled/FastLED
+diff --git a/src/hardware/Drive.cpp b/src/hardware/Drive.cpp
+index c3e7f74..269eea8 100644
+--- a/src/hardware/Drive.cpp
++++ b/src/hardware/Drive.cpp
+@@ -2,6 +2,8 @@
+ #include <Arduino.h>
+ #include <driver/mcpwm.h>
+ 
++// Parece que existe uma biblioteca mais moderna pra isso e vou ter que fazer a troca
++
+ Drive::Drive(int rightPosPin, int rightNegPin, int leftPosPin, int leftNegPin) {
+ 
+     _lastLeftSpeed = 0;
+diff --git a/src/hardware/IRreader.cpp b/src/hardware/IRreader.cpp
+index 6725f7f..fdf24d2 100644
+--- a/src/hardware/IRreader.cpp
++++ b/src/hardware/IRreader.cpp
+@@ -6,11 +6,11 @@ void IRReader::init(int pin) {
+ }
+ 
+ void IRReader::update() {
+-    _modeRC   = false;
++    _modeRC = false;
+     _modeAuto = false;
+-    _ready    = false;
+-    _start    = false;
+-    _stop     = false;
++    _ready = false;
++    _start = false;
++    _stop = false;
+ 
+     if(!IrReceiver.decode())
+         return;
+diff --git a/src/hardware/StatusLED.cpp b/src/hardware/StatusLED.cpp
+index 76bae06..b87edc0 100644
+--- a/src/hardware/StatusLED.cpp
++++ b/src/hardware/StatusLED.cpp
+@@ -1,9 +1,9 @@
+-#include "StatusLed.hpp"
++#include "StatusLED.hpp"
+ #include <Arduino.h>
+ 
+ void StatusLed::init(int debugPin, int dataPin, int numLeds) {
+-    _debugPin    = debugPin;
+-    _numLeds     = (numLeds <= MAX_LEDS) ? numLeds : MAX_LEDS;
++    _debugPin = debugPin;
++    _numLeds = (numLeds <= MAX_LEDS) ? numLeds : MAX_LEDS;
+     _currentStep = 0;
+ 
+     pinMode(_debugPin, OUTPUT);
+@@ -55,12 +55,14 @@ void StatusLed::setState(CRGB color) {
+             changed = true;
+         }
+     }
+-    if(changed) FastLED.show();
++    if(changed)
++        FastLED.show();
+ }
+ 
+ void StatusLed::heartbeat() {
+     unsigned long now = millis();
+-    if(now - _lastHeartbeatMs < 20) return; // ~50fps
++    if(now - _lastHeartbeatMs < 20)
++        return; // ~50fps
+     _lastHeartbeatMs = now;
+ 
+     uint8_t brilho = beatsin8(40, 10, 200);
+@@ -73,7 +75,8 @@ void StatusLed::heartbeat() {
+ 
+ void StatusLed::pairingWave() {
+     unsigned long now = millis();
+-    if(now - _lastWaveMs < 120) return; // velocidade da onda: 1 LED a cada 120ms
++    if(now - _lastWaveMs < 120)
++        return; // velocidade da onda: 1 LED a cada 120ms
+     _lastWaveMs = now;
+ 
+     // Restaura o LED anterior para verde
+@@ -89,7 +92,8 @@ void StatusLed::pairingWave() {
+ 
+ void StatusLed::strategyWave() {
+     unsigned long now = millis();
+-    if(now - _lastWaveMs < 120) return;
++    if(now - _lastWaveMs < 120)
++        return;
+     _lastWaveMs = now;
+ 
+     // Restaura o LED anterior para verde
+@@ -102,7 +106,8 @@ void StatusLed::strategyWave() {
+             _waveIndex = 4;
+             _pingpongForward = false;
+         }
+-    } else {
++    }
++    else {
+         _waveIndex--;
+         if(_waveIndex <= 1) {
+             _waveIndex = 1;
+diff --git a/src/hardware/WeaponSystem.cpp b/src/hardware/WeaponSystem.cpp
+index 7fb73be..6a3f324 100644
+--- a/src/hardware/WeaponSystem.cpp
++++ b/src/hardware/WeaponSystem.cpp
+@@ -11,7 +11,7 @@ void WeaponSystem::init() {
+ }
+ 
+ void WeaponSystem::addServo(ServoMechanism *servo) {
+-    if(servoCount < MAX_SERVO && servo != nullptr) {
++    if(servoCount < MAX && servo != nullptr) {
+         servos[servoCount] = servo;
+         servoCount++;
+     }
+diff --git a/src/main.cpp b/src/main.cpp
+index 5d68e53..3726b2f 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -4,7 +4,7 @@
+ #include "IRreader.hpp"
+ #include "RCMode.hpp"
+ #include "ServoMechanism.hpp"
+-#include "StatusLed.hpp"
++#include "StatusLED.hpp"
+ #include "WeaponSystem.hpp"
+ #include <Arduino.h>
+ 
+@@ -14,7 +14,7 @@ enum class RobotState {
+     AUTO
+ };
+ 
+-// Aqui que muda pra ir pro RC
++// Aqui mudamos pra ir pra RC ou AUTO direto
+ RobotState currentState = RobotState::RC;
+ 
+ Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
+@@ -125,6 +125,5 @@ void loop() {
+             statusLed.heartbeat();
+             break;
+     }
+-
+     yield();
+ }
+\ No newline at end of file
+diff --git a/src/modes/AutoMode.cpp b/src/modes/AutoMode.cpp
+index 151a1fe..f1ad318 100644
+--- a/src/modes/AutoMode.cpp
++++ b/src/modes/AutoMode.cpp
+@@ -9,9 +9,7 @@ static const MotionSequence *TABELA_DE_ESTRATEGIAS[] = {
+ };
+ 
+ AutoMode::AutoMode()
+-    : sensorEsq(Config::PIN_JS_ESQ),
+-      sensorDir(Config::PIN_JS_DIR),
+-      sensorFrontal(Config::PIN_JS_FRONT),
++    : sensorEsq(Config::PIN_JS_ESQ), sensorDir(Config::PIN_JS_DIR), sensorFrontal(Config::PIN_JS_FRONT),
+       sensorLinhaEsq(Config::PIN_LINHA_ESQ, Config::LINHA_THRESHOLD),
+       sensorLinhaDir(Config::PIN_LINHA_DIR, Config::LINHA_THRESHOLD) {}
+ 
+@@ -31,19 +29,9 @@ void AutoMode::init() {
+ 
+ // autoConfig é a struct com as configurações que vem do site :)
+ 
+-unsigned int tempotempo = 0;
+-
+ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irReady) {
+     armas.update();
+ 
+-    /*
+-    if(millis() - tempotempo > 2000) {
+-        Serial.printf("Situação: Direita: %d, Esquerda: %d, Frontal: %d\n", sensorDir.temAlvo(), sensorEsq.temAlvo(),
+-                      sensorFrontal.temAlvo());
+-        tempotempo = millis();
+-    }
+-    */
+-
+     switch(subState) {
+         case SubState::SELECTING_ESTRATEGIA:
+             configServer.update();

@@ -22,3 +22,7 @@ Thumbs.db
 
 # Para trabalhar com IAs
 repomix-output.xml
+
+# O platformio puxa as bibliotecas de locais diferentes no windows e no linux. Isso serve pra resolver essa questão
+C:/pio/
+C:/Users/*/AppData/Local/Programs/platformio/

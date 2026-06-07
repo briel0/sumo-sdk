@@ -6,11 +6,11 @@ void IRReader::init(int pin) {
 }
 
 void IRReader::update() {
-    _modeRC   = false;
+    _modeRC = false;
     _modeAuto = false;
-    _ready    = false;
-    _start    = false;
-    _stop     = false;
+    _ready = false;
+    _start = false;
+    _stop = false;
 
     if(!IrReceiver.decode())
         return;

@@ -11,7 +11,7 @@ void WeaponSystem::init() {
 }
 
 void WeaponSystem::addServo(ServoMechanism *servo) {
-    if(servoCount < MAX_SERVO && servo != nullptr) {
+    if(servoCount < MAX && servo != nullptr) {
         servos[servoCount] = servo;
         servoCount++;
     }

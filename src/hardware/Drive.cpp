@@ -2,6 +2,8 @@
 #include <Arduino.h>
 #include <driver/mcpwm.h>
 
+// Parece que existe uma biblioteca mais moderna pra isso e vou ter que fazer a troca
+
 Drive::Drive(int rightPosPin, int rightNegPin, int leftPosPin, int leftNegPin) {
 
     _lastLeftSpeed = 0;

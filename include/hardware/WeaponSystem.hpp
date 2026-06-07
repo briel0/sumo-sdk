@@ -14,10 +14,10 @@ class WeaponSystem {
     }
 
   private:
-    static constexpr int MAX_SERVO = 4;
+    static constexpr int MAX = 4;
     static constexpr unsigned long RELAX_TIMEOUT_MS = 1000;
 
-    ServoMechanism *servos[MAX_SERVO] = {nullptr};
+    ServoMechanism *servos[MAX] = {nullptr};
     int servoCount = 0;
 
     bool isDeployedFlag = false;

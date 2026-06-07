@@ -50,7 +50,9 @@ void ConfigServer::setupWebRoutes() {
     auto serveDashboard = [](AsyncWebServerRequest *request) { request->send(200, "text/html", DASHBOARD_HTML); };
 
     server.on("/", HTTP_GET, serveDashboard);
-    server.on("/generate_204", HTTP_GET, serveDashboard);
+    server.on("/generate_204", HTTP_GET, [](AsyncWebServerRequest *r) {
+        r->send(204); // ← 204 sem body, Android aceita como "tem internet"
+    });
     server.on("/fwlink", HTTP_GET, serveDashboard);
     server.on("/hotspot-detect.html", HTTP_GET, serveDashboard);
     server.on("/library/test/success.html", HTTP_GET, serveDashboard);
