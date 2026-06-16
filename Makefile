@@ -11,6 +11,10 @@ smoker:
 	@echo "Robô Selecionado: SMOKER"
 	$(PIO) run -e smoker $(UPLOAD)
 
+arruela:
+	@echo "Robô Selecionado: ARRUELA"
+	$(PIO) run -e smoker $(UPLOAD)
+
 monitor:
 	@echo "Monitor Serial (Ctrl+C para sair)"
 	$(PIO) device monitor -b 115200

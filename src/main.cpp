@@ -24,6 +24,8 @@ StatusLed statusLed;
 RCMode modoRC;
 AutoMode modoAuto;
 
+ActiveAuto taticaAtual;
+
 void setup() {
     Serial.begin(115200);
     Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
@@ -48,7 +50,7 @@ void setup() {
             Serial.println("[MAIN] BOOT DIRETO: Modo RC engatilhado.");
             break;
         case RobotState::AUTO:
-            modoAuto.init();
+            modoAuto.init(taticaAtual);
             Serial.println("[MAIN] BOOT DIRETO: Modo AUTO engatilhado.");
             break;
         case RobotState::IDLE:
@@ -85,7 +87,7 @@ void loop() {
             Serial.println("[MAIN] -> MODO RC ENGATILHADO");
         }
         else if(ir.modeAuto()) {
-            modoAuto.init();
+            modoAuto.init(taticaAtual);
             currentState = RobotState::AUTO;
             statusLed.setState(CRGB::Orange);
             Serial.println("[MAIN] -> MODO AUTO ENGATILHADO");
