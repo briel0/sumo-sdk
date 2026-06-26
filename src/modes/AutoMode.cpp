@@ -43,6 +43,9 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
         case SubState::READY:
             if(irReady) {
                 _readyReceived = true;
+                if(autoConfig.weapon) {
+                    armas.deploy();
+                }
             }
             if(irStart) {
                 _readyReceived = false;
@@ -52,9 +55,6 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
             }
             break;
         case SubState::EXECUTING_ESTRATEGIA:
-            if(autoConfig.weapon) {
-                armas.deploy();
-            }
             executingEstrategia(motores);
             break;
         case SubState::FIGHTING:

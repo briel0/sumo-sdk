@@ -6,12 +6,12 @@
 
 class SmokerAuto : public CombatStrategy {
   public:
-    SmokerAuto(); // <- Adicione o construtor aqui
+    SmokerAuto();
     void init() override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
 
   private:
-    // Apenas declare a existência deles. Não injete o Config aqui!
+    // Apenas declarando a existência deles.
     JS40F _sensorEsq;
     JS40F _sensorDir;
     JS40F _sensorFrontal;
