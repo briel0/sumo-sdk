@@ -19,14 +19,20 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
     bool macroRunning = macroPlayer.isPlaying();
     bool autoDisarmFree = !_autoDisarmLocked;
 
-    if(!weaponsArmed && (playerIsMoving || receptor.dpadUp()))
+    if(receptor.dpadUp() && !weaponsArmed) {
         armas.deploy();
+    }
 
-    if(receptor.dpadDown() && weaponsArmed && autoDisarmFree)
+    if(receptor.dpadDown() && weaponsArmed) {
         armas.retract();
+    }
 
-    if(autoDisarmFree && weaponsArmed && !playerIsMoving && !macroRunning)
-        armas.retract();
+    // Movimentação e macro só disparam se autoDisarmFree
+    if(autoDisarmFree) {
+        if(!weaponsArmed && (playerIsMoving || macroRunning)) {
+            armas.deploy();
+        }
+    }
 }
 
 void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
