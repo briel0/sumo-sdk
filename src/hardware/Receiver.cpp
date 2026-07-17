@@ -132,6 +132,10 @@ void Receiver::updateButtons() {
     bool currentTriangle = currentBtns & BUTTON_Y;
     triangleFlag = currentTriangle && !lastTriangle;
     lastTriangle = currentTriangle;
+
+    bool currentR3 = currentBtns & BUTTON_THUMB_R;
+    r3Flag = currentR3 && !lastR3;
+    lastR3 = currentR3;
 }
 
 void Receiver::applyFailsafe() {
@@ -156,4 +160,7 @@ void Receiver::applyFailsafe() {
     crossFlag = false;
     squareFlag = false;
     triangleFlag = false;
+
+    lastR3 = false;
+    r3Flag = false;
 }

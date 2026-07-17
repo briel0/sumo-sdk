@@ -13,6 +13,8 @@ class WeaponSystem {
         return isDeployedFlag;
     }
 
+    void setServoAngle(int index, int angle);
+
   private:
     static constexpr int MAX = 4;
     static constexpr unsigned long RELAX_TIMEOUT_MS = 1000;

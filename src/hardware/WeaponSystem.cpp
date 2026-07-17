@@ -67,3 +67,10 @@ void WeaponSystem::relaxAll() {
         }
     }
 }
+
+void WeaponSystem::setServoAngle(int index, int angle) {
+    if(index >= 0 && index < servoCount && servos[index] != nullptr) {
+        servos[index]->setAngle(angle);
+        isRelaxedFlag = false;
+    }
+}

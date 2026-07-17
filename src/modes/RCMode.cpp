@@ -27,7 +27,11 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
         armas.retract();
     }
 
-    // Movimentação e macro só disparam se autoDisarmFree
+    if(receptor.r3()) {
+        armas.setServoAngle(0, -40);
+        Serial.println("[SUMÔ] R3: Override de ângulo no servo 0");
+    }
+
     if(autoDisarmFree) {
         if(!weaponsArmed && (playerIsMoving || macroRunning)) {
             armas.deploy();
