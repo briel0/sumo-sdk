@@ -59,6 +59,7 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
             break;
         case SubState::FIGHTING:
             if(_estrategia) {
+                Serial.println("Aqui");
                 _estrategia->autoEngage(motores, armas);
             }
             break;

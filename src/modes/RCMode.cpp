@@ -28,7 +28,7 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
     }
 
     if(receptor.r3()) {
-        armas.setServoAngle(0, -40);
+        armas.setServoAngle(0, 20);
         Serial.println("[SUMÔ] R3: Override de ângulo no servo 0");
     }
 

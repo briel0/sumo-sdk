@@ -3,8 +3,10 @@
 #include "RobotTypes.hpp"
 #include "WebUI.hpp"
 #include "esp_bt.h"
+#include "esp_wifi.h" // INJETADO: Necessário para burlar a queda por inatividade
 
 const byte DNS_PORT = 53;
+const uint16_t AP_INACTIVITY_TIMEOUT_S = 65535; // INJETADO: Mantém o piloto conectado indefinidamente
 
 ConfigServer::ConfigServer(uint16_t port) : server(port) {}
 
@@ -35,6 +37,9 @@ bool ConfigServer::setupAccessPoint() {
 
     WiFi.softAP(Config::ROBOT_NAME, "sumo1234", 1, 0, 4);
 
+    // INJETADO: Desativa o corte de conexão por inatividade do ESP32
+    esp_wifi_set_inactive_time(WIFI_IF_AP, AP_INACTIVITY_TIMEOUT_S);
+
     Serial.printf("[WIFI] IP: %s\n", WiFi.softAPIP().toString().c_str());
 
     if(WiFi.softAPIP() == IPAddress(0, 0, 0, 0)) {
@@ -47,12 +52,18 @@ bool ConfigServer::setupAccessPoint() {
 }
 
 void ConfigServer::setupWebRoutes() {
+    // INJETADO: Fecha conexões imediatamente para impedir o esgotamento de sockets do ESP32
+    DefaultHeaders::Instance().addHeader("Connection", "close");
+
     auto serveDashboard = [](AsyncWebServerRequest *request) { request->send(200, "text/html", DASHBOARD_HTML); };
 
     server.on("/", HTTP_GET, serveDashboard);
-    server.on("/generate_204", HTTP_GET, [](AsyncWebServerRequest *r) {
-        r->send(204); // ← 204 sem body, Android aceita como "tem internet"
-    });
+
+    // INJETADO: Força o redirecionamento (302) em vez de 204 para forçar a abertura agressiva do Captive Portal
+    auto redirectToPortal = [](AsyncWebServerRequest *r) { r->redirect("/"); };
+    server.on("/generate_204", HTTP_GET, redirectToPortal);
+    server.on("/gen_204", HTTP_GET, redirectToPortal);
+
     server.on("/fwlink", HTTP_GET, serveDashboard);
     server.on("/hotspot-detect.html", HTTP_GET, serveDashboard);
     server.on("/library/test/success.html", HTTP_GET, serveDashboard);
@@ -90,9 +101,7 @@ void ConfigServer::setupWebRoutes() {
                       currentAutoStrategy.macro, currentAutoStrategy.direction, currentAutoStrategy.search,
                       currentAutoStrategy.weapon);
 
-        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "CONFIGURADO");
-        response->addHeader("Connection", "close");
-        request->send(response);
+        request->send(200, "text/plain", "CONFIGURADO");
     });
 }
 

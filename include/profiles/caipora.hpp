@@ -29,7 +29,7 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        {23, 8, 62}, // Pino 23 | Começa em 15° | Arma em 120°
+        {23, 80, 150}, // Pino 23 | Começa em 80° | Arma em 145°
     };
 
     static const MotionSequence MACRO_FRENTAO = MACRO({100, 100, 170});

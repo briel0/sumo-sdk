@@ -10,8 +10,8 @@ using ActiveAuto = NoAuto;
 using ActiveAuto = NoAuto;
 #elif defined(ROBOT_ARRUELA)
 #include "profiles/arruela.hpp"
-#include "strategies/NoAuto.hpp"
-using ActiveAuto = NoAuto;
+#include "strategies/ArruelaAuto.hpp"
+using ActiveAuto = ArruelaAuto;
 #elif defined(ROBOT_MAROLA)
 #include "profiles/marola.hpp"
 #include "strategies/NoAuto.hpp"
