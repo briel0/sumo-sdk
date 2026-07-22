@@ -1,5 +1,4 @@
 #include "Receiver.hpp"
-#include <Preferences.h>
 #include <esp_mac.h>
 
 // TO DO: REMOVER PREFS
@@ -11,8 +10,9 @@ Receiver::Receiver() {
 }
 
 void Receiver::init() {
-    prefs.begin("radio", false);
-    prefs.getBytes("mac_dono", savedMac, 6);
+    // Sempre limpa o cache — garante que o BTstack não tenta reconectar
+    // com controles de sessões anteriores antes de você escolher qual aceitar
+    BP32.forgetBluetoothKeys();
 
     isPairingMode = true;
 
@@ -36,27 +36,14 @@ void Receiver::openForNewController() {
 }
 
 void Receiver::onConnected(ControllerPtr ctl) {
-    const uint8_t *incomingMac = ctl->getProperties().btaddr;
-
     if(instance->isPairingMode) {
-        Serial.printf("[Receiver] ✅ NEW OWNER ACCEPTED! MAC: " MACSTR "\n", MAC2STR(incomingMac));
-
-        // Grava na memória NVS para persistir entre reboots e quedas
-        instance->prefs.putBytes("mac_dono", incomingMac, 6);
-        memcpy(instance->savedMac, incomingMac, 6);
-
         instance->controller = ctl;
-        instance->lockToSavedController();
+        instance->isPairingMode = false; // trava — só esse controle agora
+        Serial.printf("[Receiver] ✅ Controle aceito. MAC: " MACSTR "\n", MAC2STR(ctl->getProperties().btaddr));
     }
     else {
-        if(memcmp(incomingMac, instance->savedMac, 6) == 0) {
-            Serial.println("[Receiver] ✅ Official pilot recognized! Connection restored.");
-            instance->controller = ctl;
-        }
-        else {
-            Serial.printf("[Receiver] ❌ ALERT! Invader blocked. MAC: " MACSTR "\n", MAC2STR(incomingMac));
-            ctl->disconnect();
-        }
+        Serial.println("[Receiver] ❌ Segundo controle rejeitado.");
+        ctl->disconnect();
     }
 }
 
