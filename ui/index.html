@@ -201,6 +201,50 @@
         
         .btn-confirm { border: 2px solid var(--sea-green); color: var(--sea-green); letter-spacing: 1px; }
         .btn-confirm:active { background-color: var(--sea-green); color: #000; }
+
+        /* ESTILIZAÇÃO DO CONSTRUTOR DE MACROS */
+    .step-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        background-color: rgba(44, 146, 70, 0.05);
+        padding: 10px;
+        border-left: 3px solid var(--sea-green);
+    }
+
+    .step-row span {
+        font-weight: bold;
+        color: var(--lemon-chiffon);
+        min-width: 65px;
+        font-size: 0.85rem;
+    }
+
+    .step-input {
+        flex: 1;
+        width: 100%;
+        background-color: transparent;
+        border: 1px solid var(--dark-spruce);
+        color: var(--sea-green);
+        padding: 10px 5px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 0;
+        appearance: textfield; /* Remove setinhas em alguns navegadores */
+    }
+
+    .step-input:focus {
+        outline: none;
+        border-color: var(--sea-green);
+        background-color: rgba(44, 146, 70, 0.15);
+    }
+
+    .step-input::placeholder {
+        color: var(--dim-grey);
+        font-size: 0.75rem;
+    }
+
     </style>
 </head>
 <body>
@@ -239,6 +283,21 @@
 
     <button class="btn-submit" onclick="openTacticalConfirm()">[SUBMETER]</button>
 
+    <h2>TESTE DE MACRO</h2>
+    <div id="macro-steps">
+        <div class="step-row" data-index="0">
+            <span>Passo 1</span>
+            <input type="text" class="step-input" placeholder="ESQ %" id="l0" min="-100" max="100">
+            <input type="text" class="step-input" placeholder="DIR %" id="r0" min="-100" max="100">
+            <input type="text" class="step-input" placeholder="MS" id="d0" min="50" max="5000">
+        </div>
+    </div>
+    <div class="grid" style="margin-bottom: 10px;">
+        <button class="btn-macro" onclick="addStep()">ADICIONAR PASSO</button>
+        <button class="btn-macro" onclick="removeStep()">REMOVER PASSO</button>
+    </div>
+    <button class="btn-submit" onclick="dispararMacro()">[DISPARAR MACRO]</button>
+
     <div id="terminal-log">> SYS STANDBY // UPLINK READY</div>
 
     <div id="custom-modal" class="modal-overlay">
@@ -250,6 +309,69 @@
     </div>
 
     <script>
+        // =================================================
+        // LÓGICA DO TESTADOR DE MACRO
+        // =================================================
+        let numSteps = 1;
+
+        function addStep() {
+            if(numSteps >= 8) return;
+            const div = document.createElement('div');
+            div.className = 'step-row';
+            div.dataset.index = numSteps;
+            div.innerHTML = `
+                <span>Passo ${numSteps + 1}</span>
+                <input type="text" class="step-input" placeholder="ESQ %" id="l${numSteps}">
+                <input type="text" class="step-input" placeholder="DIR %" id="r${numSteps}">
+                <input type="text" class="step-input" placeholder="MS" id="d${numSteps}">
+            `;
+            document.getElementById('macro-steps').appendChild(div);
+            numSteps++;
+        }
+
+        function removeStep() {
+            if(numSteps <= 1) return;
+            numSteps--;
+            const rows = document.querySelectorAll('.step-row');
+            rows[rows.length - 1].remove();
+        }
+
+        function parseInput(id, fallback) {
+            const val = document.getElementById(id).value;
+            return val !== '' ? parseInt(val) : fallback;
+        }
+
+        function dispararMacro() {
+            const d0 = document.getElementById('d0').value;
+            if(!d0) {
+                showUiAlert('[!] ERRO', 'Preencha pelo menos a duração do Passo 1.', true);
+                return;
+            }
+
+            let params = `steps=${numSteps}`;
+            for(let i = 0; i < numSteps; i++) {
+                const l = parseInput(`l${i}`, 0);
+                const r = parseInput(`r${i}`, 0);
+                const d = parseInput(`d${i}`, 300);
+                params += `&l${i}=${l}&r${i}=${r}&d${i}=${d}`;
+            }
+
+            printLog('> DISPARANDO MACRO DE TESTE...');
+            fetch('/test-macro?' + params)
+                .then(res => res.text())
+                .then(txt => {
+                    printLog('> [OK] MACRO DISPARADA NO ROBÔ');
+                    showUiAlert('MACRO DISPARADA', txt, false);
+                })
+                .catch(() => {
+                    printLog('> [ERRO] ROBÔ NÃO RESPONDEU', true);
+                    showUiAlert('NETWORK ERROR', 'Falha ao disparar macro.<br>Verifique o Wi-Fi.', true);
+        });
+}
+
+        // =================================================
+        // LÓGICA PRINCIPAL DA INTERFACE
+        // =================================================
         const stratState = {
             macro: { val: '', label: 'NENHUM' },
             direction: { val: '', label: 'NENHUM' },

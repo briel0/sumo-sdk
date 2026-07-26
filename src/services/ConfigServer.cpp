@@ -103,6 +103,36 @@ void ConfigServer::setupWebRoutes() {
 
         request->send(200, "text/plain", "CONFIGURADO");
     });
+
+    server.on("/test-macro", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        if(!_macroTestCallback) {
+            request->send(503, "text/plain", "ERRO: Callback não registrado.");
+            return;
+        }
+
+        // Espera parâmetros: steps=N&l0=100&r0=100&d0=300&l1=...
+        if(!request->hasParam("steps")) {
+            request->send(400, "text/plain", "ERRO: Faltou steps");
+            return;
+        }
+
+        int numSteps = constrain(request->getParam("steps")->value().toInt(), 1, 8);
+
+        for(int i = 0; i < numSteps; i++) {
+            String li = "l" + String(i);
+            String ri = "r" + String(i);
+            String di = "d" + String(i);
+
+            _testSteps[i].leftSpeed = request->hasParam(li) ? request->getParam(li)->value().toInt() : 0;
+            _testSteps[i].rightSpeed = request->hasParam(ri) ? request->getParam(ri)->value().toInt() : 0;
+            _testSteps[i].durationMs = request->hasParam(di) ? request->getParam(di)->value().toInt() : 200;
+        }
+
+        MotionSequence seq = {_testSteps, numSteps};
+        _macroTestCallback(seq);
+
+        request->send(200, "text/plain", "MACRO DISPARADA");
+    });
 }
 
 void ConfigServer::update() {

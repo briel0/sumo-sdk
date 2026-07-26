@@ -16,8 +16,14 @@ class ConfigServer {
     void setupWebRoutes();
 
     bool consumePayload(AutoStrategy &outStrategy);
+    void setMacroTestCallback(std::function<void(MotionSequence)> cb) {
+        _macroTestCallback = cb;
+    }
 
   private:
+    std::function<void(MotionSequence)> _macroTestCallback = nullptr;
+    MotionStep _testSteps[8];
+
     AsyncWebServer server;
     AutoStrategy currentAutoStrategy;
     DNSServer dnsServer;

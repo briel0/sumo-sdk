@@ -41,5 +41,6 @@ class AutoMode {
     CombatStrategy *_estrategia = nullptr;
 
     bool _readyReceived = false;
+    bool _testingMacro = false;
     unsigned int _tempoDesligamento = 0;
 };

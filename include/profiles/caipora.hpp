@@ -7,8 +7,8 @@ namespace Config {
 
     static constexpr int RIGHT_POS_PIN = 16;
     static constexpr int RIGHT_NEG_PIN = 17;
-    static constexpr int LEFT_POS_PIN = 19;
-    static constexpr int LEFT_NEG_PIN = 18;
+    static constexpr int LEFT_POS_PIN = 18;
+    static constexpr int LEFT_NEG_PIN = 19;
 
     static constexpr int MAX_THROTTLE = 100;
     static constexpr int TURN_COEFFICIENT = 83;

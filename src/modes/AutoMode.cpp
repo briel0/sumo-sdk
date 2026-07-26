@@ -13,6 +13,12 @@ void AutoMode::init(CombatStrategy &estrategia) {
     Serial.println("Modo Auto Iniciado.");
     subState = SubState::SELECTING_ESTRATEGIA;
     autoConfig = AutoStrategy();
+
+    configServer.setMacroTestCallback([this](MotionSequence seq) {
+        estrategiaPlayer.play(seq);
+        _testingMacro = true; // flag para o run() saber que está testando
+    });
+
     configServer.begin();
 
     _estrategia = &estrategia;
@@ -27,6 +33,15 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
     switch(subState) {
         case SubState::SELECTING_ESTRATEGIA:
             configServer.update();
+            if(_testingMacro) {
+                if(estrategiaPlayer.isPlaying()) {
+                    estrategiaPlayer.update(motores);
+                }
+                else {
+                    motores.setSpeed(0, 0);
+                    _testingMacro = false;
+                }
+            }
             if(configServer.consumePayload(autoConfig)) {
                 _tempoDesligamento = millis();
                 subState = SubState::DISCONNECTING_WIFI;
