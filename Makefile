@@ -13,7 +13,7 @@ smoker:
 
 arruela:
 	@echo "Robô Selecionado: ARRUELA"
-	$(PIO) run -e smoker $(UPLOAD)
+	$(PIO) run -e arruela $(UPLOAD)
 
 monitor:
 	@echo "Monitor Serial (Ctrl+C para sair)"
@@ -22,3 +22,6 @@ monitor:
 copia:
 	@echo "Criando novo repomix"
 	npx repomix
+
+limpa:
+	rm -rf .pio/

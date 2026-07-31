@@ -40,11 +40,6 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
 }
 
 void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
-    if(macroPlayer.isPlaying()) {
-        macroPlayer.update(motores);
-        return;
-    }
-
     auto triggerMacro = [&](const MotionSequence &seq) {
         if(!_autoDisarmLocked) {
             armas.deploy();
@@ -67,6 +62,10 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     }
     else if(receptor.dpadLeft()) {
         // triggerMacro(Config::MACRO_CURVAO_DIR);
+    }
+
+    if(macroPlayer.isPlaying()) {
+        macroPlayer.update(motores);
     }
 }
 
