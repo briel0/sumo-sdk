@@ -5,10 +5,10 @@ namespace Config {
 
     static constexpr const char *ROBOT_NAME = "Marola";
 
-    static constexpr int RIGHT_POS_PIN = 17;
-    static constexpr int RIGHT_NEG_PIN = 16;
-    static constexpr int LEFT_POS_PIN = 19;
-    static constexpr int LEFT_NEG_PIN = 18;
+    static constexpr int RIGHT_POS_PIN = 18;
+    static constexpr int RIGHT_NEG_PIN = 19;
+    static constexpr int LEFT_POS_PIN = 17;
+    static constexpr int LEFT_NEG_PIN = 16;
 
     static constexpr int MAX_THROTTLE = 90;
     static constexpr int TURN_COEFFICIENT = 93;
@@ -29,7 +29,7 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        {22, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
+        {26, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
     static const MotionSequence MACRO_FRENTAO = MACRO(
@@ -38,5 +38,13 @@ namespace Config {
     static const MotionSequence MACRO_DIAGONAL = MACRO(
         {-100, 100, 30},
         {100, 100, 200},);
+
+    static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
+        {100, -100, 72},
+        {100, 25, 245}, {100, 100, 72});
+
+    static const MotionSequence MACRO_CURVINHA_ESQUERDA = MACRO(
+        {-100, 100, 72},
+        {25, 100, 245}, {100, 100, 72});
 
 }

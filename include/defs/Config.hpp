@@ -4,6 +4,12 @@
 #include "profiles/caipora.hpp"
 #include "strategies/NoAuto.hpp"
 using ActiveAuto = NoAuto;
+
+#elif defined(ROBOT_BRIGA)
+#include "profiles/briga.hpp"
+#include "strategies/NoAuto.hpp"
+using ActiveAuto = NoAuto;
+
 #elif defined(ROBOT_SMOKER)
 #include "profiles/smoker.hpp"
 #include "strategies/NoAuto.hpp"

@@ -3,12 +3,12 @@
 
 namespace Config {
 
-    static constexpr const char *ROBOT_NAME = "Arruela";
+    static constexpr const char *ROBOT_NAME = "Briga";
 
-    static constexpr int RIGHT_POS_PIN = 17;
-    static constexpr int RIGHT_NEG_PIN = 16;
-    static constexpr int LEFT_POS_PIN = 18;
-    static constexpr int LEFT_NEG_PIN = 19;
+    static constexpr int RIGHT_POS_PIN = 16;
+    static constexpr int RIGHT_NEG_PIN = 17;
+    static constexpr int LEFT_POS_PIN = 19;
+    static constexpr int LEFT_NEG_PIN = 18;
 
     static constexpr int MAX_THROTTLE = 90;      // Velocidade Máxima (Pra Frente, Pra Trás)
     static constexpr int TURN_COEFFICIENT = 83;  // Coeficiente de Curva
@@ -37,11 +37,4 @@ namespace Config {
         {-100, 100, 50},
         {100, 100, 100});
 
-    static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
-        {100, -100, 72},
-        {100, 25, 245}, {100, 100, 72});
-
-    static const MotionSequence MACRO_CURVINHA_ESQUERDA = MACRO(
-        {-100, 100, 72},
-        {25, 100, 245}, {100, 100, 72});
 }
