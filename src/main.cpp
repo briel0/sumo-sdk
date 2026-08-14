@@ -15,7 +15,7 @@ enum class RobotState {
 };
 
 // Aqui mudamos pra ir pra RC ou AUTO direto
-RobotState currentState = RobotState::RC;
+RobotState currentState = RobotState::IDLE;
 
 Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
 WeaponSystem sistemaDeArmas;

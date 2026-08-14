@@ -2,11 +2,10 @@
 #include "CombatStrategy.hpp"
 #include "JS40F.hpp"
 #include "RobotTypes.hpp"
-#include "ToFSensor.hpp"
 
-class ArruelaAuto : public CombatStrategy {
+class CaiporaAuto : public CombatStrategy {
   public:
-    ArruelaAuto();
+    CaiporaAuto();
     void init() override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
 
@@ -15,7 +14,6 @@ class ArruelaAuto : public CombatStrategy {
     JS40F _sensorEsq;
     JS40F _sensorDir;
     JS40F _sensorFrontal;
-    ToFSensor _sensorDistancia;
 
     Direction _ultimoLado = Direction::left;
 

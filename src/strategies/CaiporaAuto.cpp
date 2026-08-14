@@ -1,24 +1,20 @@
-#include "ArruelaAuto.hpp"
+#include "CaiporaAuto.hpp"
 #include "Config.hpp"
 #include "Drive.hpp"
 #include "WeaponSystem.hpp"
 
-ArruelaAuto::ArruelaAuto()
-    : _sensorEsq(Config::PIN_JS_ESQ), _sensorDir(Config::PIN_JS_DIR), _sensorFrontal(Config::PIN_JS_FRONT),
-      _sensorDistancia() {}
+CaiporaAuto::CaiporaAuto()
+    : _sensorEsq(Config::PIN_JS_ESQ), _sensorDir(Config::PIN_JS_DIR), _sensorFrontal(Config::PIN_JS_FRONT) {}
 
-void ArruelaAuto::init() {
+void CaiporaAuto::init() {
     _sensorEsq.init();
     _sensorDir.init();
     _sensorFrontal.init();
     _ultimoLado = Direction::left;
 }
 
-void ArruelaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
+void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     // Snapshot único — todos os métodos usam o mesmo estado
-
-    pinMode(25, HIGH);
-
     bool viuEsq = _sensorEsq.temAlvo();
     bool viuDir = _sensorDir.temAlvo();
     bool viuFrente = _sensorFrontal.temAlvo();
@@ -36,7 +32,7 @@ void ArruelaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     }
 }
 
-void ArruelaAuto::_busca(Drive &motores, bool viuEsq, bool viuDir) {
+void CaiporaAuto::_busca(Drive &motores, bool viuEsq, bool viuDir) {
     if(viuEsq) {
         motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
         return;
@@ -51,7 +47,7 @@ void ArruelaAuto::_busca(Drive &motores, bool viuEsq, bool viuDir) {
         motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
 }
 
-void ArruelaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
+void CaiporaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
     if(!viuFrente && !viuEsq && !viuDir) {
         motores.setSpeed(0, 0);
         return;
