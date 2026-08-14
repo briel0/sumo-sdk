@@ -2,6 +2,20 @@
 
 // TO DO: Migrar para MCPWM V2 no futuro
 
+// sdkconfig.h define CONFIG_IDF_TARGET_ESP32C3. Incluído explicitamente aqui
+// porque este header costuma ser incluído ANTES de <Arduino.h> (que normalmente
+// puxaria o sdkconfig) — sem isto, o #if abaixo não veria o alvo e os membros do
+// Drive-LEDC não seriam declarados, mesmo o .cpp compilando o ramo C3.
+#include "sdkconfig.h"
+
+// O ESP32-C3 (Fumacinha RC) não tem o periférico MCPWM — só LEDC. Nesse alvo o
+// Drive usa 4 canais LEDC (via ESP32PWM, pra coordenar a alocação com os servos,
+// que usam os outros 2 dos 6 canais do C3). Nos demais alvos (ESP32 clássico)
+// segue usando MCPWM direto. A interface pública é idêntica nos dois casos.
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+#include <ESP32Servo.h> // ESP32PWM
+#endif
+
 /**
     @class Drive
     @brief Core logic to control the robot's movement and A4950 motor drivers.
@@ -52,4 +66,18 @@ class Drive {
     @param rightPWM Duty cycle percentage for the right motor (-100 to 100).
     */
     void _applyPWM(int leftPWM, int rightPWM);
+
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+    // Um canal LEDC por entrada da ponte H. Guardamos os pinos e prendemos os
+    // canais de forma preguiçosa (no primeiro uso, já dentro do loop) pra não
+    // mexer no LEDC durante a inicialização estática dos globais.
+    int      _rightPosPin, _rightNegPin, _leftPosPin, _leftNegPin;
+    bool     _attached = false;
+    ESP32PWM _pwmRightPos, _pwmRightNeg, _pwmLeftPos, _pwmLeftNeg;
+
+    void _ensureAttached();
+    // Aciona um par (IN1/IN2) de um motor: velocidade >0 avança (IN1=duty,IN2=0),
+    // <0 ré (IN1=0,IN2=duty), ==0 nada (o brake/release cuidam dos dois pinos).
+    void _drivePair(ESP32PWM &posCh, ESP32PWM &negCh, int speed);
+#endif
 };

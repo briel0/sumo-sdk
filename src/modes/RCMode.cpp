@@ -25,9 +25,9 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
     if(receptor.dpadDown() && weaponsArmed && autoDisarmFree)
         armas.retract();
 
-    if(autoDisarmFree && weaponsArmed && !playerIsMoving && !macroRunning)
-        armas.retract();
+    // Removed: auto-disarm when stopped - weapon now stays deployed until manually retracted
 }
+
 
 void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     if(macroPlayer.isPlaying()) {

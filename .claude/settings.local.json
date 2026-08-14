@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pio run -e smokerauto 2>&1)",
+      "PowerShell($c = Get-Command platformio -ErrorAction SilentlyContinue; if \\($c\\) { \"platformio: \" + $c.Source }; $pep = Get-Command pio.exe -ErrorAction SilentlyContinue; Get-ChildItem \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\pio.exe\",\"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" -ErrorAction SilentlyContinue | Select-Object FullName)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" run -e smokerauto 2>&1 | Select-Object -Last 45)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" run -e caipora 2>&1 | Select-Object -Last 12)",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" run -e smokerauto -e caipora 2>&1 | Select-String -Pattern \"Fumacinha|error|Error|SUCCESS|FAILED\")",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" run -e smokerauto -e caipora 2>&1 | Select-String -Pattern \"Fumacinha|error|Error|undefined|SUCCESS|FAILED\")",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" run -e caipora -e smoker -e smokerauto -e arruela -e marola -e fuego -e fueguito -e fumacinha 2>&1 | Select-String -Pattern \"error|Error|undefined|SUCCESS|FAILED|Environment\")",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" run -e caipora -e smoker -e smokerauto -e arruela -e marola -e fuego -e fueguito -e fumacinha 2>&1 | Select-String -Pattern \"error|Error|undefined|SUCCESS|FAILED|Environment|Taking|warning\")",
+      "PowerShell(& \"$env:USERPROFILE\\\\.platformio\\\\penv\\\\Scripts\\\\platformio.exe\" run -e caipora -e smoker -e smokerauto -e arruela -e marola -e fuego -e fueguito -e fumacinha 2>&1 | Select-String -Pattern \"error|Error|undefined|SUCCESS|FAILED|Environment|warning\")"
+    ]
+  }
+}

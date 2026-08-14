@@ -1,8 +1,6 @@
 #include "Receiver.hpp"
-#include <Preferences.h>
+#include "Config.hpp"
 #include <esp_mac.h>
-
-// TO DO: REMOVER PREFS
 
 Receiver *Receiver::instance = nullptr;
 
@@ -10,51 +8,66 @@ Receiver::Receiver() {
     instance = this;
 }
 
-void Receiver::init() {
-    prefs.begin("radio", false);
-    prefs.getBytes("mac_dono", savedMac, 6);
+bool Receiver::macIsZero(const uint8_t *mac) {
+    for(int i = 0; i < 6; i++) {
+        if(mac[i] != 0) {
+            return false;
+        }
+    }
+    return true;
+}
 
-    isPairingMode = true;
+void Receiver::init() {
+    // Allowlist em tempo de compilação: o MAC "dono" vem do perfil, não mais da
+    // NVS. Perfil com MAC fixo => pareamento determinístico (só aquele controle).
+    // Perfil com MAC tudo-zero => modo descoberta (aceita o primeiro e imprime
+    // o MAC pra você fixar no perfil).
+    memcpy(savedMac, Config::CONTROLLER_MAC, 6);
+    discoveryMode = macIsZero(savedMac);
 
     BP32.setup(&Receiver::onConnected, &Receiver::onDisconnected);
-    Serial.println("[Receiver] Bluetooth Stack started. Looking for controllers...");
+
+    if(discoveryMode) {
+        Serial.println("[Receiver] MODO DESCOBERTA: nenhum MAC fixado no perfil. Vou aceitar o primeiro "
+                       "controle e imprimir o MAC dele — copie pra Config::CONTROLLER_MAC.");
+    }
+    else {
+        Serial.printf("[Receiver] MODO SEGURO: só o controle " MACSTR " pode parear.\n", MAC2STR(savedMac));
+    }
 }
 
-void Receiver::lockToSavedController() {
-    isPairingMode = false;
-    Serial.println("[Receiver] SECURE MODE ACTIVATED: Only the owner can connect.");
-}
-
-void Receiver::openForNewController() {
-    isPairingMode = true;
-
+void Receiver::disconnect() {
     if(controller && controller->isConnected()) {
         controller->disconnect();
         controller = nullptr;
+        Serial.println("[Receiver] Bluetooth disconnected instantly.");
     }
-    Serial.println("[Receiver] OPEN MODE: Waiting to pair a NEW controller...");
 }
 
 void Receiver::onConnected(ControllerPtr ctl) {
     const uint8_t *incomingMac = ctl->getProperties().btaddr;
 
-    if(instance->isPairingMode) {
-        Serial.printf("[Receiver] ✅ NEW OWNER ACCEPTED! MAC: " MACSTR "\n", MAC2STR(incomingMac));
+    if(instance->discoveryMode) {
+        // Primeiro controle da sessão: aceita, trava nele (pro resto do
+        // power-cycle) e imprime o MAC bem visível pra ser fixado no perfil.
+        // Não persiste em NVS de propósito — "lembrar do último pareado" é
+        // justamente o que permitia cross-pairing acidental entre dois robôs.
+        Serial.printf("\n[Receiver] >>> CONTROLE DESCOBERTO! Fixe este MAC em Config::CONTROLLER_MAC:\n"
+                      "[Receiver] >>> { 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X }\n\n",
+                      incomingMac[0], incomingMac[1], incomingMac[2], incomingMac[3], incomingMac[4],
+                      incomingMac[5]);
 
-        // Grava na memória NVS para persistir entre reboots e quedas
-        instance->prefs.putBytes("mac_dono", incomingMac, 6);
         memcpy(instance->savedMac, incomingMac, 6);
-
-        instance->controller = ctl;
-        instance->lockToSavedController();
+        instance->discoveryMode = false; // trava: um segundo controle não rouba mais a sessão
+        instance->controller    = ctl;
     }
     else {
         if(memcmp(incomingMac, instance->savedMac, 6) == 0) {
-            Serial.println("[Receiver] ✅ Official pilot recognized! Connection restored.");
+            Serial.println("[Receiver] ✅ Piloto oficial reconhecido. Conexão liberada.");
             instance->controller = ctl;
         }
         else {
-            Serial.printf("[Receiver] ❌ ALERT! Invader blocked. MAC: " MACSTR "\n", MAC2STR(incomingMac));
+            Serial.printf("[Receiver] ❌ Controle não autorizado bloqueado. MAC: " MACSTR "\n", MAC2STR(incomingMac));
             ctl->disconnect();
         }
     }

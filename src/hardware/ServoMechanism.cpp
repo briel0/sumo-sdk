@@ -4,11 +4,9 @@ ServoMechanism::ServoMechanism(int pin, int retractAngle, int deployAngle)
     : _pin(pin), _retractAngle(retractAngle), _deployAngle(deployAngle) {}
 
 void ServoMechanism::init() {
-    ESP32PWM::allocateTimer(0);
-    ESP32PWM::allocateTimer(1);
-    ESP32PWM::allocateTimer(2);
-    ESP32PWM::allocateTimer(3);
-
+    // Os timers LEDC são alocados uma vez em main.cpp setup(), antes de qualquer
+    // servo prender o pino — não realocamos aqui pra não corromper a
+    // contabilidade da ESP32PWM quando o robô também tem um WingServo.
     _servo.setPeriodHertz(50);
 
     _servo.attach(_pin, 500, 2400);
@@ -33,7 +31,7 @@ void ServoMechanism::retract() {
 }
 
 void ServoMechanism::relax() {
-    if(_servo.attached()) {
-        _servo.detach();
-    }
+    // Keep servo attached and holding position - don't detach
+    // Detaching causes the servo to lose PWM signal and return to default position
+    // The servo will hold its current angle without continuously updating
 }

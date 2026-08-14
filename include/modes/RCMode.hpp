@@ -32,6 +32,10 @@ class RCMode {
         return receptor.isConnected();
     }
 
+    void disconnectController() {
+        receptor.disconnect();
+    }
+
   private:
     /**
     @brief The radio receiver instance. Composition: The radio is a private tool of RCMode.

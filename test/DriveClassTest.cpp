@@ -3,7 +3,7 @@
 #include "Config.hpp"
 #include "Drive.hpp"
 
-Drive drive(RIGHT_POS_PIN, RIGHT_NEG_PIN, LEFT_POS_PIN, LEFT_NEG_PIN);
+Drive drive(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
 
 void setup() {
     Serial.begin(115200);

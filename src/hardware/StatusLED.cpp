@@ -28,7 +28,7 @@ void StatusLed::confirmStep() {
     FastLED.show();
     _currentStep++;
 
-    delay(300);
+    delay(100);
 }
 
 void StatusLed::setAll(CRGB color) {
@@ -117,5 +117,16 @@ void StatusLed::strategyWave() {
 
     // Acende o LED atual em laranja
     _leds[_waveIndex] = CRGB::Orange;
+    FastLED.show();
+}
+
+void StatusLed::setLedRaw(int index, CRGB color) {
+    if(index < 0 || index >= _numLeds) {
+        return;
+    }
+    _leds[index] = color;
+}
+
+void StatusLed::push() {
     FastLED.show();
 }

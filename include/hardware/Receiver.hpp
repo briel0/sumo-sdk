@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 #include <Bluepad32.h>
-#include <Preferences.h>
 
 class Receiver {
   public:
@@ -10,8 +9,7 @@ class Receiver {
     void init();
     void update();
 
-    void lockToSavedController();
-    void openForNewController();
+    void disconnect();
 
     static void onConnected(ControllerPtr ctl);
     static void onDisconnected(ControllerPtr ctl);
@@ -94,9 +92,18 @@ class Receiver {
     bool lastTriangle = false;
 
     static Receiver *instance;
+
+    // MAC do controle aceito neste power-cycle. Vem de Config::CONTROLLER_MAC
+    // (allowlist em tempo de compilação). Se o perfil não fixou um MAC
+    // (tudo-zero), entra em modo descoberta: aceita o primeiro controle que
+    // conectar, trava nele pelo resto da sessão e imprime o MAC no serial pra
+    // você fixar no perfil. Uma vez que o perfil tem MAC, o pareamento é
+    // determinístico — só aquele controle conecta, eliminando o cross-pairing
+    // entre dois robôs nossos pareando ao mesmo tempo.
     uint8_t savedMac[6] = {0};
-    bool isPairingMode = true;
-    Preferences prefs;
+    bool    discoveryMode = true;
+
+    static bool macIsZero(const uint8_t *mac);
 
     void updateAxes();
     void updateButtons();

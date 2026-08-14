@@ -64,6 +64,22 @@ class StatusLed {
     */
     void strategyWave();
 
+    /**
+    @brief Define a cor de um LED específico sem enviar pro hardware ainda.
+        Use push() depois de uma ou mais chamadas pra aplicar as mudanças de
+        uma vez. Existe pra permitir controle individual por índice (ex: painel
+        de diagnóstico) sem duplicar o addLeds() do FastLED — só pode haver um
+        registro por pino físico.
+    @param index Índice do LED (0 a numLeds-1 passado em init()). Fora da faixa: no-op.
+    @param color Cor a aplicar.
+    */
+    void setLedRaw(int index, CRGB color);
+
+    /**
+    @brief Envia o buffer atual pra tira física. Chame depois de setLedRaw().
+    */
+    void push();
+
   private:
     int _debugPin = 0;
     int _numLeds = 0;

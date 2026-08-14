@@ -8,6 +8,8 @@
 #include "RobotTypes.hpp"
 #include "WeaponSystem.hpp"
 
+class HardwareCore;
+
 class AutoMode {
   public:
     AutoMode() = default;
@@ -19,7 +21,7 @@ class AutoMode {
         FIGHTING,
     };
 
-    void init(CombatStrategy &estrategia);
+    void init(CombatStrategy &estrategia, HardwareCore &hardware);
     void run(Drive &motores, WeaponSystem &armas, bool irStart, bool irReady);
 
     SubState getSubState() const {
@@ -39,6 +41,7 @@ class AutoMode {
     void executingEstrategia(Drive &motores);
 
     CombatStrategy *_estrategia = nullptr;
+    HardwareCore   *_hardware   = nullptr;
 
     bool _readyReceived = false;
     unsigned int _tempoDesligamento = 0;

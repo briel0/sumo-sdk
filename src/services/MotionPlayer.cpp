@@ -26,8 +26,11 @@ void MotionPlayer::update(Drive &motores) {
         currentStep++;
 
         if(currentStep >= sequence.numSteps) {
-            active = false; // A macro inteira acabou
-            Serial.println("[MACRO] Finalizada. Controle restaurado.");
+            active = false;         // A macro inteira acabou
+            motores.setSpeed(0, 0); // TRAVA os motores — o Drive segura o último
+                                    // PWM sozinho; sem isto o robô continuava na
+                                    // velocidade do último passo pra sempre.
+            Serial.println("[MACRO] Finalizada. Motores parados.");
         }
         else {
             stepStartTime = millis();

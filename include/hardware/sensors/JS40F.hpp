@@ -3,7 +3,10 @@
 
 class JS40F {
   public:
-    explicit JS40F(uint8_t pin);
+    // activeLow inverte a leitura por software: alguns receptores IR passivos
+    // frontais operam em active-low (0 = detectado, 1 = vazio). Mantendo o
+    // padrão antigo, o default é active-high para não quebrar os perfis atuais.
+    explicit JS40F(uint8_t pin, bool activeLow = false);
 
     void init() const;
 
@@ -11,4 +14,5 @@ class JS40F {
 
   private:
     uint8_t _pin;
+    bool    _activeLow;
 };

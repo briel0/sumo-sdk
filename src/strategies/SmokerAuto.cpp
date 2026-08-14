@@ -1,57 +1,54 @@
-#include "SmokerAuto.hpp"
-#include "Config.hpp"
-#include "Drive.hpp"
-#include "WeaponSystem.hpp"
+#include "strategies/SmokerAuto.hpp"
+#include "hardware/Drive.hpp"
+#include "hardware/HardwareCore.hpp"
+#include "hardware/WeaponSystem.hpp"
 
-SmokerAuto::SmokerAuto()
-    : _sensorEsq(Config::PIN_JS_ESQ), _sensorDir(Config::PIN_JS_DIR), _sensorFrontal(Config::PIN_JS_FRONT),
-      _linhaEsq(Config::PIN_LINHA_ESQ, Config::LINHA_THRESHOLD),
-      _linhaDir(Config::PIN_LINHA_DIR, Config::LINHA_THRESHOLD) {}
-
-void SmokerAuto::init() {
-    _sensorEsq.init();
-    _sensorDir.init();
-    _sensorFrontal.init();
-    _linhaEsq.init();
-    _linhaDir.init();
+void SmokerAuto::init(HardwareCore &hardware) {
+    // Liga os emissores IR laterais para enxergar o adversário nas diagonais.
+    hardware.setStealth(true);
+    hardware.setWing(WingPosition::RETRACTED);
     _ultimoLado = Direction::left;
 }
 
-void SmokerAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
-    if(_linhaEsq.temLinhaBranca() || _linhaDir.temLinhaBranca()) {
+void SmokerAuto::autoEngage(Drive &motores, WeaponSystem &armas, HardwareCore &hardware) {
+    (void)armas;
+
+    // Borda do dohyo: linha branca sob qualquer sensor -> recuo imediato.
+    if(hardware.lineLeft() || hardware.lineRight()) {
         motores.setSpeed(-VEL_ATAQUE_MAX, -VEL_ATAQUE_MAX);
         return;
     }
 
-    bool viuEsq = _sensorEsq.temAlvo();
-    bool viuDir = _sensorDir.temAlvo();
-    bool viuFrente = _sensorFrontal.temAlvo();
+    bool viuEsq    = hardware.leftDetected();
+    bool viuDir    = hardware.rightDetected();
+    bool viuFrente = hardware.frontDetected();
 
-    if(viuEsq)
+    if(viuEsq) {
         _ultimoLado = Direction::left;
-    else if(viuDir)
+        hardware.setWing(WingPosition::LEFT);
+    }
+    else if(viuDir) {
         _ultimoLado = Direction::right;
+        hardware.setWing(WingPosition::RIGHT);
+    }
 
     if(viuFrente || (viuEsq && viuDir)) {
-        _ataque(motores);
-    }
-    else if(viuEsq || viuDir) {
-        _busca(motores); // lateral — centraliza antes de atacar
+        _ataque(motores, hardware);
     }
     else {
-        _busca(motores); // cegueira total
+        _busca(motores, hardware);
     }
 }
 
-void SmokerAuto::_busca(Drive &motores) {
-    if(_sensorFrontal.temAlvo()) {
+void SmokerAuto::_busca(Drive &motores, HardwareCore &hardware) {
+    if(hardware.frontDetected()) {
         return; // será tratado no próximo frame pelo ataque
     }
-    if(_sensorEsq.temAlvo()) {
+    if(hardware.leftDetected()) {
         motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
         return;
     }
-    if(_sensorDir.temAlvo()) {
+    if(hardware.rightDetected()) {
         motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
         return;
     }
@@ -62,10 +59,10 @@ void SmokerAuto::_busca(Drive &motores) {
         motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
 }
 
-void SmokerAuto::_ataque(Drive &motores) {
-    bool viuEsq = _sensorEsq.temAlvo();
-    bool viuDir = _sensorDir.temAlvo();
-    bool viuFrente = _sensorFrontal.temAlvo();
+void SmokerAuto::_ataque(Drive &motores, HardwareCore &hardware) {
+    bool viuEsq    = hardware.leftDetected();
+    bool viuDir    = hardware.rightDetected();
+    bool viuFrente = hardware.frontDetected();
 
     if(!viuFrente && !viuEsq && !viuDir)
         return; // perdeu contato
