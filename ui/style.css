@@ -1,0 +1,134 @@
+:root {
+    --sea-green: #2c9246;
+    --dark-spruce: #124925;
+    --lemon-chiffon: #eeecc5;
+    --grey-olive: #847f79;
+    --dim-grey: #6e6965;
+    --void-bg: #05140a; 
+    --alert-red: #ff3333;
+    --edit-yellow: #f1c40f;
+}
+
+* { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 0; }
+
+body { 
+    background-color: var(--void-bg); 
+    color: var(--lemon-chiffon); 
+    width: 100vw;
+    min-height: 100dvh;
+    user-select: none; 
+    -webkit-user-select: none;
+    overflow-x: hidden;
+}
+
+/* ================= PAINEL DE ESTRATÉGIA ================= */
+#strategy-panel {
+    padding: 15px;
+    padding-bottom: 80px;
+    display: block;
+}
+
+#strategy-panel h1 { 
+    color: var(--sea-green); font-size: 1.2rem; text-align: center; 
+    border-bottom: 2px solid var(--dark-spruce); padding-bottom: 10px; margin-top: 5px; 
+}
+
+#strategy-panel h2 { 
+    font-size: 0.9rem; color: var(--lemon-chiffon); margin-top: 25px; margin-bottom: 10px; 
+    border-left: 4px solid var(--sea-green); padding-left: 8px; 
+}
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.btn-base {
+    background-color: transparent; font-size: 0.85rem; font-weight: bold; text-transform: uppercase;
+    width: 100%; cursor: pointer; transition: 0.1s; padding: 18px 5px;
+}
+.btn-base:active { filter: brightness(1.5); }
+
+.btn-macro { border: 2px solid var(--sea-green); color: var(--lemon-chiffon); }
+.btn-macro.selected { background-color: var(--sea-green); color: var(--void-bg); }
+
+.btn-direction { border: 2px solid var(--dim-grey); color: var(--lemon-chiffon); }
+.btn-direction.selected { background-color: var(--dim-grey); color: var(--void-bg); }
+
+.btn-search { border: 2px solid var(--grey-olive); color: var(--lemon-chiffon); }
+.btn-search.selected { background-color: var(--grey-olive); color: var(--void-bg); }
+
+.btn-weapon { border: 2px solid var(--lemon-chiffon); color: var(--lemon-chiffon); }
+.btn-weapon.selected { background-color: var(--lemon-chiffon); color: var(--dark-spruce); }
+
+.btn-submit {
+    margin-top: 30px; background-color: var(--dark-spruce); border: 3px solid var(--sea-green);
+    color: var(--lemon-chiffon); font-size: 1.2rem; padding: 20px; letter-spacing: 2px; width: 100%;
+}
+
+.btn-joystick-open {
+    margin-top: 15px; background-color: transparent; border: 3px dashed var(--edit-yellow);
+    color: var(--edit-yellow); font-size: 1.2rem; padding: 20px; letter-spacing: 2px; width: 100%;
+    cursor: pointer;
+}
+
+/* TERMINAL LOG FIXO */
+#terminal-log {
+    position: fixed; bottom: 0; left: 0; right: 0; padding: 10px; background-color: #000;
+    border-top: 2px solid var(--dark-spruce); font-size: 0.7rem; color: var(--sea-green);
+    overflow-x: auto; white-space: nowrap; z-index: 99;
+}
+
+/* MODAL CONFIRMAÇÃO */
+.modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(5, 20, 10, 0.95); z-index: 100; padding: 20px;
+    justify-content: center; align-items: center;
+}
+.modal-box { background-color: #000; border: 3px solid var(--sea-green); width: 100%; max-width: 400px; padding: 20px; }
+.modal-box.error-mode { border-color: var(--alert-red); }
+.modal-title { font-size: 1.1rem; font-weight: bold; text-align: center; letter-spacing: 2px; margin-bottom: 20px; border-bottom: 2px solid var(--dim-grey); padding-bottom: 8px; }
+.modal-body { font-size: 1.1rem; font-weight: bold; line-height: 1.5; letter-spacing: 1.5px; margin-bottom: 25px; color: var(--lemon-chiffon); }
+.modal-chip { display: block; width: 100%; padding: 12px; margin-bottom: 8px; text-align: center; font-size: 1rem; font-weight: bold; text-transform: uppercase; pointer-events: none; }
+.modal-prompt { text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--grey-olive); }
+.modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.modal-actions.single-btn { grid-template-columns: 1fr; }
+.btn-abort { background: transparent; border: 2px solid var(--alert-red); color: var(--alert-red); letter-spacing: 1px; padding: 15px; cursor: pointer; font-weight: bold; }
+.btn-abort:active { background-color: var(--alert-red); color: #fff; }
+.btn-confirm { background: transparent; border: 2px solid var(--sea-green); color: var(--sea-green); letter-spacing: 1px; padding: 15px; cursor: pointer; font-weight: bold; }
+.btn-confirm:active { background-color: var(--sea-green); color: #000; }
+
+/* STEPS MACRO */
+.step-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; background-color: rgba(44, 146, 70, 0.05); padding: 10px; border-left: 3px solid var(--sea-green); }
+.step-row span { font-weight: bold; color: var(--lemon-chiffon); min-width: 65px; font-size: 0.85rem; }
+.step-input { flex: 1; width: 100%; background-color: transparent; border: 1px solid var(--dark-spruce); color: var(--sea-green); padding: 10px 5px; font-size: 0.9rem; font-weight: bold; text-align: center; border-radius: 0; appearance: textfield; }
+.step-input:focus { outline: none; border-color: var(--sea-green); background-color: rgba(44, 146, 70, 0.15); }
+
+/* ================= PAINEL DO JOYSTICK ================= */
+#joystick-panel { 
+    display: none; 
+    width: 100vw; height: 100dvh; position: fixed; top: 0; left: 0;
+    touch-action: none; overflow: hidden;
+}
+
+#top-toolbar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 90; }
+.tool-btn { background: transparent; border: 2px solid var(--dim-grey); color: var(--dim-grey); padding: 8px 15px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
+.tool-btn:active { background: var(--dim-grey); color: #000; }
+#edit-controls { display: none; gap: 10px; }
+body.editing #btn-edit { display: none; }
+body.editing #edit-controls { display: flex; }
+
+.control-zone { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: center center; padding: 10px; opacity: 0; transition: opacity 0.2s; }
+body.editing .control-zone { border: 2px dashed var(--edit-yellow); background: rgba(241, 196, 15, 0.05); cursor: move; }
+body.editing .control-zone.selected { border: 2px solid var(--edit-yellow); background: rgba(241, 196, 15, 0.15); }
+
+#joystick-base { width: 160px; height: 160px; border: 4px solid var(--dark-spruce); border-radius: 50%; background: rgba(44, 146, 70, 0.05); position: relative; }
+#joystick-knob { width: 60px; height: 60px; background-color: var(--sea-green); border-radius: 50%; position: absolute; top: 50%; left: 50%; margin-top: -30px; margin-left: -30px; pointer-events: none; transition: transform 0.05s linear; }
+#joystick-base:not(.active) #joystick-knob { transition: transform 0.2s ease-out; transform: translate(0px, 0px) !important; }
+#joystick-coords { margin-top: 10px; color: var(--grey-olive); font-size: 0.8rem; font-weight: bold; }
+
+.ps4-pad { display: grid; grid-template-columns: 65px 65px 65px; grid-template-rows: 65px 65px 65px; gap: 8px; justify-content: center; }
+.btn-ps4 { background-color: transparent; border-radius: 50%; font-size: 1.4rem; font-weight: bold; border-width: 3px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.05s; }
+.btn-tri { grid-column: 2; grid-row: 1; border-color: var(--sea-green); color: var(--sea-green); }
+.btn-sq  { grid-column: 1; grid-row: 2; border-color: var(--lemon-chiffon); color: var(--lemon-chiffon); }
+.btn-cir { grid-column: 3; grid-row: 2; border-color: var(--alert-red); color: var(--alert-red); }
+.btn-x   { grid-column: 2; grid-row: 3; border-color: var(--dim-grey); color: var(--dim-grey); }
+
+#joystick-panel h2 { pointer-events: none; border: none; padding: 0; margin-top: 0; text-align: center; }

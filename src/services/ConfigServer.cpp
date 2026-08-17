@@ -8,7 +8,7 @@
 const byte DNS_PORT = 53;
 const uint16_t AP_INACTIVITY_TIMEOUT_S = 65535; // INJETADO: Mantém o piloto conectado indefinidamente
 
-ConfigServer::ConfigServer(uint16_t port) : server(port) {}
+ConfigServer::ConfigServer(uint16_t port) : server(port), ws("/ws-joy") {}
 
 void ConfigServer::begin() {
     teardownBluetooth();
@@ -55,7 +55,17 @@ void ConfigServer::setupWebRoutes() {
     // INJETADO: Fecha conexões imediatamente para impedir o esgotamento de sockets do ESP32
     DefaultHeaders::Instance().addHeader("Connection", "close");
 
-    auto serveDashboard = [](AsyncWebServerRequest *request) { request->send(200, "text/html", DASHBOARD_HTML); };
+    ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+        if (type == WS_EVT_DATA) {
+            AwsFrameInfo *info = (AwsFrameInfo*)arg;
+            if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+                this->handleWebSocketMessage(arg, data, len);
+            }
+        }
+    });
+    server.addHandler(&ws);
+
+    auto serveDashboard = [](AsyncWebServerRequest *request) { request->send(200, "text/html", INDEX_HTML); };
 
     server.on("/", HTTP_GET, serveDashboard);
 
@@ -138,6 +148,7 @@ void ConfigServer::setupWebRoutes() {
 void ConfigServer::update() {
     if(WiFi.getMode() == WIFI_AP) {
         dnsServer.processNextRequest();
+        ws.cleanupClients();
     }
 }
 
@@ -153,4 +164,28 @@ bool ConfigServer::consumePayload(AutoStrategy &outStrategy) {
     outStrategy = currentAutoStrategy;
     currentAutoStrategy.isNew = false;
     return true;
+}
+
+void ConfigServer::handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+    String msg((char*)data, len);
+    
+    if (msg.startsWith("J:")) {
+        int commaIndex = msg.indexOf(',');
+        if (commaIndex > 0) {
+            currentJoyState.x = msg.substring(2, commaIndex).toInt();
+            currentJoyState.y = msg.substring(commaIndex + 1).toInt();
+        }
+    } 
+    else if (msg.startsWith("B:")) {
+        int commaIndex = msg.indexOf(',');
+        if (commaIndex > 0) {
+            String btn = msg.substring(2, commaIndex);
+            bool state = msg.substring(commaIndex + 1).toInt() > 0;
+            
+            if (btn == "TRI") currentJoyState.btnTriangle = state;
+            else if (btn == "SQR") currentJoyState.btnSquare = state;
+            else if (btn == "CIR") currentJoyState.btnCircle = state;
+            else if (btn == "X") currentJoyState.btnCross = state;
+        }
+    }
 }

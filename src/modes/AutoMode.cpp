@@ -41,6 +41,8 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
                     motores.setSpeed(0, 0);
                     _testingMacro = false;
                 }
+            } else {
+                webRC.run(motores, armas, configServer.getJoystickState());
             }
             if(configServer.consumePayload(autoConfig)) {
                 _tempoDesligamento = millis();

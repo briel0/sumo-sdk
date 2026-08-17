@@ -7,6 +7,7 @@
 #include "QRE1113.hpp"
 #include "RobotTypes.hpp"
 #include "WeaponSystem.hpp"
+#include "WebRCMode.hpp"
 
 class AutoMode {
   public:
@@ -34,6 +35,7 @@ class AutoMode {
     SubState subState = SubState::SELECTING_ESTRATEGIA;
     MotionPlayer estrategiaPlayer;
     ConfigServer configServer;
+    WebRCMode webRC;
     AutoStrategy autoConfig;
 
     void executingEstrategia(Drive &motores);
