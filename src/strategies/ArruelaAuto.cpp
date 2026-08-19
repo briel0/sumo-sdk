@@ -17,8 +17,6 @@ void ArruelaAuto::init() {
 void ArruelaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     // Snapshot único — todos os métodos usam o mesmo estado
 
-    pinMode(25, HIGH);
-
     bool viuEsq = _sensorEsq.temAlvo();
     bool viuDir = _sensorDir.temAlvo();
     bool viuFrente = _sensorFrontal.temAlvo();

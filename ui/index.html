@@ -252,15 +252,8 @@
     <h1>SUMO AUTO</h1>
 
     <h2>MOVIMENTAÇÃO INICIAL</h2>
-    <div class="grid">
-        <button class="btn-macro" data-category="macro" data-val="0" data-label="FRENTÃO">FRENTÃO</button>
-        <button class="btn-macro" data-category="macro" data-val="1" data-label="FRENTÃO [FAST]">FRENTÃO [FAST]</button>
-        <button class="btn-macro" data-category="macro" data-val="2" data-label="FRENTINHO">FRENTINHO</button>
-        <button class="btn-macro" data-category="macro" data-val="3" data-label="CURVÃO">CURVÃO</button>
-        <button class="btn-macro" data-category="macro" data-val="4" data-label="CURVINHA">CURVINHA</button>
-        <button class="btn-macro" data-category="macro" data-val="5" data-label="EM V">EM V</button>
-        <button class="btn-macro" data-category="macro" data-val="6" data-label="COSTAS">COSTAS</button>
-        <button class="btn-macro" data-category="macro" data-val="7" data-label="DEFENSIVO">DEFENSIVO</button>
+    <div class="grid" id="macro-grid">
+        <!-- Renderizado dinamicamente -->
     </div>
 
     <h2>DIREÇÃO</h2>
@@ -270,15 +263,13 @@
     </div>
 
     <h2>BUSCA E TÁTICA</h2>
-    <div class="grid">
-        <button class="btn-search" data-category="search" data-val="1" data-label="BUSCA PADRÃO">BUSCA PADRÃO</button>
-        <button class="btn-search" data-category="search" data-val="2" data-label="BUSCA LENTA">BUSCA LENTA</button>
+    <div class="grid" id="search-grid">
+        <!-- Renderizado dinamicamente -->
     </div>
 
     <h2>SISTEMA DE ARMAS</h2>
-    <div class="grid">
-        <button class="btn-weapon" data-category="weapon" data-val="0" data-label="DESARMAR">DESARMAR</button>
-        <button class="btn-weapon" data-category="weapon" data-val="1" data-label="NÃO DESARMAR">NÃO DESARMAR</button>
+    <div class="grid" id="weapon-grid">
+        <!-- Renderizado dinamicamente -->
     </div>
 
     <button class="btn-submit" onclick="openTacticalConfirm()">[SUBMETER]</button>
@@ -405,29 +396,82 @@
             modal.style.display = 'flex';
         }
 
-        document.querySelectorAll('button[data-category]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                if (navigator.vibrate) navigator.vibrate(20); 
-                
-                const category = this.getAttribute('data-category');
-                const val = this.getAttribute('data-val');
-                const label = this.getAttribute('data-label');
-                
-                if (this.classList.contains('selected')) {
-                    this.classList.remove('selected');
-                    stratState[category] = { val: '', label: 'NENHUM' };
-                    printLog(`> CATEGORIA ${category.toUpperCase()} DESMARCADA`);
-                }
-                else {
-                    document.querySelectorAll(`button[data-category="${category}"]`).forEach(function(b) {
-                        b.classList.remove('selected');
-                    });
-                    this.classList.add('selected');
-                    stratState[category] = { val: val, label: label };
-                    printLog(`> SEL: ${category.toUpperCase()} -> ${label}`);
-                }
-            });
+        // Event Delegation para lidar com botões criados dinamicamente
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-category]');
+            if(!btn) return;
+
+            if (navigator.vibrate) navigator.vibrate(20); 
+            
+            const category = btn.getAttribute('data-category');
+            const val = btn.getAttribute('data-val');
+            const label = btn.getAttribute('data-label');
+            
+            if (btn.classList.contains('selected')) {
+                btn.classList.remove('selected');
+                stratState[category] = { val: '', label: 'NENHUM' };
+                printLog(`> CATEGORIA ${category.toUpperCase()} DESMARCADA`);
+            }
+            else {
+                document.querySelectorAll(`button[data-category="${category}"]`).forEach(function(b) {
+                    b.classList.remove('selected');
+                });
+                btn.classList.add('selected');
+                stratState[category] = { val: val, label: label };
+                printLog(`> SEL: ${category.toUpperCase()} -> ${label}`);
+            }
         });
+
+        // Construtor dinâmico do painel
+        function loadProfile() {
+            fetch('/api/profile')
+                .then(res => res.json())
+                .then(data => renderProfile(data))
+                .catch(() => {
+                    // MOCK: Caso o usuário abra o HTML direto no PC para testar
+                    console.log("Servidor não encontrado. Usando Mock do Arruela.");
+                    renderProfile({
+                        robot_name: "Arruela (Local Mock)",
+                        macros: [
+                            {id: 0, name: "FRENTÃO"},
+                            {id: 1, name: "CURVÃO"}
+                        ],
+                        searches: [
+                            {id: 1, name: "BUSCA PADRÃO"}
+                        ],
+                        has_weapons: false
+                    });
+                });
+        }
+
+        function renderProfile(profile) {
+            document.querySelector('h1').innerText = "SUMO AUTO // " + profile.robot_name.toUpperCase();
+            
+            const macroGrid = document.getElementById('macro-grid');
+            macroGrid.innerHTML = profile.macros.map(m => 
+                `<button class="btn-macro" data-category="macro" data-val="${m.id}" data-label="${m.name}">${m.name}</button>`
+            ).join('');
+
+            const searchGrid = document.getElementById('search-grid');
+            searchGrid.innerHTML = profile.searches.map(s => 
+                `<button class="btn-search" data-category="search" data-val="${s.id}" data-label="${s.name}">${s.name}</button>`
+            ).join('');
+
+            const weaponGrid = document.getElementById('weapon-grid');
+            if(profile.has_weapons) {
+                weaponGrid.innerHTML = `
+                    <button class="btn-weapon" data-category="weapon" data-val="0" data-label="DESARMAR">DESARMAR</button>
+                    <button class="btn-weapon" data-category="weapon" data-val="1" data-label="NÃO DESARMAR">NÃO DESARMAR</button>
+                `;
+            } else {
+                weaponGrid.innerHTML = `<button class="btn-weapon selected" data-category="weapon" data-val="0" data-label="SEM ARMAS" disabled style="opacity: 0.5;">SEM ARMAS</button>`;
+                stratState.weapon = { val: '0', label: 'SEM ARMAS' }; // Trava default
+            }
+            printLog(`> PERFIL ${profile.robot_name.toUpperCase()} CARREGADO`);
+        }
+
+        // Iniciar
+        loadProfile();
 
         function openTacticalConfirm() {
             if (!stratState.macro.val) {

@@ -10,7 +10,7 @@ namespace Config {
     static constexpr int LEFT_POS_PIN = 18;
     static constexpr int LEFT_NEG_PIN = 19;
 
-    static constexpr int MAX_THROTTLE = 90;      // Velocidade Máxima (Pra Frente, Pra Trás)
+    static constexpr int MAX_THROTTLE = 100;      // Velocidade Máxima (Pra Frente, Pra Trás)
     static constexpr int TURN_COEFFICIENT = 83;  // Coeficiente de Curva
     static constexpr int PIVOT_COEFFICIENT = 70; // Coeficiente de Rotação
 
@@ -44,4 +44,38 @@ namespace Config {
     static const MotionSequence MACRO_CURVINHA_ESQUERDA = MACRO(
         {-100, 100, 72},
         {25, 100, 245}, {100, 100, 72});
+
+    static const MotionSequence MACRO_CURVAO_ESQUERDA = MACRO(
+        {-100, 100, 70},
+        {100, 40, 600}
+    );
+    
+    static const MotionSequence MACRO_CURVAO_DIREITA = MACRO(
+        {100, -100, 70},
+        {40, 100, 500}
+    );
+
+    // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão)
+    static const MotionSequence* const TABELA_MACROS_ESQ[] = {
+        &MACRO_FRENTAO,
+        &MACRO_CURVAO_ESQUERDA
+    };
+
+    static const MotionSequence* const TABELA_MACROS_DIR[] = {
+        &MACRO_FRENTAO,
+        &MACRO_CURVAO_DIREITA
+    };
+
+    static constexpr const char* UI_PROFILE_JSON = R"({
+        "robot_name": "Arruela",
+        "macros": [
+            {"id": 0, "name": "FRENTÃO"},
+            {"id": 1, "name": "CURVÃO"}
+        ],
+        "searches": [
+            {"id": 1, "name": "BUSCA PADRÃO"}
+        ],
+        "has_weapons": false
+    })";
+
 }
