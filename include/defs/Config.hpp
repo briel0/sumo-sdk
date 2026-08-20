@@ -2,8 +2,8 @@
 
 #if defined(ROBOT_CAIPORA)
 #include "profiles/caipora.hpp"
-#include "strategies/NoAuto.hpp"
-using ActiveAuto = NoAuto;
+#include "strategies/CaiporaAuto.hpp"
+using ActiveAuto = CaiporaAuto;
 
 #elif defined(ROBOT_BRIGA)
 #include "profiles/briga.hpp"

@@ -1,19 +1,35 @@
 #pragma once
 #include "CombatStrategy.hpp"
-#include "JS40F.hpp"
 #include "RobotTypes.hpp"
+#include "ToFSensor.hpp"
+#include "QRE1113.hpp"
+#include "LDR.hpp"
+#include "MotionPlayer.hpp"
 
 class CaiporaAuto : public CombatStrategy {
   public:
+    // Pinos (valores aleatórios, altere depois)
+    static constexpr int PIN_LDR = 4;
+    static constexpr int PIN_XSHUT_FRENTE_ESQ = 5;
+    static constexpr int PIN_XSHUT_LATERAL_ESQ = 12;
+    static constexpr int PIN_XSHUT_FRENTE_DIR = 13;
+    static constexpr int PIN_XSHUT_LATERAL_DIR = 14;
+    static constexpr int PIN_LINHA_ESQ = 26;
+    static constexpr int PIN_LINHA_DIR = 27;
+
     CaiporaAuto();
     void init() override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
 
   private:
-    // Apenas declarando a existência deles.
-    JS40F _sensorEsq;
-    JS40F _sensorDir;
-    JS40F _sensorFrontal;
+    LDR _ldr;
+    ToFSensor _vlFrenteEsq;
+    ToFSensor _vlLateralEsq;
+    ToFSensor _vlFrenteDir;
+    ToFSensor _vlLateralDir;
+    QRE1113 _linhaEsq;
+    QRE1113 _linhaDir;
+    MotionPlayer _player;
 
     Direction _ultimoLado = Direction::left;
 
