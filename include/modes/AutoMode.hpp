@@ -42,5 +42,9 @@ class AutoMode {
 
     bool _readyReceived = false;
     bool _testingMacro = false;
+    bool _testingMotor = false;
+    bool _testingSensor = false;
+    bool _startMacroTest = false;
+    MotionSequence _macroToTest;
     unsigned int _tempoDesligamento = 0;
 };

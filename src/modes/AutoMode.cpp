@@ -9,14 +9,31 @@ static const MotionSequence *TABELA_DE_ESTRATEGIAS[] = {
     &Config::MACRO_FRENTAO,
 };
 
+static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
+    {60, 60, 500},
+    {0, 0, 500},
+    {-60, -60, 500},
+    {0, 0, 500}
+);
+
 void AutoMode::init(CombatStrategy &estrategia) {
     Serial.println("Modo Auto Iniciado.");
     subState = SubState::SELECTING_ESTRATEGIA;
     autoConfig = AutoStrategy();
 
     configServer.setMacroTestCallback([this](MotionSequence seq) {
-        estrategiaPlayer.play(seq);
-        _testingMacro = true; // flag para o run() saber que está testando
+        _macroToTest = seq;
+        _startMacroTest = true;
+    });
+
+    configServer.setMotorTestCallback([this](bool active) {
+        if(!active) _testingMotor = false;
+        else _testingMotor = true;
+    });
+
+    configServer.setSensorTestCallback([this](bool active) {
+        if(!active) _testingSensor = false;
+        else _testingSensor = true;
     });
 
     configServer.begin();
@@ -32,20 +49,38 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
 
     switch(subState) {
         case SubState::SELECTING_ESTRATEGIA:
-            if(_estrategia) {
+            if(_testingSensor && _estrategia) {
                 configServer.setTestReadout(_estrategia->getSensorStatusJSON());
             }
             configServer.update();
             
-            if(_testingMacro) {
+            if(_startMacroTest) {
+                _startMacroTest = false;
+                _testingMacro = true;
+                _testingMotor = false;
+                estrategiaPlayer.play(_macroToTest);
+            }
+
+            if(_testingMotor) {
                 if(estrategiaPlayer.isPlaying()) {
                     estrategiaPlayer.update(motores);
+                } else {
+                    estrategiaPlayer.play(MACRO_TESTE_MOTOR);
                 }
-                else {
+            }
+            else if(_testingMacro) {
+                if(estrategiaPlayer.isPlaying()) {
+                    estrategiaPlayer.update(motores);
+                } else {
                     motores.setSpeed(0, 0);
                     _testingMacro = false;
                 }
             }
+            else {
+                if(estrategiaPlayer.isPlaying()) estrategiaPlayer.stop();
+                motores.setSpeed(0, 0);
+            }
+
             if(configServer.consumePayload(autoConfig)) {
                 _tempoDesligamento = millis();
                 subState = SubState::DISCONNECTING_WIFI;

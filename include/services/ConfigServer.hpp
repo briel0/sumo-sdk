@@ -23,9 +23,19 @@ class ConfigServer {
     void setTestReadout(const String &json) {
         _testReadoutJson = json;
     }
+    
+    void setMotorTestCallback(std::function<void(bool)> cb) {
+        _motorTestCallback = cb;
+    }
+
+    void setSensorTestCallback(std::function<void(bool)> cb) {
+        _sensorTestCallback = cb;
+    }
 
   private:
     std::function<void(MotionSequence)> _macroTestCallback = nullptr;
+    std::function<void(bool)> _motorTestCallback = nullptr;
+    std::function<void(bool)> _sensorTestCallback = nullptr;
     String _testReadoutJson = "{}";
     MotionStep _testSteps[8];
 

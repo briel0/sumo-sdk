@@ -275,6 +275,7 @@
     <h2>DIAGNÓSTICO DE BANCADA</h2>
     <div class="grid">
         <button id="btn-test-sensor" class="btn-diag" onclick="toggleTest('sensor')">TESTE SENSORES</button>
+        <button id="btn-test-motor" class="btn-diag" onclick="toggleTest('motor')">TESTE MOTORES</button>
     </div>
     <div id="test-readout"></div>
 
@@ -451,20 +452,33 @@
             readoutBox.innerText = '';
         }
 
+        let testMotorActive = false;
+
         function toggleTest(which) {
             if (navigator.vibrate) navigator.vibrate(20);
 
             if (which === 'sensor') {
                 testSensorActive = !testSensorActive;
+                if (testSensorActive && testMotorActive) { toggleTest('motor'); }
+                
                 document.getElementById('btn-test-sensor').classList.toggle('active', testSensorActive);
                 
-                if (testSensorActive) {
-                    printLog('> TESTE DE SENSORES: ATIVO');
-                    startReadoutPolling();
-                } else {
-                    printLog('> TESTE DE SENSORES: DESLIGADO');
-                    stopReadoutPolling();
-                }
+                printLog('> TESTE DE SENSORES: ' + (testSensorActive ? 'ATIVO' : 'DESLIGADO'));
+                fetch('/set-test?sensor=' + (testSensorActive ? '1' : '0') + '&t=' + Date.now())
+                    .then(() => {
+                        if (testSensorActive) startReadoutPolling();
+                        else stopReadoutPolling();
+                    })
+                    .catch(e => console.log(e));
+            } 
+            else if (which === 'motor') {
+                testMotorActive = !testMotorActive;
+                if (testMotorActive && testSensorActive) { toggleTest('sensor'); }
+
+                document.getElementById('btn-test-motor').classList.toggle('active', testMotorActive);
+                
+                printLog('> TESTE DE MOTORES: ' + (testMotorActive ? 'ATIVO' : 'DESLIGADO'));
+                fetch('/set-test?motor=' + (testMotorActive ? '1' : '0') + '&t=' + Date.now()).catch(e => console.log(e));
             }
         }
 
@@ -556,6 +570,9 @@
             // Força o desligamento do painel de diagnóstico para evitar poluição I2C durante a luta
             if (testSensorActive) {
                 toggleTest('sensor');
+            }
+            if (testMotorActive) {
+                toggleTest('motor');
             }
 
             closeModal();

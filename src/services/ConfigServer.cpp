@@ -137,6 +137,18 @@ void ConfigServer::setupWebRoutes() {
     server.on("/sensors", HTTP_GET, [this](AsyncWebServerRequest *request) {
         request->send(200, "application/json", _testReadoutJson);
     });
+
+    server.on("/set-test", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        if(request->hasParam("motor")) {
+            bool turnOn = request->getParam("motor")->value() == "1";
+            if(_motorTestCallback) _motorTestCallback(turnOn);
+        }
+        if(request->hasParam("sensor")) {
+            bool turnOn = request->getParam("sensor")->value() == "1";
+            if(_sensorTestCallback) _sensorTestCallback(turnOn);
+        }
+        request->send(200, "text/plain", "OK");
+    });
 }
 
 void ConfigServer::update() {
