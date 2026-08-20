@@ -135,11 +135,7 @@ void ConfigServer::setupWebRoutes() {
     });
 
     server.on("/sensors", HTTP_GET, [this](AsyncWebServerRequest *request) {
-        if(!_sensorReadCallback) {
-            request->send(503, "application/json", "{}");
-            return;
-        }
-        request->send(200, "application/json", _sensorReadCallback());
+        request->send(200, "application/json", _testReadoutJson);
     });
 }
 

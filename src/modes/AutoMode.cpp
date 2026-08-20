@@ -19,11 +19,6 @@ void AutoMode::init(CombatStrategy &estrategia) {
         _testingMacro = true; // flag para o run() saber que está testando
     });
 
-    configServer.setSensorReadCallback([this]() {
-        if(_estrategia) return _estrategia->getSensorStatusJSON();
-        return String("{}");
-    });
-
     configServer.begin();
 
     _estrategia = &estrategia;
@@ -37,7 +32,11 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
 
     switch(subState) {
         case SubState::SELECTING_ESTRATEGIA:
+            if(_estrategia) {
+                configServer.setTestReadout(_estrategia->getSensorStatusJSON());
+            }
             configServer.update();
+            
             if(_testingMacro) {
                 if(estrategiaPlayer.isPlaying()) {
                     estrategiaPlayer.update(motores);

@@ -2,7 +2,6 @@
 #include <Arduino.h>
 
 const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -64,6 +63,27 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         }
         
         button:active { filter: brightness(1.5); }
+
+        .btn-diag {
+            border: 2px solid var(--alert-red);
+            color: var(--alert-red);
+        }
+        .btn-diag.active {
+            background-color: var(--alert-red);
+            color: var(--void-bg);
+        }
+
+        #test-readout {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #000;
+            border: 2px solid var(--alert-red);
+            font-size: 0.75rem;
+            color: var(--sea-green);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
 
         .btn-macro {
             border: 2px solid var(--sea-green);
@@ -256,6 +276,12 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
     <h1>SUMO AUTO</h1>
 
+    <h2>DIAGNÓSTICO DE BANCADA</h2>
+    <div class="grid">
+        <button id="btn-test-sensor" class="btn-diag" onclick="toggleTest('sensor')">TESTE SENSORES</button>
+    </div>
+    <div id="test-readout"></div>
+
     <h2>MOVIMENTAÇÃO INICIAL</h2>
     <div class="grid">
         <button class="btn-macro" data-category="macro" data-val="0" data-label="FRENTÃO">FRENTÃO</button>
@@ -391,6 +417,61 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         const mBody = document.getElementById('modal-body');
         const mActions = document.getElementById('modal-actions');
 
+        const readoutBox = document.getElementById('test-readout');
+        let readoutTimer = null;
+        let testSensorActive = false;
+
+        function fetchReadout() {
+            fetch('/sensors')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    const keys = Object.keys(data);
+                    if (keys.length === 0) {
+                        readoutBox.innerText = '> aguardando leitura (robô sem sensores mapeados)...';
+                        return;
+                    }
+                    readoutBox.innerText = keys.map(function(key) {
+                        return '> ' + key.toUpperCase() + ': ' + data[key];
+                    }).join('\n');
+                })
+                .catch(function() {
+                    readoutBox.innerText = '> [ERRO] FALHA AO LER /sensors';
+                });
+        }
+
+        function startReadoutPolling() {
+            readoutBox.style.display = 'block';
+            readoutBox.innerText = '> iniciando...';
+            fetchReadout();
+            readoutTimer = setInterval(fetchReadout, 150); // Polling a ~6.6Hz
+        }
+
+        function stopReadoutPolling() {
+            if (readoutTimer) {
+                clearInterval(readoutTimer);
+                readoutTimer = null;
+            }
+            readoutBox.style.display = 'none';
+            readoutBox.innerText = '';
+        }
+
+        function toggleTest(which) {
+            if (navigator.vibrate) navigator.vibrate(20);
+
+            if (which === 'sensor') {
+                testSensorActive = !testSensorActive;
+                document.getElementById('btn-test-sensor').classList.toggle('active', testSensorActive);
+                
+                if (testSensorActive) {
+                    printLog('> TESTE DE SENSORES: ATIVO');
+                    startReadoutPolling();
+                } else {
+                    printLog('> TESTE DE SENSORES: DESLIGADO');
+                    stopReadoutPolling();
+                }
+            }
+        }
+
         function printLog(msg, isError = false) {
             logTerm.innerText = msg;
             logTerm.style.color = isError ? 'var(--alert-red)' : 'var(--sea-green)';
@@ -476,6 +557,11 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         function executeTransmit() {
             if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
 
+            // Força o desligamento do painel de diagnóstico para evitar poluição I2C durante a luta
+            if (testSensorActive) {
+                toggleTest('sensor');
+            }
+
             closeModal();
             printLog("> EXECUTANDO UPLINK...");
 
@@ -506,6 +592,4 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         }
     </script>
 </body>
-</html>
-
-)rawliteral";
+</html>)rawliteral";
