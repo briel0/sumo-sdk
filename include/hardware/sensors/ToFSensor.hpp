@@ -22,6 +22,11 @@ class ToFSensor {
     explicit ToFSensor(int8_t xshutPin = -1, uint8_t address = 0x29);
 
     /**
+     * @brief Desliga o sensor (coloca o pino XSHUT em LOW).
+     */
+    void disable();
+
+    /**
      * @brief Inicializa o pino XSHUT, define o endereço I2C e configura a velocidade.
      * @return true se o sensor respondeu corretamente no barramento, false se falhou.
      */

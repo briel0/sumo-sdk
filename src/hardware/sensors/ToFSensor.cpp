@@ -2,6 +2,13 @@
 
 ToFSensor::ToFSensor(int8_t xshutPin, uint8_t address) : _pinXshut(xshutPin), _address(address) {}
 
+void ToFSensor::disable() {
+    if(_pinXshut >= 0) {
+        pinMode(_pinXshut, OUTPUT);
+        digitalWrite(_pinXshut, LOW);
+    }
+}
+
 bool ToFSensor::init() {
     // 1. Hardware Reset (Garante que o sensor acorde limpo e pronto para aceitar endereço)
     if(_pinXshut >= 0) {

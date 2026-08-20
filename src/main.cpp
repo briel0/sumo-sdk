@@ -7,6 +7,7 @@
 #include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
+#include <Wire.h>
 
 enum class RobotState {
     IDLE,
@@ -28,6 +29,7 @@ ActiveAuto taticaAtual;
 
 void setup() {
     Serial.begin(115200);
+    Wire.begin(); // Inicializa I2C
     Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
     statusLed.init(LED_BUILTIN, Config::PIN_STATUS_LED, Config::STATUS_LED_COUNT);
     delay(500);
