@@ -11,6 +11,7 @@ void ArruelaAuto::init() {
     _sensorEsq.init();
     _sensorDir.init();
     _sensorFrontal.init();
+    _sensorDistancia.init();
     _ultimoLado = Direction::left;
 }
 
