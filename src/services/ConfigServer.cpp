@@ -133,6 +133,14 @@ void ConfigServer::setupWebRoutes() {
 
         request->send(200, "text/plain", "MACRO DISPARADA");
     });
+
+    server.on("/sensors", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        if(!_sensorReadCallback) {
+            request->send(503, "application/json", "{}");
+            return;
+        }
+        request->send(200, "application/json", _sensorReadCallback());
+    });
 }
 
 void ConfigServer::update() {

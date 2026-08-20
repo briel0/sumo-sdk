@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 
 class Drive;
 class WeaponSystem;
@@ -30,4 +31,12 @@ class CombatStrategy {
     @param armas    Referência ao sistema de armas.
     */
     virtual void autoEngage(Drive &motores, WeaponSystem &armas) = 0;
+
+    /**
+    @brief Retorna o estado atual dos sensores do robô no formato JSON.
+    Pode ser sobrescrito por cada robô para expor seus sensores na interface web de debug.
+    */
+    virtual String getSensorStatusJSON() {
+        return "{}";
+    }
 };

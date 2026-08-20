@@ -20,6 +20,7 @@ class CaiporaAuto : public CombatStrategy {
     CaiporaAuto();
     void init() override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
+    String getSensorStatusJSON() override;
 
   private:
     LDR _ldr;

@@ -92,3 +92,16 @@ void CaiporaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFren
     }
     motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
 }
+
+String CaiporaAuto::getSensorStatusJSON() {
+    String json = "{";
+    json += "\"LDR\": " + String(_ldr.readRaw()) + ", ";
+    json += "\"Linha Esq\": " + String(_linhaEsq.leituraRaw()) + ", ";
+    json += "\"Linha Dir\": " + String(_linhaDir.leituraRaw()) + ", ";
+    json += "\"VL Frente Esq (mm)\": " + String(_vlFrenteEsq.leituraRaw()) + ", ";
+    json += "\"VL Lat Esq (mm)\": " + String(_vlLateralEsq.leituraRaw()) + ", ";
+    json += "\"VL Frente Dir (mm)\": " + String(_vlFrenteDir.leituraRaw()) + ", ";
+    json += "\"VL Lat Dir (mm)\": " + String(_vlLateralDir.leituraRaw());
+    json += "}";
+    return json;
+}

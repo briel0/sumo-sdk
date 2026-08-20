@@ -19,6 +19,11 @@ void AutoMode::init(CombatStrategy &estrategia) {
         _testingMacro = true; // flag para o run() saber que está testando
     });
 
+    configServer.setSensorReadCallback([this]() {
+        if(_estrategia) return _estrategia->getSensorStatusJSON();
+        return String("{}");
+    });
+
     configServer.begin();
 
     _estrategia = &estrategia;
