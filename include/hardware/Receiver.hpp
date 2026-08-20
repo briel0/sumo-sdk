@@ -59,6 +59,9 @@ class Receiver {
     bool cross() const {
         return crossFlag;
     }
+    bool crossHeld() const {
+        return lastCross;
+    }
     bool square() const {
         return squareFlag;
     }

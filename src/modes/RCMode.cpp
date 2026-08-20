@@ -48,10 +48,7 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     };
 
     // CONFIGURE AS MACROS AQUI!!!
-    if(receptor.cross()) {
-        triggerMacro(Config::MACRO_FRENTAO);
-    }
-    else if(receptor.square()) {
+    if(receptor.square()) {
         // triggerMacro(Config::MACRO_CURVAO_ESQ);
     }
     else if(receptor.triangle()) {
@@ -75,6 +72,10 @@ void RCMode::run(Drive &motores, WeaponSystem &armas) {
 
     int throttle = receptor.rightTrigger() - receptor.leftTrigger();
     int steer = receptor.leftStickX();
+
+    if(receptor.crossHeld()) {
+        throttle = 100;
+    }
 
     handleWeapons(armas, throttle, steer);
 
