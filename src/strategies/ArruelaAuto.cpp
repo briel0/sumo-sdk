@@ -70,3 +70,13 @@ void ArruelaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFren
     }
     motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
 }
+
+String ArruelaAuto::getSensorStatusJSON() {
+    String json = "{";
+    json += "\"Frontal (JS40F)\": " + String(_sensorFrontal.temAlvo() ? 1 : 0) + ", ";
+    json += "\"Esquerda (JS40F)\": " + String(_sensorEsq.temAlvo() ? 1 : 0) + ", ";
+    json += "\"Direita (JS40F)\": " + String(_sensorDir.temAlvo() ? 1 : 0) + ", ";
+    json += "\"Distancia (ToF)\": " + String(_sensorDistancia.leituraRaw());
+    json += "}";
+    return json;
+}

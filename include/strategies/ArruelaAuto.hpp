@@ -9,6 +9,7 @@ class ArruelaAuto : public CombatStrategy {
     ArruelaAuto();
     void init() override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
+    String getSensorStatusJSON() override;
 
   private:
     // Apenas declarando a existência deles.
