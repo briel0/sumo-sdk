@@ -58,10 +58,10 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
         // triggerMacro(Config::MACRO_CURVAO_DIR);
     }
     else if(receptor.dpadRight()) {
-        triggerMacro(Config::MACRO_CURVINHA_DIREITA);
+        // triggerMacro(Config::MACRO_CURVINHA_DIREITA);
     }
     else if(receptor.dpadLeft()) {
-        triggerMacro(Config::MACRO_CURVINHA_ESQUERDA);
+        // triggerMacro(Config::MACRO_CURVINHA_ESQUERDA);
     }
 
     if(macroPlayer.isPlaying()) {

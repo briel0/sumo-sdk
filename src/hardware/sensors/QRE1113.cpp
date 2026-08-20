@@ -7,7 +7,7 @@ void QRE1113::init() const {
 }
 
 bool QRE1113::temLinhaBranca() const {
-    return analogRead(_pin) > _threshold;
+    return analogRead(_pin) < _threshold;
 }
 
 uint16_t QRE1113::leituraRaw() const {
