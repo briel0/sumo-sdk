@@ -80,6 +80,38 @@ class StatusLed {
     */
     void push();
 
+    /**
+    @brief Toma posse exclusiva da tira: todo o resto da API de pintura
+        (setAll/setState/heartbeat/pairingWave/strategyWave/setLedRaw/push)
+        vira no-op até unlock().
+
+        Existe porque a tira tem vários donos concorrentes espalhados pelo
+        código (animações do main, feedback do FumacinhaMode, DiagnosticsPanel)
+        e a senha IR de boot precisa desenhar por cima de todos eles sem sair
+        caçando cada chamador. Quem trava pinta pelos métodos *Locked abaixo.
+    */
+    void lock();
+
+    /**
+    @brief Devolve a tira aos donos normais. O buffer interno continua com o
+        que o dono do lock desenhou, então a próxima animação repinta por cima.
+    */
+    void unlock();
+
+    bool isLocked() const {
+        return _locked;
+    }
+
+    /**
+    @brief Igual a setLedRaw(), mas ignora o lock. Só o dono do lock deve chamar.
+    */
+    void setLedRawLocked(int index, CRGB color);
+
+    /**
+    @brief Igual a push(), mas ignora o lock. Só o dono do lock deve chamar.
+    */
+    void pushLocked();
+
   private:
     int _debugPin = 0;
     int _numLeds = 0;
@@ -88,6 +120,7 @@ class StatusLed {
     unsigned long _lastWaveMs = 0;
     int _waveIndex = 0;
     bool _pingpongForward = true;
+    bool _locked = false;
 
     // FastLED exige array estático de tamanho conhecido em compile time.
     // O limite de 8 cobre qualquer configuração razoável do projeto.

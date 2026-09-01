@@ -32,6 +32,8 @@ void StatusLed::confirmStep() {
 }
 
 void StatusLed::setAll(CRGB color) {
+    if(_locked)
+        return;
     for(int i = 0; i < _numLeds; i++) {
         _leds[i] = color;
     }
@@ -48,6 +50,8 @@ void StatusLed::blinkDebug(int times, int intervalMs) {
 }
 
 void StatusLed::setState(CRGB color) {
+    if(_locked)
+        return;
     bool changed = false;
     for(int i = 0; i < _numLeds; i++) {
         if(_leds[i] != color) {
@@ -60,6 +64,8 @@ void StatusLed::setState(CRGB color) {
 }
 
 void StatusLed::heartbeat() {
+    if(_locked)
+        return;
     unsigned long now = millis();
     if(now - _lastHeartbeatMs < 20)
         return; // ~50fps
@@ -74,6 +80,8 @@ void StatusLed::heartbeat() {
 }
 
 void StatusLed::pairingWave() {
+    if(_locked)
+        return;
     unsigned long now = millis();
     if(now - _lastWaveMs < 120)
         return; // velocidade da onda: 1 LED a cada 120ms
@@ -91,6 +99,8 @@ void StatusLed::pairingWave() {
 }
 
 void StatusLed::strategyWave() {
+    if(_locked)
+        return;
     unsigned long now = millis();
     if(now - _lastWaveMs < 120)
         return;
@@ -121,12 +131,32 @@ void StatusLed::strategyWave() {
 }
 
 void StatusLed::setLedRaw(int index, CRGB color) {
+    if(_locked)
+        return;
+    setLedRawLocked(index, color);
+}
+
+void StatusLed::push() {
+    if(_locked)
+        return;
+    FastLED.show();
+}
+
+void StatusLed::lock() {
+    _locked = true;
+}
+
+void StatusLed::unlock() {
+    _locked = false;
+}
+
+void StatusLed::setLedRawLocked(int index, CRGB color) {
     if(index < 0 || index >= _numLeds) {
         return;
     }
     _leds[index] = color;
 }
 
-void StatusLed::push() {
+void StatusLed::pushLocked() {
     FastLED.show();
 }

@@ -4,6 +4,7 @@
 #include "JS40F.hpp"
 #include "LDRSensor.hpp"
 #include "QRE1113.hpp"
+#include "ToFSensor.hpp"
 #include "StealthEmitter.hpp"
 #include "WingServo.hpp"
 #include <Arduino.h>
@@ -93,6 +94,19 @@ class HardwareCore {
         _wingIntent = position;
     }
 
+    /**
+    @brief Última posição pedida à asa. Devolve a INTENÇÃO, não a posição
+        física: o servo pode ainda estar a caminho, já que update() só dispara o
+        movimento e não espera o curso terminar.
+
+        Lê o intent (e não _wing.position()) de propósito — o WingServo só
+        existe nas famílias FUMACINHA e LEGACY, então tocá-lo aqui quebraria a
+        compilação dos robôs da família NONE.
+    */
+    WingPosition wing() const {
+        return _wingIntent;
+    }
+
   private:
     // Front-end de sensores/atuadores: a COMPOSIÇÃO muda por família de hardware
     // (HW_FAMILY_*, definida em Config.hpp), não por nome de robô. Perfis de
@@ -112,6 +126,22 @@ class HardwareCore {
     LDRSensor      _ldr; // LDR de rampa: exclusivo desta família
     StealthEmitter _stealth;
     WingServo      _wing;
+#elif defined(HW_FAMILY_CAIPORA)
+    // 4 VL53L0X (ToF) no lugar dos IR/JSumo do Fumacinha: 2 CENTRAIS, que juntos
+    // fazem o papel do sensor frontal (este chassi não tem um dedicado), e 2
+    // LATERAIS EXTREMOS, que fazem o papel dos JSumo.
+    //
+    // Sem StealthEmitter e sem WingServo de propósito: o ToF é sempre ativo, não
+    // existe fonte passiva pra alternar, e este robô não tem asa. setStealth() e
+    // setWing() continuam existindo e apenas não têm efeito aqui — é o que deixa
+    // a FumacinhaAuto rodar sem uma linha de alteração.
+    ToFSensor _tofCentroEsq;
+    ToFSensor _tofCentroDir;
+    ToFSensor _tofLateralEsq;
+    ToFSensor _tofLateralDir;
+    QRE1113   _lineSensorLeft;
+    QRE1113   _lineSensorRight;
+    LDRSensor _ldr;
 #elif defined(HW_FAMILY_LEGACY)
     // 3 IR simples (frente/esq/dir) + linha + furtivo + asa. Sem LDR de rampa.
     JS40F          _front;

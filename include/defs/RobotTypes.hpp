@@ -1,6 +1,22 @@
 #pragma once
 #include <stdint.h>
 
+/**
+    Modo em que o robô opera depois do setup(). Vive aqui (e não no main.cpp)
+    porque o BootModeStore grava esse valor na NVS e o BootModeSelector o
+    escolhe por senha IR — os dois precisam do mesmo tipo.
+
+    ATENÇÃO: os valores numéricos são o que vai gravado na NVS. Reordenar ou
+    inserir no meio faz um robô com valor antigo gravado subir no modo errado
+    (o carimbo de default do BootModeStore não pega isso — ele só detecta
+    mudança do default compilado). Só acrescente no fim.
+*/
+enum class RobotState : uint8_t {
+    IDLE = 0,
+    RC = 1,
+    AUTO = 2
+};
+
 // Esta struct é apenas um envelope de dados. Não aciona hardware nenhum.
 struct ServoConfig {
     int pin;
@@ -35,7 +51,7 @@ enum class Direction {
 
 /**
     Posições fundamentais do servo da asa lateral (TPU). Compartilhado entre
-    WingServo (hardware real) e Fumacinha_FSM (HAL placeholder) para não existir
+    WingServo (hardware real) e FumacinhaAuto (HAL placeholder) para não existir
     duas definições incompatíveis do mesmo conceito físico.
 */
 enum class WingPosition {
@@ -45,7 +61,7 @@ enum class WingPosition {
 };
 
 /**
-    Fases da luta. A Fumacinha_FSM percorre essas fases conforme o combate evolui.
+    Fases da luta. A FumacinhaAuto percorre essas fases conforme o combate evolui.
 */
 enum class CombatPhase {
     OPENING,   // Saque inicial, logo após a largada
@@ -57,18 +73,24 @@ enum class CombatPhase {
     Táticas disponíveis para a fase OPENING (abertura de round).
 */
 enum class OpeningTactic {
-    STANDARD_EVASION, // Saque padrão com fuga do centro
+    CURVA,            // Curva fechada saindo do centro (1/4 do dohyo)
     EDGE_POSITIONING, // Posicionamento propositalmente próximo à borda
-    CENTER_DOMINANCE  // Ocupação agressiva do centro do dohyo
+    FRENTAO,          // Avanço reto e longo (3/4 do dohyo) em força máxima
+    FRENTINHO,        // Avanço reto e curto (1/4 do dohyo) em meia força
+    CURVAO,           // Curva aberta e longa (3/4 do dohyo)
+    EM_V,             // Avança, vira no eixo e avança de novo (3/4 do dohyo)
+    VZINHO,           // Mesmo V, sem o giro de entrada — mais curto
+    VZAO              // V longo, com giro de entrada
 };
 
 /**
     Táticas disponíveis para a fase SEARCHING (varredura pelo oponente).
 */
 enum class SearchTactic {
-    STEALTH_SWEEP,  // Varredura com os emissores IR laterais desligados
-    ACTIVE_FISHING, // Varredura ativa, movimentando-se para provocar reação
-    ZOMBIE_NAV      // Navegação pelo último rumo conhecido, sem varredura ativa
+    OFFENSIVE_SEARCH, // Gira procurando e ataca em arco assim que um lateral vê o alvo
+    PERIODIC_PULSE, // Parado a maior parte do tempo, com pulsos curtos de avanço
+    LINE_SEARCH,      // Cruzeiro reto usando a linha da borda como referência
+    DEFENSIVE_SEARCH  // Rasteja e só alinha; escala para LINE_SEARCH se estagnar
 };
 
 /**
@@ -82,8 +104,8 @@ enum class AttackTactic {
 /**
     @struct CombatTuning
     @brief Velocidades (PWM, escala -100..100) e tempos (ms) de cada passo do
-           Fumacinha_FSM. Os defaults aqui são exatamente os valores que eram
-           constantes constexpr no FSM — o Fumacinha_FSM lê tudo daqui via
+           FumacinhaAuto. Os defaults aqui são exatamente os valores que eram
+           constantes constexpr no FSM — o FumacinhaAuto lê tudo daqui via
            activeProfile.tuning. Hoje NÃO há controle no dashboard pra mexer
            nesses valores (o ajuste ao vivo é feito pelo construtor de macro,
            que é um testador à parte), então na prática rodam sempre nos
@@ -91,7 +113,7 @@ enum class AttackTactic {
            constantes soltas pelo .cpp.
 */
 struct CombatTuning {
-    // --- OPENING / ARCO EVASIVO (STANDARD_EVASION) ---
+    // --- OPENING / CURVA (CURVA) ---
     unsigned long evasionDurationMs = 400; // duração da curva de fuga
     int           evasionPwmOuter   = 100; // roda externa da curva
     int           evasionPwmInner   = 40;  // roda interna (fecha a curva)
@@ -102,20 +124,27 @@ struct CombatTuning {
     unsigned long spinDurationMs      = 300; // duração do giro no próprio eixo
     int           spinPwm             = 90;  // módulo do giro (sinais opostos)
 
-    // --- OPENING / ARRANCADA RETA (CENTER_DOMINANCE) ---
-    unsigned long centerRushMs  = 200; // duração do avanço ao centro
-    int           centerRushPwm = 100; // potência do avanço reto
+    // --- OPENING / FRENTÃO (FRENTAO) ---
+    unsigned long frentaoMs  = 200; // duração do avanço reto longo
+    int           frentaoPwm = 100; // potência do frentão
 
-    // --- SEARCHING / ZIGUEZAGUE IR (STEALTH_SWEEP) ---
+    // --- OPENING / FRENTINHO (FRENTINHO) ---
+    unsigned long frentinhoMs  = 200; // duração do avanço reto curto
+    int           frentinhoPwm = 50;  // potência do frentinho (127/255 do original)
+
+    // --- SEARCHING / BUSCA OFENSIVA (OFFENSIVE_SEARCH) ---
     unsigned long sweepHalfPeriodMs = 250; // duração de cada perna do zigue-zague
     int           sweepPwmOuter     = 70;  // roda externa da perna
     int           sweepPwmInner     = 20;  // roda interna da perna
 
-    // --- SEARCHING / PULSO PERIÓDICO (ACTIVE_FISHING) ---
-    unsigned long fishingIntervalMs = 800; // troca de lado da asa
+    // --- SEARCHING / PULSO PERIÓDICO (PERIODIC_PULSE) ---
+    unsigned long pulseIntervalMs = 1500; // período do ciclo (1 pulso + espera parada)
+    unsigned long pulseDurationMs = 90;   // duração do avanço de cada pulso
+    int           pulsePwm        = 100;  // potência do pulso (as duas rodas)
+    uint8_t       pulseCount      = 4;    // pulsos da série antes de cair no busca linha
 
-    // --- SEARCHING / AVANÇO CEGO (ZOMBIE_NAV) ---
-    int           zombieNavPwm = 80; // velocidade de cruzeiro do avanço cego
+    // --- SEARCHING / BUSCA LINHA (LINE_SEARCH) ---
+    int           zombieNavPwm = 80; // velocidade de cruzeiro do busca linha
 
     // --- ATTACKING / EMPUXO CORRIGIDO (ALIGNMENT_STRIKE) ---
     int           alignmentPwmMax       = 100; // lado alinhado / avanço reto
@@ -128,15 +157,16 @@ struct CombatTuning {
 /**
     @struct CombatProfile
     @brief Envelope de dados com as táticas escolhidas para o round atual do
-           Fumacinha_FSM. Mesmo papel que AutoStrategy cumpre para o AutoMode
+           FumacinhaAuto. Mesmo papel que AutoStrategy cumpre para o AutoMode
            legado — preenchido pelo ConfigServer a partir do payload do celular.
 */
 struct CombatProfile {
-    OpeningTactic openingTactic = OpeningTactic::STANDARD_EVASION;
-    SearchTactic  searchTactic  = SearchTactic::STEALTH_SWEEP;
+    OpeningTactic openingTactic = OpeningTactic::CURVA;
+    SearchTactic  searchTactic  = SearchTactic::OFFENSIVE_SEARCH;
     AttackTactic  attackTactic  = AttackTactic::ALIGNMENT_STRIKE;
-    // Lado preferencial das táticas assimetricas (curva de EDGE_POSITIONING/
-    // STANDARD_EVASION, lado da asa em ZOMBIE_NAV/ACTIVE_FISHING/STEALTH_SWEEP).
+    // Lado preferencial das táticas assimetricas (lado de todas as macros de
+    // abertura, primeira perna do OFFENSIVE_SEARCH, lado da asa em
+    // LINE_SEARCH — e, por tabela, no trecho de busca linha do PERIODIC_PULSE).
     // Default = right pra preservar o comportamento antigo (hardcoded) de quem
     // não mexer nesse controle novo no dashboard.
     Direction     preferredSide = Direction::right;

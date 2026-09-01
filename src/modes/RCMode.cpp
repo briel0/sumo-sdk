@@ -43,26 +43,61 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     };
 
     // CONFIGURE AS MACROS AQUI!!!
-    if(receptor.cross()) {
-        triggerMacro(Config::MACRO_FRENTAO);
-    }
-    else if(receptor.square()) {
+    // O X NÃO dispara mais macro: ele virou o override de aceleração total no
+    // topo de run(), que sai do frame antes de chegar aqui. Se o FRENTÃO no
+    // controle fizer falta, remapeie pra um botão livre.
+    if(receptor.square()) {
         // triggerMacro(Config::MACRO_CURVAO_ESQ);
     }
     else if(receptor.triangle()) {
         // triggerMacro(Config::MACRO_CURVAO_DIR);
     }
+#if defined(ROBOT_FUMACINHA)
+    // Setas = giro de 180° no próprio eixo, pro lado da seta. Só o Fumacinha
+    // define essas macros; deixar o binding sem guarda quebraria o build dos
+    // outros perfis, e defini-las em todos daria a eles um atalho de RC que
+    // ninguém pediu (o tempo de 135 ms é calibrado pra ESTE chassi).
+    else if(receptor.dpadLeft()) {
+        triggerMacro(Config::MACRO_GIRO_ESQ);
+    }
+    else if(receptor.dpadRight()) {
+        triggerMacro(Config::MACRO_GIRO_DIR);
+    }
+#else
     else if(receptor.dpadRight()) {
         // triggerMacro(Config::MACRO_CURVAO_DIR);
     }
     else if(receptor.dpadLeft()) {
-        // triggerMacro(Config::MACRO_CURVAO_DIR);
+        // triggerMacro(Config::MACRO_CURVAO_ESQ);
     }
+#endif
 }
 
 void RCMode::run(Drive &motores, WeaponSystem &armas) {
     receptor.update();
     armas.update();
+
+    // === OVERRIDE DE ACELERAÇÃO TOTAL (botão X) =============================
+    // Roda ANTES de tudo e sai do frame: enquanto o X estiver segurado, o robô
+    // vai pra frente em potência crua e nada mais é lido — nem gatilhos, nem
+    // direcional, nem macro. Sair aqui é o que garante isso, porque as três
+    // coisas moram abaixo.
+    //
+    // A macro em curso é ENCERRADA, não só ignorada. O MotionPlayer é baseado em
+    // millis(): se ela ficasse viva, o relógio dela correria durante o override e
+    // ela voltaria adiantada (ou já vencida) quando o X fosse solto. Encerrando,
+    // soltar o X devolve o controle limpo ao piloto no frame seguinte, que é o
+    // comportamento pedido.
+    //
+    // armas.update() acima continua rodando, então o servo em movimento termina o
+    // curso normalmente. O que pausa é a LEITURA dos botões de arma
+    // (handleWeapons), que fica abaixo — segurar o X é um comando de movimento.
+    if(receptor.crossHeld()) {
+        macroPlayer.stop();
+        motores.setSpeed(CROSS_BOOST_PWM, CROSS_BOOST_PWM);
+        return;
+    }
+
 
     int throttle = receptor.rightTrigger() - receptor.leftTrigger();
     int steer = receptor.leftStickX();

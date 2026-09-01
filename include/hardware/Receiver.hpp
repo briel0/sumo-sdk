@@ -57,6 +57,15 @@ class Receiver {
     bool cross() const {
         return crossFlag;
     }
+    /**
+    @brief Estado CONTÍNUO do X (pressionado agora), e não o flanco de subida
+           que cross() devolve. É o que o override de aceleração total do
+           RCMode::run() lê — ele precisa saber "está segurando", não "acabou
+           de apertar".
+    */
+    bool crossHeld() const {
+        return lastCross;
+    }
     bool square() const {
         return squareFlag;
     }

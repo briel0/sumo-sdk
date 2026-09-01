@@ -56,7 +56,7 @@ namespace Config {
     static constexpr int ASA_ANGLE_LEFT    = 0;   // aberta para a esquerda
     static constexpr int ASA_ANGLE_RIGHT   = 180; // aberta para a direita
 
-    // === Fumacinha_FSM (modo AUTO) ==============================================
+    // === FumacinhaAuto (modo AUTO) ==============================================
     static constexpr bool USES_FUMACINHA_FSM = false;
 
     // Cada linha { } é um servo físico!

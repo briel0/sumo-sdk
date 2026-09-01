@@ -25,6 +25,15 @@ class RCMode {
     */
     void run(Drive &motores, WeaponSystem &armas);
 
+  private:
+    // Aceleração total no X: potência CRUA, de propósito fora da escala de
+    // Config::MAX_THROTTLE. Perfis que limitam o piloto a 90 continuam limitados
+    // no controle normal — este override existe justamente pra passar por cima
+    // disso quando o piloto segura o botão.
+    static constexpr int CROSS_BOOST_PWM = 100;
+
+  public:
+
     /**
     @brief Returns whether the controller is currently connected and recognized.
     */

@@ -39,7 +39,7 @@ namespace Config {
     // robô para outra família em HardwareFamily.hpp e adicione os pinos aqui.
     static constexpr bool USES_HARDWARE_CORE = false;
 
-    // === Fumacinha_FSM (modo AUTO) ==============================================
+    // === FumacinhaAuto (modo AUTO) ==============================================
     static constexpr bool USES_FUMACINHA_FSM = false;
 
     // Cada linha { } é um servo físico!

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RobotTypes.hpp" // CombatProfile, usado pelo hook setCombatProfile()
+
 class Drive;
 class WeaponSystem;
 class HardwareCore;
@@ -36,4 +38,18 @@ class CombatStrategy {
     @param hardware Estados limpos dos sensores e intenções dos periféricos.
     */
     virtual void autoEngage(Drive &motores, WeaponSystem &armas, HardwareCore &hardware) = 0;
+
+    /**
+    @brief Entrega o pacote tático da HUD do Fumacinha (CombatProfile) à
+           estratégia. Chamado pelo AutoMode assim que o celular transmite,
+           antes da largada.
+
+    Default no-op de propósito: só a FumacinhaAuto lê um CombatProfile. As
+    estratégias que usam a HUD legada recebem seus parâmetros pelo AutoStrategy,
+    que o próprio AutoMode consome — para elas este hook nunca importa, e por
+    isso nenhuma precisou ser alterada quando ele entrou.
+    */
+    virtual void setCombatProfile(const CombatProfile &profile) {
+        (void)profile;
+    }
 };

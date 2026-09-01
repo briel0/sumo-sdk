@@ -18,7 +18,7 @@ class ConfigServer {
     bool consumePayload(AutoStrategy &outStrategy);
 
     /**
-    @brief Mesmo papel de consumePayload(), para robôs que usam Fumacinha_FSM
+    @brief Mesmo papel de consumePayload(), para robôs que usam FumacinhaAuto
            (CombatProfile) em vez do par MotionPlayer + CombatStrategy legado.
     */
     bool consumeCombatProfile(CombatProfile &outProfile);

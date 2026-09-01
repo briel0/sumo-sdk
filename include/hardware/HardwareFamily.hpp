@@ -16,8 +16,13 @@
 //   LEGACY   : 3 IR (frente/esq/dir) + 2 linha + emissor furtivo + servo de asa.
 //              Sem LDR de rampa.
 //   FUMACINHA: 5 IR (jsumo×3 + ir puro×2) + 2 linha + LDR de rampa + furtivo + asa.
-#if defined(ROBOT_FUMACINHA)
+//   CAIPORA  : 4 VL53L0X (2 centrais + 2 laterais extremos) + 2 linha + LDR de
+//              rampa. SEM emissor furtivo e SEM asa: o ToF é sempre ativo (não
+//              tem modo passivo pra alternar) e este chassi não tem asa.
+#if defined(ROBOT_FUMACINHA) || defined(ROBOT_FUEGO)
 #define HW_FAMILY_FUMACINHA
+#elif defined(ROBOT_CAIPORA)
+#define HW_FAMILY_CAIPORA
 #elif defined(ROBOT_SMOKERAUTO)
 #define HW_FAMILY_LEGACY
 #else

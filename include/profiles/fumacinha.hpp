@@ -18,10 +18,10 @@ namespace Config {
     // primeiro controle e imprime o MAC no serial pra você fixar aqui).
     static constexpr uint8_t CONTROLLER_MAC[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-    static constexpr int RIGHT_POS_PIN = 18;
-    static constexpr int RIGHT_NEG_PIN = 19;
-    static constexpr int LEFT_POS_PIN = 17;
-    static constexpr int LEFT_NEG_PIN = 16;
+    static constexpr int RIGHT_POS_PIN = 19;
+    static constexpr int RIGHT_NEG_PIN = 18;
+    static constexpr int LEFT_POS_PIN = 16;
+    static constexpr int LEFT_NEG_PIN = 17;
 
     static constexpr int MAX_THROTTLE = 100;
     static constexpr int TURN_COEFFICIENT = 83;
@@ -35,8 +35,7 @@ namespace Config {
     // adversário o próprio sinal infravermelho que ele poderia usar pra nos achar.
     static constexpr int PIN_JSUMO_ESQ = 23;
     static constexpr int PIN_JSUMO_DIR = 14;
-    static constexpr int PIN_JSUMO_ASA =
-        32; // frente — emissor nunca é desligado, sempre confiável — teste: trocado com PIN_SERVO_ASA
+    static constexpr int PIN_JSUMO_ASA = 32; // frente — emissor nunca é desligado, sempre confiável — teste: trocado com PIN_SERVO_ASA
 
     // "IR puro": receptor cru do MESMO módulo lateral, sem o CI (LOW = alvo
     // detectado). Fica sempre energizado, mesmo com o emissor desligado no
@@ -51,7 +50,7 @@ namespace Config {
     // não desliga o rádio de verdade, então isso valeria pra luta inteira, não só
     // pra bancada. Realocado pro 5 (ADC1, livre).
     static constexpr uint8_t PIN_LINHA_DIR = 34;
-    static constexpr uint16_t LINHA_THRESHOLD = 3800;
+    static constexpr uint16_t LINHA_THRESHOLD = 3950;
 
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
@@ -61,14 +60,24 @@ namespace Config {
     // GPIO entrariam em conflito.
     static constexpr ServoConfig SERVOS[] = {};
 
-    // Velocidade no motor direito, velocidade no motor esquerdo, tempo
+    // Ordem dos campos do MACRO: {motor ESQUERDO, motor DIREITO, tempo_ms} —
+    // é a ordem de MotionStep (leftSpeed, rightSpeed, durationMs). O comentário
+    // anterior dizia o contrário e invertia o lado de qualquer macro assimétrica.
     static const MotionSequence MACRO_FRENTAO = MACRO({100, 100, 300});
 
     static const MotionSequence MACRO_DIAGONAL = MACRO({-100, 100, 50}, {100, 100, 100});
 
+    // Giro de 180° no próprio eixo, disparado pelas setas do controle no RC.
+    // Sinais opostos em módulo igual é o que gira sobre o eixo em vez de pivotar
+    // sobre uma roda parada. Os 135 ms são o que fecha meia volta NESTE chassi,
+    // em potência cheia — é tempo cego, sem sensor, então recalibre aqui se a
+    // bateria cair ou a tração mudar.
+    static const MotionSequence MACRO_GIRO_ESQ = MACRO({-100, 100, 145});
+    static const MotionSequence MACRO_GIRO_DIR = MACRO({100, -100, 145});
+
     // === Núcleo de Hardware ======================================================
     // Inicializa o HardwareCore (sensores + periféricos de estado) quando este robô entra em AUTO.
-    // Fumacinha_FSM depende diretamente do HardwareCore; FumacinhaMode::init() o
+    // FumacinhaAuto depende diretamente do HardwareCore; FumacinhaMode::init() o
     // inicializa incondicionalmente, sem consultar esta flag (ela existe aqui só
     // por completude/documentação — quem realmente consulta é o AutoMode legado).
     static constexpr bool USES_HARDWARE_CORE = true;
@@ -80,16 +89,16 @@ namespace Config {
     // GPIO22 pedido não tem ADC — realocado pro 34, ADC1 livre. Com isso, nenhum
     // sensor analógico do Fumacinha depende mais de ADC2 (ver PIN_LINHA_DIR).
     static constexpr uint8_t PIN_LDR = 36;
-    static constexpr uint16_t LDR_THRESHOLD = 200; // abaixo disso: oponente sobre a rampa
+    static constexpr uint16_t LDR_THRESHOLD = 100; // abaixo disso: oponente sobre a rampa
     static constexpr uint8_t LDR_FILTER_SIZE = 8;  // janela da média móvel
 
     // Servo da asa lateral — posições fundamentais.
     static constexpr int PIN_SERVO_ASA = 26;     // teste: trocado com PIN_JSUMO_ASA
-    static constexpr int ASA_ANGLE_RETRACT = 90; // recolhida
-    static constexpr int ASA_ANGLE_LEFT = 0;     // aberta para a esquerda
-    static constexpr int ASA_ANGLE_RIGHT = 180;  // aberta para a direita
+    static constexpr int ASA_ANGLE_RETRACT = 87; // recolhida
+    static constexpr int ASA_ANGLE_LEFT = 11;     // aberta para a esquerda
+    static constexpr int ASA_ANGLE_RIGHT = 175;  // aberta para a direita
 
-    // === Fumacinha_FSM (modo AUTO) ==============================================
+    // === FumacinhaAuto (modo AUTO) ==============================================
     // Habilita o FumacinhaMode como ActiveAutoMode (ver dispatch em Config.hpp) e
     // faz o ConfigServer servir a HUD de abertura/busca/ataque em vez da legada.
     static constexpr bool USES_FUMACINHA_FSM = true;

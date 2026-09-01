@@ -11,7 +11,7 @@ void WingServo::init() {
     _servo.attach(_pin, 500, 2400);
 
     // Diagnóstico: se "attached" vier falso aqui, o problema é no attach() da
-    // ESP32Servo (pino inválido/canal LEDC esgotado) — não em Fumacinha_FSM
+    // ESP32Servo (pino inválido/canal LEDC esgotado) — não em FumacinhaAuto
     // nem em HardwareCore, que só chamam setWing()/moveTo() depois disso.
     Serial.printf("[ASA] init() pino %d -> attached: %s\n", _pin, _servo.attached() ? "SIM" : "NAO (attach falhou!)");
 

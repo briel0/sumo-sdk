@@ -101,6 +101,14 @@ void ConfigServer::setupWebRoutes() {
     // conexão com N cópias da página ao mesmo tempo.
     server.on("/", HTTP_GET, serveDashboard);
 
+    // Identidade do robô. A HUD tática é a MESMA página pra todos os robôs que
+    // a usam, e todos atendem no mesmo IP do AP — sem isto a página não teria
+    // como saber em qual chassi está falando, e o celular guardaria a estratégia
+    // validada de um robô sob a mesma chave do outro (ver /robot no fumacinha.html).
+    // Resposta minúscula de propósito: cabe no mesmo custo dos probes de portal.
+    server.on("/robot", HTTP_GET,
+              [](AsyncWebServerRequest *r) { r->send(200, "text/plain", Config::ROBOT_NAME); });
+
     auto redirectToPortal = [](AsyncWebServerRequest *r) { r->redirect("/"); };
     server.on("/generate_204", HTTP_GET, redirectToPortal);
     server.on("/gen_204", HTTP_GET, redirectToPortal);
@@ -152,11 +160,11 @@ void ConfigServer::setupWebRoutes() {
 
         // --- HUD Fumacinha: CombatProfile (openingTactic/searchTactic/attackTactic) -
         if(hasCombatProfilePayload) {
-            int opening = constrain(request->getParam("openingTactic")->value().toInt(), 0, 2);
+            int opening = constrain(request->getParam("openingTactic")->value().toInt(), 0, 7);
             currentCombatProfile.openingTactic = static_cast<OpeningTactic>(opening);
 
             if(request->hasParam("searchTactic")) {
-                int search = constrain(request->getParam("searchTactic")->value().toInt(), 0, 2);
+                int search = constrain(request->getParam("searchTactic")->value().toInt(), 0, 3);
                 currentCombatProfile.searchTactic = static_cast<SearchTactic>(search);
             }
 
@@ -199,12 +207,18 @@ void ConfigServer::setupWebRoutes() {
             tn.edgeAdvancePwmInner = constrain(tuneInt("edgeAdvancePwmInner", tn.edgeAdvancePwmInner), -100, 100);
             tn.spinDurationMs      = constrain(tuneInt("spinDurationMs", tn.spinDurationMs), 0, 60000);
             tn.spinPwm             = constrain(tuneInt("spinPwm", tn.spinPwm), -100, 100);
-            tn.centerRushMs        = constrain(tuneInt("centerRushMs", tn.centerRushMs), 0, 60000);
-            tn.centerRushPwm       = constrain(tuneInt("centerRushPwm", tn.centerRushPwm), -100, 100);
+            tn.frentaoMs           = constrain(tuneInt("frentaoMs", tn.frentaoMs), 0, 60000);
+            tn.frentaoPwm          = constrain(tuneInt("frentaoPwm", tn.frentaoPwm), -100, 100);
+            tn.frentinhoMs         = constrain(tuneInt("frentinhoMs", tn.frentinhoMs), 0, 60000);
+            tn.frentinhoPwm        = constrain(tuneInt("frentinhoPwm", tn.frentinhoPwm), -100, 100);
             tn.sweepHalfPeriodMs   = constrain(tuneInt("sweepHalfPeriodMs", tn.sweepHalfPeriodMs), 0, 60000);
             tn.sweepPwmOuter       = constrain(tuneInt("sweepPwmOuter", tn.sweepPwmOuter), -100, 100);
             tn.sweepPwmInner       = constrain(tuneInt("sweepPwmInner", tn.sweepPwmInner), -100, 100);
-            tn.fishingIntervalMs   = constrain(tuneInt("fishingIntervalMs", tn.fishingIntervalMs), 0, 60000);
+            // pulseIntervalMs é divisor do ciclo de pulso na FSM: mínimo 1, nunca 0.
+            tn.pulseIntervalMs     = constrain(tuneInt("pulseIntervalMs", tn.pulseIntervalMs), 1, 60000);
+            tn.pulseDurationMs     = constrain(tuneInt("pulseDurationMs", tn.pulseDurationMs), 0, 60000);
+            tn.pulsePwm            = constrain(tuneInt("pulsePwm", tn.pulsePwm), -100, 100);
+            tn.pulseCount          = constrain(tuneInt("pulseCount", tn.pulseCount), 0, 255);
             tn.zombieNavPwm        = constrain(tuneInt("zombieNavPwm", tn.zombieNavPwm), -100, 100);
             tn.alignmentPwmMax     = constrain(tuneInt("alignmentPwmMax", tn.alignmentPwmMax), -100, 100);
             tn.alignmentPwmCorrected = constrain(tuneInt("alignmentPwmCorrected", tn.alignmentPwmCorrected), -100, 100);

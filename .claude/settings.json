@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(~/.platformio/penv/Scripts/platformio.exe run *)",
+      "Bash(git diff *)",
+      "Bash(cd /c/sumo-sdk_main/sumo-sdk && echo \"=== CombatStrategy.hpp \\(main\\) ===\" && cat include/strategies/CombatStrategy.hpp && echo && echo \"=== platformio.ini envs \\(main\\) ===\" && grep -E \"^\\\\[env|^build_flags|^src_filter|^build_src_filter\" platformio.ini)",
+      "Read(//c/sumo-sdk_main/sumo-sdk/**)",
+      "Read(//c/sumo-sdk_main/sumo-sdk/include/strategies/**)",
+      "Bash(awk '/^ *)",
+      "Read(//c/sumo-sdk_main/sumo-sdk/src/services/**)",
+      "Bash(grep -n *)",
+      "Read(//c/sumo-sdk_main/sumo-sdk/include/services/**)",
+      "Bash(cd /c/sumo-sdk_main/sumo-sdk && echo \"=== quem registra callbacks ===\" && grep -rn \"MacroTestCallback\\\\|MotorTestCallback\\\\|SensorTestCallback\\\\|setTestReadout\\\\|consumeMacroTest\\\\|isSensorTestActive\\\\|isMotorTestActive\" src/ include/ | grep -v \"ConfigServer.cpp\" && echo && echo \"=== membros no ConfigServer.hpp ===\" && grep -n \"_testSteps\\\\|_macroTestCallback\\\\|_motorTestCallback\\\\|_sensorTestCallback\\\\|_testReadoutJson\\\\|testMacroSteps\\\\|testMacroPending\\\\|testReadoutJson\\\\|MAX_MACRO_STEPS\\\\|sensorTestActive\" include/services/ConfigServer.hpp)",
+      "Bash(cd /c/sumo-sdk_main/sumo-sdk *)",
+      "Read(//c/Users/giova/AppData/Local/Temp/claude/c--sumo-sdk/1a78db80-7c6d-4cb5-a0df-7abc20db20ae/scratchpad/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\sumo-sdk_main\\sumo-sdk\\include\\strategies",
+      "c:\\sumo-sdk_main\\sumo-sdk",
+      "c:\\sumo-sdk_main\\sumo-sdk\\src\\services",
+      "c:\\sumo-sdk_main\\sumo-sdk\\include\\services"
+    ]
+  }
+}

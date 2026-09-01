@@ -396,7 +396,11 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
 )rawliteral";
 
-// HUD Fumacinha (FumacinhaMode + Fumacinha_FSM): abertura/busca/ataque/arma.
+// HUD tática (AutoMode + FumacinhaAuto): abertura/busca/ataque/arma, lado
+// preferencial, macro de bancada e diagnóstico. Servida por todo perfil com
+// Config::USES_FUMACINHA_FSM == true — hoje Fumacinha, Fuego e Caipora — e por
+// isso o nome do robô nela é preenchido em tempo de execução pela rota /robot,
+// não escrito no HTML.
 // Fonte editável em ui/fumacinha.html — após editar, atualizar a string abaixo.
 const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
@@ -405,7 +409,7 @@ const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FUMACINHA AUTO</title>
+    <title>SUMÔ AUTO</title>
     <style>
         :root {
             --sea-green: #2c9246;
@@ -687,7 +691,7 @@ const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 </head>
 <body>
 
-    <h1>FUMACINHA AUTO</h1>
+    <h1 id="titulo">SUMÔ AUTO</h1>
 
     <h2>DIAGNÓSTICO DE BANCADA</h2>
     <div class="grid-3">
@@ -704,17 +708,23 @@ const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
     </div>
 
     <h2>ABERTURA (OPENING)</h2>
-    <div class="grid-3">
-        <button class="btn-opening" data-category="openingTactic" data-val="0" data-label="ARCO EVASIVO">ARCO EVASIVO</button>
+    <div class="grid">
+        <button class="btn-opening" data-category="openingTactic" data-val="0" data-label="CURVA">CURVA</button>
         <button class="btn-opening" data-category="openingTactic" data-val="1" data-label="CURVA DE BORDA">CURVA DE BORDA</button>
-        <button class="btn-opening" data-category="openingTactic" data-val="2" data-label="ARRANCADA RETA">ARRANCADA RETA</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="2" data-label="FRENTÃO">FRENTÃO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="3" data-label="FRENTINHO">FRENTINHO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="4" data-label="CURVÃO">CURVÃO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="5" data-label="EM V">EM V</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="6" data-label="VZINHO">VZINHO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="7" data-label="VZÃO">VZÃO</button>
     </div>
 
     <h2>BUSCA (SEARCHING)</h2>
-    <div class="grid-3">
-        <button class="btn-search" data-category="searchTactic" data-val="0" data-label="ZIGUEZAGUE IR">ZIGUEZAGUE IR</button>
+    <div class="grid">
+        <button class="btn-search" data-category="searchTactic" data-val="0" data-label="BUSCA OFENSIVA">BUSCA OFENSIVA</button>
         <button class="btn-search" data-category="searchTactic" data-val="1" data-label="PULSO PERIÓDICO">PULSO PERIÓDICO</button>
-        <button class="btn-search" data-category="searchTactic" data-val="2" data-label="AVANÇO CEGO">AVANÇO CEGO</button>
+        <button class="btn-search" data-category="searchTactic" data-val="2" data-label="BUSCA LINHA">BUSCA LINHA</button>
+        <button class="btn-search" data-category="searchTactic" data-val="3" data-label="BUSCA DEFENSIVA">BUSCA DEFENSIVA</button>
     </div>
 
     <h2>EMISSOR NA BUSCA</h2>
@@ -742,9 +752,9 @@ const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
     <div id="macro-steps">
         <div class="step-row" data-index="0">
             <span>Passo 1</span>
-            <input type="text" class="step-input" inputmode="numeric" placeholder="DIR %" id="r0">
-            <input type="text" class="step-input" inputmode="numeric" placeholder="ESQ %" id="l0">
-            <input type="text" class="step-input" inputmode="numeric" placeholder="MS" id="d0">
+            <input type="text" class="step-input" placeholder="DIR %" id="r0">
+            <input type="text" class="step-input" placeholder="ESQ %" id="l0">
+            <input type="text" class="step-input" placeholder="MS" id="d0">
         </div>
     </div>
     <div class="grid" style="margin-bottom: 10px;">
@@ -994,9 +1004,9 @@ const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             div.dataset.index = numSteps;
             div.innerHTML =
                 '<span>Passo ' + (numSteps + 1) + '</span>' +
-                '<input type="text" class="step-input" inputmode="numeric" placeholder="DIR %" id="r' + numSteps + '">' +
-                '<input type="text" class="step-input" inputmode="numeric" placeholder="ESQ %" id="l' + numSteps + '">' +
-                '<input type="text" class="step-input" inputmode="numeric" placeholder="MS" id="d' + numSteps + '">';
+                '<input type="text" class="step-input" placeholder="DIR %" id="r' + numSteps + '">' +
+                '<input type="text" class="step-input" placeholder="ESQ %" id="l' + numSteps + '">' +
+                '<input type="text" class="step-input" placeholder="MS" id="d' + numSteps + '">';
             document.getElementById('macro-steps').appendChild(div);
             numSteps++;
         }
@@ -1033,7 +1043,12 @@ const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         // ===================================================================
         // VALIDAR: salva/restaura a estratégia inteira no navegador (localStorage)
         // ===================================================================
-        const VALIDADA_KEY = 'fumacinhaValidada';
+        // A chave é POR ROBÔ, e o nome vem do firmware (/robot). Esta mesma
+        // página é servida pelo Fumacinha, pelo Fuego e pela Caipora, e os três
+        // atendem no mesmo IP do AP — ou seja, MESMA origem pro navegador. Com
+        // uma chave fixa, a estratégia validada de um robô reaparecia no outro
+        // ao abrir a página, sem nenhum aviso de que era de outro chassi.
+        let VALIDADA_KEY = 'validada:SUMO';
 
         function coletarConfigAtual() {
             const macro = [];
@@ -1084,7 +1099,21 @@ const char FUMACINHA_DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             printLog('> ESTRATÉGIA VALIDADA RESTAURADA');
         }
 
-        restaurarValidada();
+        // Identidade do robô: título, aba e chave do localStorage. O restaurar
+        // roda DEPOIS da resposta (ou da falha) pra nunca ler a chave errada —
+        // por isso ele saiu daqui e virou o último elo da cadeia.
+        fetch('/robot')
+            .then(function (res) { return res.text(); })
+            .then(function (nome) {
+                nome = (nome || '').trim().toUpperCase();
+                if (!nome) return;
+                VALIDADA_KEY = 'validada:' + nome;
+                document.title = nome + ' AUTO';
+                const h = document.getElementById('titulo');
+                if (h) h.textContent = nome + ' AUTO';
+            })
+            .catch(function () { printLog('> [AVISO] ROBÔ NÃO INFORMOU O NOME', true); })
+            .then(function () { restaurarValidada(); });
     </script>
 </body>
 </html>
