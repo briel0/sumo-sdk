@@ -5,9 +5,7 @@
 #include "RobotTypes.hpp"
 #include <Arduino.h>
 
-static const MotionSequence *TABELA_DE_ESTRATEGIAS[] = {
-    &Config::MACRO_FRENTAO,
-};
+// Tabela de estratégias agora é carregada diretamente do Config::TABELA_MACROS_ESQ / DIR
 
 static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
     {60, 60, 500},
@@ -104,7 +102,11 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
             if(irStart) {
                 _readyReceived = false;
                 subState = SubState::EXECUTING_ESTRATEGIA;
-                estrategiaPlayer.play(*TABELA_DE_ESTRATEGIAS[autoConfig.macro]);
+                if(autoConfig.direction == 'D') {
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[autoConfig.macro]);
+                } else {
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[autoConfig.macro]);
+                }
                 Serial.println("[AUTO] LARGADA! Executando estratégia.");
             }
             break;

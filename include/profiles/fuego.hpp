@@ -35,4 +35,24 @@ namespace Config {
 
     static const MotionSequence MACRO_DIAGONAL = MACRO({-100, 100, 50}, {100, 100, 100});
 
+
+    static constexpr const char* UI_PROFILE_JSON = R"({
+        "robot_name": "Fuego",
+        "macros": [
+            {"id": 0, "name": "FRENTAO"}
+        ],
+        "searches": [
+            {"id": 1, "name": "BUSCA PADRAO"}
+        ],
+        "has_weapons": true
+    })";
+
+    static const MotionSequence* const TABELA_MACROS_ESQ[] = {
+        &MACRO_FRENTAO
+    };
+
+    static const MotionSequence* const TABELA_MACROS_DIR[] = {
+        &MACRO_FRENTAO
+    };
+
 }

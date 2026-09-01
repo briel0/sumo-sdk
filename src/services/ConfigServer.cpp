@@ -104,6 +104,10 @@ void ConfigServer::setupWebRoutes() {
         request->send(200, "text/plain", "CONFIGURADO");
     });
 
+    server.on("/api/profile", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(200, "application/json", Config::UI_PROFILE_JSON);
+    });
+
     server.on("/test-macro", HTTP_GET, [this](AsyncWebServerRequest *request) {
         if(!_macroTestCallback) {
             request->send(503, "text/plain", "ERRO: Callback não registrado.");

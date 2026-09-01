@@ -48,17 +48,19 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     };
 
     // CONFIGURE AS MACROS AQUI!!!
+    int numMacros = sizeof(Config::TABELA_MACROS_ESQ) / sizeof(Config::TABELA_MACROS_ESQ[0]);
+
     if(receptor.square()) {
-        // triggerMacro(Config::MACRO_CURVAO_ESQ);
+        if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_ESQ[1]);
     }
     else if(receptor.triangle()) {
-        // triggerMacro(Config::MACRO_CURVAO_DIR);
+        if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_DIR[1]);
     }
     else if(receptor.dpadRight()) {
-        // triggerMacro(Config::MACRO_CURVINHA_DIREITA);
+        //triggerMacro(Config::MACRO_CURVINHA_DIREITA);
     }
     else if(receptor.dpadLeft()) {
-        // triggerMacro(Config::MACRO_CURVINHA_ESQUERDA);
+        //triggerMacro(Config::MACRO_CURVINHA_ESQUERDA);
     }
 
     if(macroPlayer.isPlaying()) {
@@ -71,11 +73,13 @@ void RCMode::run(Drive &motores, WeaponSystem &armas) {
     armas.update();
 
     int throttle = receptor.rightTrigger() - receptor.leftTrigger();
-    int steer = receptor.leftStickX();
-
+    
+    // Acelerador digital: X força 100% pra frente se o gatilho não estiver acionado.
     if(receptor.crossHeld()) {
         throttle = 100;
     }
+
+    int steer = receptor.leftStickX();
 
     handleWeapons(armas, throttle, steer);
 
