@@ -3,6 +3,15 @@
 #include <Arduino.h>
 
 void MotionPlayer::play(const MotionSequence &seq) {
+    // Macro vazia = "sem saque". Nem chega a tocar: o AutoMode ve isPlaying() falso
+    // no primeiro frame e cai direto no combate.
+    if(seq.numSteps <= 0 || seq.steps == nullptr) {
+        sequence = {nullptr, 0};
+        active = false;
+        Serial.println("[MACRO] Vazia. Pulando saque cego.");
+        return;
+    }
+
     sequence = seq;
     currentStep = 0;
     stepStartTime = millis();

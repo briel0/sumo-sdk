@@ -10,15 +10,15 @@ namespace Config {
     static constexpr int LEFT_POS_PIN = 18;
     static constexpr int LEFT_NEG_PIN = 19;
 
-    static constexpr int MAX_THROTTLE = 100;      // Velocidade Máxima (Pra Frente, Pra Trás)
+    static constexpr int MAX_THROTTLE = 100;     // Velocidade Máxima (Pra Frente, Pra Trás)
     static constexpr int TURN_COEFFICIENT = 83;  // Coeficiente de Curva
     static constexpr int PIVOT_COEFFICIENT = 70; // Coeficiente de Rotação
 
     static constexpr int NUM_SERVOS = 0;
 
-    static constexpr int PIN_JS_ESQ = 34;
-    static constexpr int PIN_JS_DIR = 36;
-    static constexpr int PIN_JS_FRONT = 39;
+    static constexpr int PIN_JS_ESQ = 27;
+    static constexpr int PIN_JS_DIR = 14;
+    static constexpr int PIN_JS_FRONT = 4;
 
     static constexpr uint8_t PIN_LINHA_ESQ = 30;
     static constexpr uint8_t PIN_LINHA_DIR = 35;
@@ -49,31 +49,31 @@ namespace Config {
         {-100, 100, 70},
         {100, 40, 600}
     );
-    
+
     static const MotionSequence MACRO_CURVAO_DIREITA = MACRO(
         {100, -100, 70},
         {40, 100, 500}
     );
 
-    // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão)
-    static const MotionSequence* const TABELA_MACROS_ESQ[] = {
-        &MACRO_FRENTAO,
-        &MACRO_CURVAO_ESQUERDA
-    };
+    // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
+    static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
 
-    static const MotionSequence* const TABELA_MACROS_DIR[] = {
-        &MACRO_FRENTAO,
-        &MACRO_CURVAO_DIREITA
-    };
+    // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão, 2 = Sem Saque)
+    static const MotionSequence *const TABELA_MACROS_ESQ[] = {&MACRO_FRENTAO, &MACRO_CURVAO_ESQUERDA, &MACRO_SEM_SAQUE};
 
-    static constexpr const char* UI_PROFILE_JSON = R"({
+    static const MotionSequence *const TABELA_MACROS_DIR[] = {&MACRO_FRENTAO, &MACRO_CURVAO_DIREITA, &MACRO_SEM_SAQUE};
+
+    static constexpr const char *UI_PROFILE_JSON = R"({
         "robot_name": "Arruela",
         "macros": [
             {"id": 0, "name": "FRENTÃO"},
-            {"id": 1, "name": "CURVÃO"}
+            {"id": 1, "name": "CURVÃO"},
+            {"id": 2, "name": "SEM SAQUE"}
         ],
         "searches": [
-            {"id": 1, "name": "BUSCA PADRÃO"}
+            {"id": 1, "name": "BUSCA PADRÃO"},
+            {"id": 2, "name": "BUSCA LENTA"},
+            {"id": 3, "name": "BUSCA POR DISTÂNCIA"}
         ],
         "has_weapons": false
     })";

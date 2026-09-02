@@ -7,6 +7,12 @@
 
 // Tabela de estratégias agora é carregada diretamente do Config::TABELA_MACROS_ESQ / DIR
 
+// As duas tabelas sao indexadas pelo mesmo id vindo do site: precisam andar juntas.
+static_assert(sizeof(Config::TABELA_MACROS_ESQ) == sizeof(Config::TABELA_MACROS_DIR),
+              "TABELA_MACROS_ESQ e TABELA_MACROS_DIR precisam ter o mesmo numero de macros!");
+
+static constexpr int NUM_MACROS = (int)(sizeof(Config::TABELA_MACROS_ESQ) / sizeof(Config::TABELA_MACROS_ESQ[0]));
+
 static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
     {60, 60, 500},
     {0, 0, 500},
@@ -25,13 +31,17 @@ void AutoMode::init(CombatStrategy &estrategia) {
     });
 
     configServer.setMotorTestCallback([this](bool active) {
-        if(!active) _testingMotor = false;
-        else _testingMotor = true;
+        if(!active)
+            _testingMotor = false;
+        else
+            _testingMotor = true;
     });
 
     configServer.setSensorTestCallback([this](bool active) {
-        if(!active) _testingSensor = false;
-        else _testingSensor = true;
+        if(!active)
+            _testingSensor = false;
+        else
+            _testingSensor = true;
     });
 
     configServer.begin();
@@ -51,7 +61,7 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
                 configServer.setTestReadout(_estrategia->getSensorStatusJSON());
             }
             configServer.update();
-            
+
             if(_startMacroTest) {
                 _startMacroTest = false;
                 _testingMacro = true;
@@ -62,24 +72,32 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
             if(_testingMotor) {
                 if(estrategiaPlayer.isPlaying()) {
                     estrategiaPlayer.update(motores);
-                } else {
+                }
+                else {
                     estrategiaPlayer.play(MACRO_TESTE_MOTOR);
                 }
             }
             else if(_testingMacro) {
                 if(estrategiaPlayer.isPlaying()) {
                     estrategiaPlayer.update(motores);
-                } else {
+                }
+                else {
                     motores.setSpeed(0, 0);
                     _testingMacro = false;
                 }
             }
             else {
-                if(estrategiaPlayer.isPlaying()) estrategiaPlayer.stop();
+                if(estrategiaPlayer.isPlaying())
+                    estrategiaPlayer.stop();
                 motores.setSpeed(0, 0);
             }
 
             if(configServer.consumePayload(autoConfig)) {
+                // Entrega o pacote tatico para a estrategia enquanto ainda da tempo:
+                // daqui pra frente o radio morre e nao chega mais nada.
+                if(_estrategia) {
+                    _estrategia->configure(autoConfig);
+                }
                 _tempoDesligamento = millis();
                 subState = SubState::DISCONNECTING_WIFI;
                 Serial.println("[AUTO] Estratégia recebida. Dando tempo para o rádio responder...");
@@ -102,10 +120,20 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
             if(irStart) {
                 _readyReceived = false;
                 subState = SubState::EXECUTING_ESTRATEGIA;
+
+                // O id vem cru de um parametro HTTP: sem isso, um indice invalido
+                // vira ponteiro lixo desreferenciado no exato instante da largada.
+                const int macroIdx = constrain(autoConfig.macro, 0, NUM_MACROS - 1);
+                if(macroIdx != autoConfig.macro) {
+                    Serial.printf("[AUTO] AVISO: macro %d fora da tabela (0..%d). Usando %d.\n", autoConfig.macro,
+                                  NUM_MACROS - 1, macroIdx);
+                }
+
                 if(autoConfig.direction == 'D') {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[autoConfig.macro]);
-                } else {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[autoConfig.macro]);
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[macroIdx]);
+                }
+                else {
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[macroIdx]);
                 }
                 Serial.println("[AUTO] LARGADA! Executando estratégia.");
             }
@@ -115,7 +143,6 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
             break;
         case SubState::FIGHTING:
             if(_estrategia) {
-                Serial.println("Aqui");
                 _estrategia->autoEngage(motores, armas);
             }
             break;

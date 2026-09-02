@@ -36,11 +36,15 @@ namespace Config {
 
     static const MotionSequence MACRO_DIAGONAL = MACRO({-100, 100, 50}, {100, 100, 100});
 
-    static constexpr const char* UI_PROFILE_JSON = R"({
+    // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
+    static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
+
+    static constexpr const char *UI_PROFILE_JSON = R"({
         "robot_name": "Caipora",
         "macros": [
             {"id": 0, "name": "FRENTÃO"},
-            {"id": 1, "name": "DIAGONAL"}
+            {"id": 1, "name": "DIAGONAL"},
+            {"id": 2, "name": "SEM SAQUE"}
         ],
         "searches": [
             {"id": 1, "name": "BUSCA PADRÃO"}
@@ -48,14 +52,8 @@ namespace Config {
         "has_weapons": true
     })";
 
-    static const MotionSequence* const TABELA_MACROS_ESQ[] = {
-        &MACRO_FRENTAO,
-        &MACRO_DIAGONAL
-    };
+    static const MotionSequence *const TABELA_MACROS_ESQ[] = {&MACRO_FRENTAO, &MACRO_DIAGONAL, &MACRO_SEM_SAQUE};
 
-    static const MotionSequence* const TABELA_MACROS_DIR[] = {
-        &MACRO_FRENTAO,
-        &MACRO_DIAGONAL
-    };
+    static const MotionSequence *const TABELA_MACROS_DIR[] = {&MACRO_FRENTAO, &MACRO_DIAGONAL, &MACRO_SEM_SAQUE};
 
 }

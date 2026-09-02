@@ -1,4 +1,5 @@
 #pragma once
+#include "RobotTypes.hpp"
 #include <Arduino.h>
 
 class Drive;
@@ -23,6 +24,19 @@ class CombatStrategy {
     Chamado uma única vez pelo AutoMode ao entrar em combate.
     */
     virtual void init() = 0;
+
+    /**
+    @brief Recebe o pacote tático que o piloto mandou pelo site.
+
+    Chamado pelo AutoMode assim que a config chega, ainda antes da largada —
+    nunca durante o combate. A estratégia guarda o que lhe interessa; o padrão
+    é ignorar tudo, então quem não usa config não precisa sobrescrever.
+
+    Não confundir com init(): aquele roda no boot, muito antes de existir config.
+    */
+    virtual void configure(const AutoStrategy &cfg) {
+        (void)cfg;
+    }
 
     /**
     @brief Executa um frame da lógica de combate.

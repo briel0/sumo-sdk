@@ -41,10 +41,14 @@ namespace Config {
         {100, 100, 200});
 
 
+    // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
+    static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
+
     static constexpr const char* UI_PROFILE_JSON = R"({
         "robot_name": "Smoker",
         "macros": [
-            {"id": 0, "name": "FRENTAO"}
+            {"id": 0, "name": "FRENTAO"},
+            {"id": 1, "name": "SEM SAQUE"}
         ],
         "searches": [
             {"id": 1, "name": "BUSCA PADRAO"}
@@ -53,11 +57,13 @@ namespace Config {
     })";
 
     static const MotionSequence* const TABELA_MACROS_ESQ[] = {
-        &MACRO_FRENTAO
+        &MACRO_FRENTAO,
+        &MACRO_SEM_SAQUE
     };
 
     static const MotionSequence* const TABELA_MACROS_DIR[] = {
-        &MACRO_FRENTAO
+        &MACRO_FRENTAO,
+        &MACRO_SEM_SAQUE
     };
 
 }
