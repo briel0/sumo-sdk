@@ -1,0 +1,44 @@
+name: Publica UI no GitHub Pages
+
+# Publica só a pasta ui/ (a dashboard standalone, ver ui/index.html) no
+# GitHub Pages — não é o firmware, não builda nada de C++/PlatformIO aqui.
+# Fonte de verdade do HTML é ui/index.html; o WebUI.hpp embutido no firmware
+# é gerado dele via scripts/pack_html.py, os dois ficam sincronizados por
+# quem edita, não por este workflow.
+on:
+  push:
+    branches:
+      - feat/bluetooth-config
+    paths:
+      - "ui/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Só um deploy de cada vez — um push novo cancela o deploy anterior em
+# andamento em vez de empilhar.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Empacota ui/ como artefato do Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ui
+
+      - name: Publica no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

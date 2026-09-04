@@ -272,6 +272,10 @@
 
     <h1>SUMO AUTO</h1>
 
+    <div class="grid">
+        <button id="btn-connect" class="btn-macro" onclick="loadProfile()">CONECTAR AO ROBÔ (BLUETOOTH)</button>
+    </div>
+
     <h2>DIAGNÓSTICO DE BANCADA</h2>
     <div class="grid">
         <button id="btn-test-sensor" class="btn-diag" onclick="toggleTest('sensor')">TESTE SENSORES</button>
@@ -329,6 +333,137 @@
 
     <script>
         // =================================================
+        // CAMADA DE TRANSPORTE
+        // =================================================
+        // Único ponto de contato com o robô. Implementação BLE (Web
+        // Bluetooth) — o firmware desta branch não serve mais HTTP, trocou
+        // pra BleConfigServer (ver src/services/BleConfigServer.cpp, é a
+        // fonte de verdade do protocolo abaixo). UI/estado/renderização de
+        // perfil por robô embaixo continuam intactos, só isso mudou.
+        //
+        // Só existe em Chrome/Android — Safari/iOS não implementa Web
+        // Bluetooth.
+        //
+        // Protocolo: uma característica só (0000FF11 no serviço 0000FF10).
+        // WRITE = 1 byte de comando + payload; o READ seguinte devolve a
+        // resposta (JSON cru pra GET_PROFILE/GET_SENSORS, 1 byte de
+        // ack OK/ERRO pros comandos de escrita).
+        const BLE_SERVICE_UUID = '0000ff10-0000-1000-8000-00805f9b34fb';
+        const BLE_CHARACTERISTIC_UUID = '0000ff11-0000-1000-8000-00805f9b34fb';
+
+        const BLE_CMD = {
+            GET_PROFILE: 0x01,
+            GET_SENSORS: 0x02,
+            SET_STRATEGY: 0x03,
+            SET_TEST: 0x04,
+            TRIGGER_MACRO: 0x05,
+        };
+
+        let bleCharacteristic = null;
+
+        async function bleGetCharacteristic() {
+            if (bleCharacteristic) return bleCharacteristic;
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ services: [BLE_SERVICE_UUID] }],
+            });
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+            bleCharacteristic = await service.getCharacteristic(BLE_CHARACTERISTIC_UUID);
+            device.addEventListener('gattserverdisconnected', () => { bleCharacteristic = null; });
+            return bleCharacteristic;
+        }
+
+        // Escreve o comando e lê a resposta em seguida — mesmo ciclo
+        // request/response que o BleConfigServer espera (um comando arma a
+        // resposta, o READ que vem depois é que a entrega).
+        async function bleCommand(bytes) {
+            const characteristic = await bleGetCharacteristic();
+            await characteristic.writeValueWithResponse(bytes);
+            const value = await characteristic.readValue();
+            return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+        }
+
+        // Simula o formato de Response do fetch que os .then() abaixo (não
+        // tocados nessa troca) já esperam: .ok/.status/.json()/.text().
+        function bleJsonResponse(bytes) {
+            const text = new TextDecoder().decode(bytes);
+            let parsed = {};
+            try { parsed = JSON.parse(text); } catch(e) { /* deixa {} se vier lixo/vazio */ }
+            return { ok: true, status: 200, json: () => Promise.resolve(parsed), text: () => Promise.resolve(text) };
+        }
+
+        function bleAckResponse(bytes) {
+            const ok = bytes.length > 0 && bytes[0] === 0x00;
+            return {
+                ok,
+                status: ok ? 200 : 500,
+                json: () => Promise.resolve({}),
+                text: () => Promise.resolve(ok ? 'OK' : 'ERRO'),
+            };
+        }
+
+        const Transport = {
+            getProfile: () => bleCommand(new Uint8Array([BLE_CMD.GET_PROFILE])).then(bleJsonResponse),
+
+            getSensorReadout: () => bleCommand(new Uint8Array([BLE_CMD.GET_SENSORS])).then(bleJsonResponse),
+
+            // endpoint vem pronto como '/set-strat?macro=..&direction=..&search=..&weapon=..'
+            // (ver executeTransmit) — parseia de volta pros 4 bytes que o
+            // firmware espera. Defaults casam com os defaults de AutoStrategy
+            // em RobotTypes.hpp (macro=0, direction='X', search=1, weapon=0),
+            // pros campos que a UI deixa em branco quando o robô não oferece
+            // aquela categoria.
+            sendStrategy: (endpoint) => {
+                const params = new URLSearchParams(endpoint.split('?')[1] || '');
+                const bytes = new Uint8Array([
+                    BLE_CMD.SET_STRATEGY,
+                    parseInt(params.get('macro') || '0', 10) & 0xff,
+                    (params.get('direction') || 'X').charCodeAt(0),
+                    parseInt(params.get('search') || '1', 10) & 0xff,
+                    parseInt(params.get('weapon') || '0', 10) & 0xff,
+                ]);
+                return bleCommand(bytes).then(bleAckResponse);
+            },
+
+            // query vem como 'sensor=1&t=169...' ou 'motor=0&t=169...' (ver
+            // toggleTest) — o 't' é cache-buster de fetch, não significa nada
+            // pro BLE, ignorado aqui.
+            setTest: (query) => {
+                const params = new URLSearchParams(query);
+                const isMotor = params.has('motor');
+                const state = parseInt(params.get(isMotor ? 'motor' : 'sensor') || '0', 10);
+                const bytes = new Uint8Array([BLE_CMD.SET_TEST, isMotor ? 1 : 0, state ? 1 : 0]);
+                return bleCommand(bytes).then(bleAckResponse);
+            },
+
+            // params vem como 'steps=2&l0=60&r0=60&d0=500&l1=..&r1=..&d1=..'
+            // (ver dispararMacro). l/r cabem em int8 (velocidade -100..100);
+            // atribuir negativo num Uint8Array já faz o wrap pro complemento
+            // de 2 que o firmware espera em (int8_t)step[0]. d é u16 little-
+            // endian, igual step[2] | (step[3]<<8) no BleConfigServer.cpp.
+            //
+            // MTU: 8 passos dá 34 bytes (1 cmd + 1 numSteps + 8*4), acima do
+            // ATT MTU padrão (23 bytes) — depende do Android negociar MTU
+            // maior. Sem hardware pra testar, fica em aberto; não é o
+            // caminho crítico (é ferramenta de bancada, não o /set-strat).
+            triggerMacroTest: (params) => {
+                const p = new URLSearchParams(params);
+                const numSteps = Math.min(8, Math.max(1, parseInt(p.get('steps') || '1', 10)));
+                const bytes = new Uint8Array(2 + numSteps * 4);
+                bytes[0] = BLE_CMD.TRIGGER_MACRO;
+                bytes[1] = numSteps;
+                for(let i = 0; i < numSteps; i++) {
+                    bytes[2 + i * 4 + 0] = parseInt(p.get('l' + i) || '0', 10);
+                    bytes[2 + i * 4 + 1] = parseInt(p.get('r' + i) || '0', 10);
+                    const d = parseInt(p.get('d' + i) || '0', 10);
+                    bytes[2 + i * 4 + 2] = d & 0xff;
+                    bytes[2 + i * 4 + 3] = (d >> 8) & 0xff;
+                }
+                return bleCommand(bytes).then(bleAckResponse);
+            },
+        };
+
+        // =================================================
         // LÓGICA DO TESTADOR DE MACRO
         // =================================================
         let numSteps = 1;
@@ -376,7 +511,7 @@
             }
 
             printLog('> DISPARANDO MACRO DE TESTE...');
-            fetch('/test-macro?' + params)
+            Transport.triggerMacroTest(params)
                 .then(res => res.text())
                 .then(txt => {
                     printLog('> [OK] MACRO DISPARADA NO ROBÔ');
@@ -410,7 +545,7 @@
         let testSensorActive = false;
 
         function fetchReadout() {
-            fetch('/sensors')
+            Transport.getSensorReadout()
                 .then(function(response) { return response.json(); })
                 .then(function(data) {
                     const keys = Object.keys(data);
@@ -455,7 +590,7 @@
                 document.getElementById('btn-test-sensor').classList.toggle('active', testSensorActive);
                 
                 printLog('> TESTE DE SENSORES: ' + (testSensorActive ? 'ATIVO' : 'DESLIGADO'));
-                fetch('/set-test?sensor=' + (testSensorActive ? '1' : '0') + '&t=' + Date.now())
+                Transport.setTest('sensor=' + (testSensorActive ? '1' : '0') + '&t=' + Date.now())
                     .then(() => {
                         if (testSensorActive) startReadoutPolling();
                         else stopReadoutPolling();
@@ -469,7 +604,7 @@
                 document.getElementById('btn-test-motor').classList.toggle('active', testMotorActive);
                 
                 printLog('> TESTE DE MOTORES: ' + (testMotorActive ? 'ATIVO' : 'DESLIGADO'));
-                fetch('/set-test?motor=' + (testMotorActive ? '1' : '0') + '&t=' + Date.now()).catch(e => console.log(e));
+                Transport.setTest('motor=' + (testMotorActive ? '1' : '0') + '&t=' + Date.now()).catch(e => console.log(e));
             }
         }
 
@@ -520,7 +655,7 @@
 
         // Construtor dinâmico do painel
         function loadProfile() {
-            fetch('/api/profile')
+            Transport.getProfile()
                 .then(res => res.json())
                 .then(data => renderProfile(data))
                 .catch(() => {
@@ -566,8 +701,10 @@
             printLog(`> PERFIL ${profile.robot_name.toUpperCase()} CARREGADO`);
         }
 
-        // Iniciar
-        loadProfile();
+        // NÃO chama loadProfile() sozinho no carregamento — Web Bluetooth
+        // exige gesto do usuário (clique/toque) pra abrir o requestDevice(),
+        // senão estoura SecurityError. Quem dispara é o botão "CONECTAR" no
+        // topo da página.
 
         function openTacticalConfirm() {
             if (!stratState.macro.val) {
@@ -632,7 +769,7 @@
             const endpoint = '/set-strat?' + params.toString();
             printLog("> TX: " + endpoint);
             
-            fetch(endpoint, { method: 'GET' })
+            Transport.sendStrategy(endpoint)
                 .then(function(response) {
                     if(response.ok) {
                         showUiAlert("UPLINK SUCCESS", "Configuração salva com sucesso!<br><br>Status: 200 OK", false);
