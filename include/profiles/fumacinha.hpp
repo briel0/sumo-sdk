@@ -18,10 +18,10 @@ namespace Config {
     // primeiro controle e imprime o MAC no serial pra você fixar aqui).
     static constexpr uint8_t CONTROLLER_MAC[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-    static constexpr int RIGHT_POS_PIN = 19;
-    static constexpr int RIGHT_NEG_PIN = 18;
-    static constexpr int LEFT_POS_PIN = 16;
-    static constexpr int LEFT_NEG_PIN = 17;
+    static constexpr int RIGHT_POS_PIN = 16;
+    static constexpr int RIGHT_NEG_PIN = 17;
+    static constexpr int LEFT_POS_PIN = 19;
+    static constexpr int LEFT_NEG_PIN = 18;
 
     static constexpr int MAX_THROTTLE = 100;
     static constexpr int TURN_COEFFICIENT = 83;
@@ -89,14 +89,14 @@ namespace Config {
     // GPIO22 pedido não tem ADC — realocado pro 34, ADC1 livre. Com isso, nenhum
     // sensor analógico do Fumacinha depende mais de ADC2 (ver PIN_LINHA_DIR).
     static constexpr uint8_t PIN_LDR = 36;
-    static constexpr uint16_t LDR_THRESHOLD = 100; // abaixo disso: oponente sobre a rampa
+    static constexpr uint16_t LDR_THRESHOLD = 200; // abaixo disso: oponente sobre a rampa
     static constexpr uint8_t LDR_FILTER_SIZE = 8;  // janela da média móvel
 
     // Servo da asa lateral — posições fundamentais.
     static constexpr int PIN_SERVO_ASA = 26;     // teste: trocado com PIN_JSUMO_ASA
-    static constexpr int ASA_ANGLE_RETRACT = 87; // recolhida
-    static constexpr int ASA_ANGLE_LEFT = 11;     // aberta para a esquerda
-    static constexpr int ASA_ANGLE_RIGHT = 175;  // aberta para a direita
+    static constexpr int ASA_ANGLE_RETRACT = 80; // recolhida
+    static constexpr int ASA_ANGLE_LEFT = 0;     // aberta para a esquerda
+    static constexpr int ASA_ANGLE_RIGHT = 160;  // aberta para a direita
 
     // === FumacinhaAuto (modo AUTO) ==============================================
     // Habilita o FumacinhaMode como ActiveAutoMode (ver dispatch em Config.hpp) e

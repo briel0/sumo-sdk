@@ -73,14 +73,16 @@ enum class CombatPhase {
     Táticas disponíveis para a fase OPENING (abertura de round).
 */
 enum class OpeningTactic {
-    CURVA,            // Curva fechada saindo do centro (1/4 do dohyo)
-    EDGE_POSITIONING, // Posicionamento propositalmente próximo à borda
     FRENTAO,          // Avanço reto e longo (3/4 do dohyo) em força máxima
     FRENTINHO,        // Avanço reto e curto (1/4 do dohyo) em meia força
     CURVAO,           // Curva aberta e longa (3/4 do dohyo)
+    CURVA,            // Curva fechada saindo do centro (1/4 do dohyo)
+    EDGE_POSITIONING, // Posicionamento propositalmente próximo à borda
     EM_V,             // Avança, vira no eixo e avança de novo (3/4 do dohyo)
+    VZAO,             // V longo, com giro de entrada
     VZINHO,           // Mesmo V, sem o giro de entrada — mais curto
-    VZAO              // V longo, com giro de entrada
+    RECUO,            // Ré curta em arco, cedendo terreno, com a asa do lado oposto
+    DESEMPATE         // Deriva curta + giro no eixo, com a asa do lado oposto
 };
 
 /**
@@ -88,17 +90,30 @@ enum class OpeningTactic {
 */
 enum class SearchTactic {
     OFFENSIVE_SEARCH, // Gira procurando e ataca em arco assim que um lateral vê o alvo
-    PERIODIC_PULSE, // Parado a maior parte do tempo, com pulsos curtos de avanço
+    PULSED_SEARCH,    // Parado a maior parte do tempo, com pulsos curtos de avanço
     LINE_SEARCH,      // Cruzeiro reto usando a linha da borda como referência
-    DEFENSIVE_SEARCH  // Rasteja e só alinha; escala para LINE_SEARCH se estagnar
+    DEFENSIVE_SEARCH, // Rasteja e só alinha; escala para LINE_SEARCH se estagnar
+    WING_SEARCH       // Gira no eixo mantendo o alvo varrido pelo sensor da asa
 };
+// Os valores destes enums são o que a HUD transmite (data-val dos botões) e o
+// que o ConfigServer limita no constrain — acrescentar tática é sempre no FIM,
+// senão os botões existentes passam a apontar pra outra coisa.
 
 /**
-    Táticas disponíveis para a fase ATTACKING (engajamento).
+    Como o robô pretende ENCERRAR a luta. As duas são mutuamente exclusivas de
+    propósito: cada uma desliga o gatilho da outra.
 */
 enum class AttackTactic {
-    ALIGNMENT_STRIKE, // Corrige o alinhamento antes de avançar
-    STEAMROLLER        // Avanço direto em força máxima
+    // Finalização por LDR: o comportamento de sempre. O LDR de rampa é quem
+    // decide — oponente embarcado, o robô empurra em força máxima até o fim, e
+    // a borda de descida dispara o "S" de reengate se ele escapar.
+    LDR_FINISH,
+
+    // Finalização por tempo: o LDR é IGNORADO a luta inteira, desde o primeiro
+    // frame. Quem decide é o relógio — passados CombatProfile::finishTimeS
+    // segundos da largada, os emissores ligam e a BUSCA OFENSIVA assume o resto
+    // da luta, seja qual for a tática de busca escolhida na HUD.
+    TIME_FINISH
 };
 
 /**
@@ -137,7 +152,7 @@ struct CombatTuning {
     int           sweepPwmOuter     = 70;  // roda externa da perna
     int           sweepPwmInner     = 20;  // roda interna da perna
 
-    // --- SEARCHING / PULSO PERIÓDICO (PERIODIC_PULSE) ---
+    // --- SEARCHING / BUSCA PULSADA (PULSED_SEARCH) ---
     unsigned long pulseIntervalMs = 1500; // período do ciclo (1 pulso + espera parada)
     unsigned long pulseDurationMs = 90;   // duração do avanço de cada pulso
     int           pulsePwm        = 100;  // potência do pulso (as duas rodas)
@@ -163,10 +178,16 @@ struct CombatTuning {
 struct CombatProfile {
     OpeningTactic openingTactic = OpeningTactic::CURVA;
     SearchTactic  searchTactic  = SearchTactic::OFFENSIVE_SEARCH;
-    AttackTactic  attackTactic  = AttackTactic::ALIGNMENT_STRIKE;
+    AttackTactic  attackTactic  = AttackTactic::LDR_FINISH;
+    // Segundos de luta até a FINALIZAÇÃO POR TEMPO assumir. Ignorado pela
+    // finalização por LDR. Faixa 0..1023 s (o ConfigServer limita) — uint16_t
+    // cobre isso com folga; 0 = a busca ofensiva assume já no primeiro frame.
+    // O valor é escolhido na HUD a cada luta; este default só vale se o campo
+    // não vier no pacote.
+    uint16_t      finishTimeS = 20;
     // Lado preferencial das táticas assimetricas (lado de todas as macros de
     // abertura, primeira perna do OFFENSIVE_SEARCH, lado da asa em
-    // LINE_SEARCH — e, por tabela, no trecho de busca linha do PERIODIC_PULSE).
+    // LINE_SEARCH — e, por tabela, no trecho de busca linha do PULSED_SEARCH).
     // Default = right pra preservar o comportamento antigo (hardcoded) de quem
     // não mexer nesse controle novo no dashboard.
     Direction     preferredSide = Direction::right;
@@ -177,6 +198,13 @@ struct CombatProfile {
     // HardwareCore. Default false = furtivo.
     bool          searchEmitters = false;
     bool          attackEmitters = false;
+    // === Especificações do adversário =======================================
+    // O adversário tem asa. Muda o que o LDR coberto significa: pode ser a ASA
+    // dele na nossa rampa, com o corpo de lado — ver a correção de asa
+    // adversária na FumacinhaAuto. Também força os emissores laterais ligados a
+    // luta inteira, porque a correção depende do JSumo estar confiável no exato
+    // frame em que o LDR fecha, e o emissor não liga retroativamente.
+    bool          opponentHasWing = false;
     // Velocidades e tempos de cada passo do FSM, ajustáveis pelo dashboard. Ver
     // CombatTuning — viaja junto neste mesmo pacote.
     CombatTuning  tuning;

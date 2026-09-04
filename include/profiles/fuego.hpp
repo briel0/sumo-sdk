@@ -90,11 +90,11 @@ namespace Config {
 
     // LDR de confirmação de rampa (divisor de tensão com resistor de 10k).
     static constexpr uint8_t PIN_LDR = 36;
-    static constexpr uint16_t LDR_THRESHOLD = 300; // abaixo disso: oponente sobre a rampa
+    static constexpr uint16_t LDR_THRESHOLD = 200; // abaixo disso: oponente sobre a rampa
     static constexpr uint8_t LDR_FILTER_SIZE = 8;  // janela da média móvel
 
     // Servo da asa lateral — posições fundamentais.
-    static constexpr int PIN_SERVO_ASA = 32;
+    static constexpr int PIN_SERVO_ASA = 26;
     static constexpr int ASA_ANGLE_RETRACT = 93; // recolhida
     static constexpr int ASA_ANGLE_LEFT = 11;    // aberta para a esquerda
     static constexpr int ASA_ANGLE_RIGHT = 175;  // aberta para a direita

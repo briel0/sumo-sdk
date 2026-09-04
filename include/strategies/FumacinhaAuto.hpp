@@ -71,6 +71,54 @@ class FumacinhaAuto : public CombatStrategy {
 
     static constexpr int LDR_ATTACK_PWM = 100; // rampa ocupada: empurra em força máxima
 
+    // --- Correção de asa adversária (CombatProfile::opponentHasWing) --------
+    // Com "TEM ASA" marcado nas ESPECIFICAÇÕES DO ADVERSÁRIO, o LDR coberto
+    // deixa de significar necessariamente "corpo dele na nossa rampa": pode ser
+    // só a ASA dele apoiada ali, com o corpo de lado. O sinal que separa os dois
+    // casos é o JSumo lateral — se ele acusa ao mesmo tempo que o LDR, o corpo
+    // está para aquele lado, e empurrar reto é empurrar a asa.
+    //
+    // A correção é gira-pro-lado + avanço curto, uma vez por rampagem. O latch
+    // de disparo é rearmado quando o LDR abre; sem ele, com o lateral ainda
+    // acusando depois da manobra, a correção redispararia a cada frame e o robô
+    // nunca chegaria a empurrar.
+    //
+    // O segundo bool é o que protege a macro: enquanto ela toca, o empurrão do
+    // LDR fica suspenso. Sem isso ele chamaria _macroPlayer.stop() no frame
+    // seguinte — a rampa continua ocupada durante a manobra inteira — e a
+    // correção morreria no primeiro passo.
+    // Os tempos e a potência da manobra ficam no .cpp, em escopo de arquivo, ao
+    // lado das MotionSequence que os usam — MACRO() monta um array constexpr em
+    // escopo de arquivo e não enxerga membro privado de classe. Mesmo motivo do
+    // VEL_FRENTE_LINHA. Ver ASA_ADV_* lá.
+    bool _corrigiuAsaAdv = false;   // já corrigiu NESTA rampagem
+    bool _corrigindoAsaAdv = false; // a macro em curso é a correção
+
+    // --- Finalização por tempo (AttackTactic::TIME_FINISH) -----------------
+    // A alternativa à finalização por LDR, e o oposto dela: aqui o LDR é
+    // ignorado a luta INTEIRA — não há ataque de rampa nem "S" de reengate —
+    // e quem encerra é o relógio. Vencidos combatProfile.finishTimeS segundos
+    // contados da largada, os emissores ligam e a BUSCA OFENSIVA assume o resto
+    // da luta no lugar da tática de busca escolhida na HUD.
+    //
+    // Porta de mão única, como a carga total: uma vez aberta não fecha. Sem o
+    // latch, o robô voltaria pra tática original a cada frame em que o relógio
+    // fosse recalculado depois de um estouro do millis().
+    //
+    // O que NÃO muda com a finalização em curso: a borda. A leitura de linha
+    // continua acima da busca no _executeCombat, então o robô segue recuando da
+    // borda enquanto finaliza — ignorar a linha aqui seria jogá-lo pra fora.
+    unsigned long _largadaMs = 0;  // instante da largada, base do relógio
+    bool _finalizando = false;     // relógio vencido, busca ofensiva no comando
+
+    /**
+    @brief A finalização por tempo já deve estar no comando neste frame?
+    @return true quando a tática é TIME_FINISH e o relógio já venceu — daí em
+            diante o chamador deve rodar a BUSCA OFENSIVA e ignorar a tática de
+            busca da HUD. false para a finalização por LDR, sempre.
+    */
+    bool _finalizacaoPorTempo(unsigned long agora);
+
     // --- Manobra de flanco -------------------------------------------------
     // Gira pro lado pedido, avança até achar a borda e volta pro miolo do dohyo.
     // Ajuste os ângulos/tempos nas MotionSequence FLANCO_* do .cpp.
@@ -95,6 +143,13 @@ class FumacinhaAuto : public CombatStrategy {
     // é escolhida por luta. Resetado na largada. Qual macro cada tática usa está
     // em macroDeAbertura(), no .cpp.
     bool _aberturaDisparada = false; // a macro de abertura já rodou nesta luta
+
+    // A abertura inteira (macro cega OU curva de borda) já entregou o frame ao
+    // combate. Latch separado do _aberturaDisparada porque a CURVA DE BORDA não
+    // é macro: quem diz que ela acabou são os bools do flanco. É o que permite à
+    // BUSCA ASA rearmar esses bools pra refazer a curva de borda no meio da luta
+    // sem que a abertura volte a rodar junto. Resetado na largada.
+    bool _aberturaFinalizada = false;
 
     /**
     @brief Dispara uma macro de abertura, se nenhuma tiver rodado nesta luta.
@@ -219,7 +274,55 @@ class FumacinhaAuto : public CombatStrategy {
     */
     void _buscaDefensiva(Drive &motores, unsigned long agora);
 
-    // --- Pulso periódico (busca PERIODIC_PULSE) ----------------------------
+    // --- Busca asa (busca WING_SEARCH) -------------------------------------
+    // Tática de asa: o robô não procura o oponente pelo dohyo, ele gira no
+    // próprio eixo mantendo o alvo dentro do setor que a ASA cobre — quem manda
+    // é o sensor da asa (frontDetected(), emissor próprio, nunca desligado).
+    //
+    // O ciclo tem três estados e todos giram no eixo em ASA_GIRO_PWM:
+    //   varredura  — nenhum contato ainda com este lado: gira PRO lado da asa;
+    //   engajado   — a asa vê: continua girando PRO lado da asa;
+    //   voltando   — a asa perdeu depois de ter visto: gira pro lado CONTRÁRIO,
+    //                desfazendo o que acabou de varrer, até reencontrar.
+    //
+    // Passar ASA_REAQUISICAO_MS na volta sem reencontrar significa que o alvo
+    // saiu do alcance de vez. Aí, em vez de oscilar no lugar, o robô refaz a
+    // CURVA DE BORDA (o mesmo _flanco da abertura) preservando o lado da asa e
+    // recomeça a varredura do zero.
+    //
+    // O JSumo lateral do lado OPOSTO ao da asa é o único outro sensor que conta:
+    // ele significa "o oponente está do lado que a asa não cobre", e manda
+    // trocar a asa de lado. Por isso esta tática liga os emissores — sem eles a
+    // leitura lateral cai pro IR puro, curto demais pra essa troca acontecer.
+    bool _asaIniciada = false;   // o lado da asa já foi herdado da abertura
+    WingPosition _asaLado = WingPosition::LEFT; // lado atual da asa
+    bool _asaViu = false;        // já houve contato da asa com este lado
+    bool _asaPerdeu = false;     // viu e perdeu: está na volta de reaquisição
+    unsigned long _asaPerdaMs = 0;  // instante em que perdeu o contato
+    unsigned long _asaTrocaMs = 0;  // instante da última troca de lado da asa
+    bool _asaReabrindo = false;  // curva de borda de recomeço em curso
+
+    static constexpr int ASA_GIRO_PWM = 25;                  // giro no eixo, os três estados
+    static constexpr unsigned long ASA_REAQUISICAO_MS = 250; // volta sem reencontrar -> recomeça
+    // Permanência mínima de um lado da asa. Existe pelo servo, não pela tática:
+    // com os dois laterais piscando alternado, sem isto o servo bateria de um
+    // extremo ao outro a cada frame. É da ordem do tempo de curso dele.
+    static constexpr unsigned long ASA_TROCA_MIN_MS = 300;
+
+    /**
+    @brief Um frame da BUSCA ASA. Chamar a cada frame de busca.
+    */
+    void _buscaAsa(Drive &motores, unsigned long agora);
+
+    /**
+    @brief Giro no próprio eixo em ASA_GIRO_PWM, usado pelos três estados da
+           BUSCA ASA.
+    @param asaEsq   Lado atual da asa (true = esquerda).
+    @param voltando true na volta de reaquisição, que gira pro lado contrário.
+    */
+    void _giroAsa(Drive &motores, bool asaEsq, bool voltando);
+
+    // --- Busca pulsada (busca PULSED_SEARCH) -------------------------------
     // Robô parado a maior parte do tempo, dando um avanço curto a cada
     // PULSO_INTERVALO_MS. Cumpridos PULSO_QTD pulsos, o busca linha assume o
     // resto da luta. Quem quebra o ritmo antes disso são as travas que rodam

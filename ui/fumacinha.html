@@ -269,6 +269,7 @@
         .step-input:focus { outline: none; border-color: var(--sea-green); background-color: rgba(44, 146, 70, 0.15); }
         .step-input::placeholder { color: var(--dim-grey); font-size: 0.7rem; }
 
+        .btn-opponent { border: 2px solid var(--grey-olive); color: var(--lemon-chiffon); }
         .btn-step { border: 2px solid var(--grey-olive); color: var(--lemon-chiffon); }
         .btn-step.selected, .btn-step:active { background-color: var(--grey-olive); color: var(--void-bg); }
 
@@ -303,22 +304,25 @@
 
     <h2>ABERTURA (OPENING)</h2>
     <div class="grid">
-        <button class="btn-opening" data-category="openingTactic" data-val="0" data-label="CURVA">CURVA</button>
-        <button class="btn-opening" data-category="openingTactic" data-val="1" data-label="CURVA DE BORDA">CURVA DE BORDA</button>
-        <button class="btn-opening" data-category="openingTactic" data-val="2" data-label="FRENTÃO">FRENTÃO</button>
-        <button class="btn-opening" data-category="openingTactic" data-val="3" data-label="FRENTINHO">FRENTINHO</button>
-        <button class="btn-opening" data-category="openingTactic" data-val="4" data-label="CURVÃO">CURVÃO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="0" data-label="FRENTÃO">FRENTÃO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="1" data-label="FRENTINHO">FRENTINHO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="2" data-label="CURVÃO">CURVÃO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="3" data-label="CURVA">CURVA</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="4" data-label="CURVA DE BORDA">CURVA DE BORDA</button>
         <button class="btn-opening" data-category="openingTactic" data-val="5" data-label="EM V">EM V</button>
-        <button class="btn-opening" data-category="openingTactic" data-val="6" data-label="VZINHO">VZINHO</button>
-        <button class="btn-opening" data-category="openingTactic" data-val="7" data-label="VZÃO">VZÃO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="6" data-label="VZÃO">VZÃO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="7" data-label="VZINHO">VZINHO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="8" data-label="RECUO">RECUO</button>
+        <button class="btn-opening" data-category="openingTactic" data-val="9" data-label="DESEMPATE">DESEMPATE</button>
     </div>
 
     <h2>BUSCA (SEARCHING)</h2>
     <div class="grid">
         <button class="btn-search" data-category="searchTactic" data-val="0" data-label="BUSCA OFENSIVA">BUSCA OFENSIVA</button>
-        <button class="btn-search" data-category="searchTactic" data-val="1" data-label="PULSO PERIÓDICO">PULSO PERIÓDICO</button>
+        <button class="btn-search" data-category="searchTactic" data-val="1" data-label="BUSCA PULSADA">BUSCA PULSADA</button>
         <button class="btn-search" data-category="searchTactic" data-val="2" data-label="BUSCA LINHA">BUSCA LINHA</button>
         <button class="btn-search" data-category="searchTactic" data-val="3" data-label="BUSCA DEFENSIVA">BUSCA DEFENSIVA</button>
+        <button class="btn-search" data-category="searchTactic" data-val="4" data-label="BUSCA ASA">BUSCA ASA</button>
     </div>
 
     <h2>EMISSOR NA BUSCA</h2>
@@ -327,10 +331,19 @@
         <button class="btn-emitter" data-category="searchEmitters" data-val="1" data-label="ATIVO">ATIVO</button>
     </div>
 
-    <h2>ATAQUE (ATTACKING)</h2>
+    <h2>ESPECIFICAÇÕES DO ADVERSÁRIO</h2>
     <div class="grid">
-        <button class="btn-attack" data-category="attackTactic" data-val="0" data-label="EMPUXO CORRIGIDO">EMPUXO CORRIGIDO</button>
-        <button class="btn-attack" data-category="attackTactic" data-val="1" data-label="EMPUXO CEGO">EMPUXO CEGO</button>
+        <button class="btn-opponent" data-category="opponentHasWing" data-val="1" data-label="TEM ASA">TEM ASA</button>
+    </div>
+
+    <h2>FINALIZAÇÃO (ATTACKING)</h2>
+    <div class="grid">
+        <button class="btn-attack" data-category="attackTactic" data-val="0" data-label="FINALIZAÇÃO POR LDR">FINALIZAÇÃO POR LDR</button>
+        <button class="btn-attack" data-category="attackTactic" data-val="1" data-label="FINALIZAÇÃO POR TEMPO">FINALIZAÇÃO POR TEMPO</button>
+    </div>
+    <div class="step-row">
+        <span>TEMPO (s)</span>
+        <input type="text" inputmode="numeric" class="step-input" id="finishTimeS" value="20" placeholder="0-1023">
     </div>
 
     <h2>EMISSOR NO ATAQUE</h2>
@@ -374,6 +387,7 @@
             searchTactic: { val: '', label: 'NENHUM' },
             searchEmitters: { val: '', label: 'NENHUM' },
             attackTactic: { val: '', label: 'NENHUM' },
+            opponentHasWing: { val: '', label: 'NENHUM' },
             attackEmitters: { val: '', label: 'NENHUM' }
         };
 
@@ -533,10 +547,20 @@
 
             if (stratState.attackTactic.val) {
                 reportHtml += `<div class="modal-chip btn-attack selected">${stratState.attackTactic.label}</div>`;
+                // O tempo só é mostrado quando é ele que decide a luta. Na
+                // finalização por LDR o campo existe mas não é lido pelo robô, e
+                // exibi-lo faria parecer que está valendo.
+                if (stratState.attackTactic.val === '1') {
+                    reportHtml += `<div class="modal-chip btn-attack selected">EM ${lerTempoFinalizacao()} S</div>`;
+                }
             }
 
             if (stratState.attackEmitters.val) {
                 reportHtml += `<div class="modal-chip btn-emitter selected">EMISSOR ATAQUE: ${stratState.attackEmitters.label}</div>`;
+            }
+
+            if (stratState.opponentHasWing.val) {
+                reportHtml += `<div class="modal-chip btn-opponent selected">ADVERSÁRIO: TEM ASA</div>`;
             }
 
             reportHtml += `<div class="modal-prompt">Transmitir parâmetros para o robô?</div>`;
@@ -562,10 +586,22 @@
 
             const params = new URLSearchParams();
             Object.keys(stratState).forEach(function(key) {
+                // Fora do laço: é liga/desliga, e omitir quando desmarcado faria o
+                // robô manter a marcação da luta anterior. Vai logo abaixo, sempre.
+                if (key === 'opponentHasWing') { return; }
                 if (stratState[key].val !== '') {
                     params.append(key, stratState[key].val);
                 }
             });
+
+            params.append('opponentHasWing', stratState.opponentHasWing.val === '1' ? '1' : '0');
+
+            // Vai SEMPRE, fora do laço acima: o tempo não é um botão, é uma caixa
+            // de texto, e por isso não vive no stratState. Mandar mesmo com a
+            // finalização por LDR selecionada não custa nada — o robô só lê este
+            // campo quando a finalização por tempo está escolhida — e evita que
+            // uma troca de tática deixe pra trás um tempo nunca transmitido.
+            params.append('finishTimeS', lerTempoFinalizacao());
 
             const endpoint = '/set-strat?' + params.toString();
             printLog("> TX: " + endpoint);
@@ -644,6 +680,17 @@
         // ao abrir a página, sem nenhum aviso de que era de outro chassi.
         let VALIDADA_KEY = 'validada:SUMO';
 
+        // Lê a caixa de TEMPO (s) já saneada: o robô limita a faixa de novo no
+        // /set-strat, mas sanear aqui é o que faz o valor confirmado no modal ser
+        // o mesmo que vai no fio. Texto não numérico vira 0.
+        function lerTempoFinalizacao() {
+            const campo = document.getElementById('finishTimeS');
+            let v = parseInt((campo ? campo.value : '').trim(), 10);
+            if (isNaN(v) || v < 0) v = 0;
+            if (v > 1023) v = 1023;
+            return v;
+        }
+
         function coletarConfigAtual() {
             const macro = [];
             for (let i = 0; i < numSteps; i++) {
@@ -653,7 +700,7 @@
                     d: (document.getElementById('d' + i) || {}).value || ''
                 });
             }
-            return { strat: stratState, macro: macro };
+            return { strat: stratState, macro: macro, finishTimeS: lerTempoFinalizacao() };
         }
 
         function salvarValidada() {
@@ -689,6 +736,10 @@
                     const r = document.getElementById('r' + i), l = document.getElementById('l' + i), d = document.getElementById('d' + i);
                     if (r) r.value = s.r; if (l) l.value = s.l; if (d) d.value = s.d;
                 }
+            }
+            if (typeof saved.finishTimeS !== 'undefined') {
+                const campo = document.getElementById('finishTimeS');
+                if (campo) campo.value = saved.finishTimeS;
             }
             printLog('> ESTRATÉGIA VALIDADA RESTAURADA');
         }

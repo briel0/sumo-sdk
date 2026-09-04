@@ -160,17 +160,27 @@ void ConfigServer::setupWebRoutes() {
 
         // --- HUD Fumacinha: CombatProfile (openingTactic/searchTactic/attackTactic) -
         if(hasCombatProfilePayload) {
-            int opening = constrain(request->getParam("openingTactic")->value().toInt(), 0, 7);
+            int opening = constrain(request->getParam("openingTactic")->value().toInt(), 0, 9);
             currentCombatProfile.openingTactic = static_cast<OpeningTactic>(opening);
 
             if(request->hasParam("searchTactic")) {
-                int search = constrain(request->getParam("searchTactic")->value().toInt(), 0, 3);
+                int search = constrain(request->getParam("searchTactic")->value().toInt(), 0, 4);
                 currentCombatProfile.searchTactic = static_cast<SearchTactic>(search);
             }
 
             if(request->hasParam("attackTactic")) {
                 int attack = constrain(request->getParam("attackTactic")->value().toInt(), 0, 1);
                 currentCombatProfile.attackTactic = static_cast<AttackTactic>(attack);
+            }
+
+            // Relógio da FINALIZAÇÃO POR TEMPO, em segundos. O teto de 1023 é o
+            // pedido no projeto; o constrain é o que garante que um campo vazio
+            // ou lixo digitado no celular não vire um tempo absurdo (toInt()
+            // devolve 0 pra texto não numérico, o que aqui significa "finaliza
+            // desde o primeiro frame" — extremo, mas coerente).
+            if(request->hasParam("finishTimeS")) {
+                currentCombatProfile.finishTimeS =
+                    (uint16_t)constrain(request->getParam("finishTimeS")->value().toInt(), 0, 1023);
             }
 
             if(request->hasParam("direction")) {
@@ -180,6 +190,15 @@ void ConfigServer::setupWebRoutes() {
 
             // Emissor por fase (1 = ligado/JSumo, 0 = furtivo/IR puro). OPENING
             // não é enviado — é sempre furtivo na FSM.
+            // Especificações do adversário. Diferente dos botões de tática, este
+            // chega SEMPRE (a HUD manda 0 ou 1) — é um liga/desliga, e um campo
+            // ausente significando "não mexe" deixaria o robô com a marcação da
+            // luta anterior depois de desmarcar o botão.
+            if(request->hasParam("opponentHasWing")) {
+                currentCombatProfile.opponentHasWing =
+                    request->getParam("opponentHasWing")->value().toInt() != 0;
+            }
+
             if(request->hasParam("searchEmitters")) {
                 currentCombatProfile.searchEmitters = request->getParam("searchEmitters")->value().toInt() != 0;
             }
@@ -226,12 +245,13 @@ void ConfigServer::setupWebRoutes() {
 
             currentCombatProfile.isNew = true;
 
-            Serial.printf("[WIFI] PACOTE TÁTICO (Fumacinha) -> OPENING: %d | SEARCH: %d | ATTACK: %d | LADO: %s | "
-                          "EMISSOR B/A: %d/%d\n",
+            Serial.printf("[WIFI] PACOTE TÁTICO (Fumacinha) -> OPENING: %d | SEARCH: %d | ATTACK: %d (%u s) | "
+                          "LADO: %s | EMISSOR B/A: %d/%d | ADV C/ ASA: %d\n",
                           (int)currentCombatProfile.openingTactic, (int)currentCombatProfile.searchTactic,
-                          (int)currentCombatProfile.attackTactic,
+                          (int)currentCombatProfile.attackTactic, currentCombatProfile.finishTimeS,
                           currentCombatProfile.preferredSide == Direction::left ? "ESQ" : "DIR",
-                          currentCombatProfile.searchEmitters, currentCombatProfile.attackEmitters);
+                          currentCombatProfile.searchEmitters, currentCombatProfile.attackEmitters,
+                          currentCombatProfile.opponentHasWing);
         }
 
         request->send(200, "text/plain", "CONFIGURADO");

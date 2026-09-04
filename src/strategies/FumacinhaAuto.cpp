@@ -36,14 +36,18 @@ void FumacinhaAuto::autoEngage(Drive &motores, WeaponSystem &armas, HardwareCore
 }
 
 void FumacinhaAuto::_largada() {
-    // Asa pro LADO PREFERENCIAL, com uma exceção: na CURVA ela abre pro lado
-    // OPOSTO ao da curva. Como o arco varre na direção do lado preferencial, a
-    // asa do lado de fora fica na frente de quem vier pelo lado que o robô está
-    // deixando para trás. A escolha é feita AQUI, e não no disparo da macro, pra
-    // não mandar o servo pro lado errado e corrigir no frame seguinte — e pra
-    // não brigar, a cada frame, com a troca de lado que o recuo de borda faz.
+    // Asa pro LADO PREFERENCIAL, com três exceções: na CURVA, no RECUO e no
+    // DESEMPATE ela abre pro lado OPOSTO ao escolhido. Nas duas o robô varre ou cede terreno numa
+    // direção, e a asa do lado de fora fica na frente de quem vier pelo lado que
+    // ele está deixando para trás. A escolha é feita AQUI, e não no disparo da
+    // macro, pra não mandar o servo pro lado errado e corrigir no frame seguinte
+    // — e pra não brigar, a cada frame, com a troca de lado que o recuo de borda
+    // faz.
     bool ladoEsq = (combatProfile.preferredSide == Direction::left);
-    bool asaEsq  = (combatProfile.openingTactic == OpeningTactic::CURVA) ? !ladoEsq : ladoEsq;
+    bool asaInvertida = (combatProfile.openingTactic == OpeningTactic::CURVA) ||
+                        (combatProfile.openingTactic == OpeningTactic::RECUO) ||
+                        (combatProfile.openingTactic == OpeningTactic::DESEMPATE);
+    bool asaEsq = asaInvertida ? !ladoEsq : ladoEsq;
     _hardware->setWing(asaEsq ? WingPosition::LEFT : WingPosition::RIGHT);
 
     // Rearma o flanco de abertura: sem isto, uma segunda luta sem reboot já
@@ -51,12 +55,32 @@ void FumacinhaAuto::_largada() {
     _flancoGirou = false;
     _flancoVoltando = false;
     _aberturaDisparada = false;
+    _aberturaFinalizada = false;
+
+    // Rearma a BUSCA ASA: o lado da asa é herdado da abertura no primeiro frame
+    // dela, e nada do contato da luta anterior pode sobreviver — herdar _asaViu
+    // faria a luta nova nascer achando que perdeu um alvo, e disparar o recomeço
+    // por curva de borda nos primeiros 250 ms.
+    _asaIniciada = false;
+    _asaViu = false;
+    _asaPerdeu = false;
+    _asaReabrindo = false;
+
+    // Correção de asa adversária: luta nova, nenhuma rampagem corrigida ainda.
+    _corrigiuAsaAdv = false;
+    _corrigindoAsaAdv = false;
 
     // Os contadores partem da largada — sem carimbar, o gatilho de "sem ver
     // linha" já nasceria vencido e o robô arrancaria no primeiro frame.
     unsigned long agora = millis();
     _ultimaLinhaMs = agora;
     _semLinhaMs = agora;
+
+    // Base do relógio da FINALIZAÇÃO POR TEMPO. Tem que ser carimbado aqui, na
+    // largada, e não no primeiro frame de busca: o tempo pedido na HUD é de
+    // LUTA, e a abertura faz parte dela.
+    _largadaMs = agora;
+    _finalizando = false;
     _avancando = false;
 
     // Rearma as escaladas: uma segunda luta sem reboot não pode largar já em
@@ -127,6 +151,32 @@ static constexpr int VEL_FRENTE_LINHA = 55;
 static const MotionSequence DESENGATE_S = MACRO(
     {VEL_FRENTE_LINHA, 100,  50}, // fecha pra um lado
     {100, VEL_FRENTE_LINHA, 100}  // cruza de volta pro outro
+);
+
+// === Correção de asa adversária =================================================
+// Em escopo de arquivo, e não como membro da classe, pelo mesmo motivo do
+// VEL_FRENTE_LINHA: MACRO() monta um array constexpr aqui fora, que não enxerga
+// membro privado.
+static constexpr unsigned long ASA_ADV_GIRO_MS = 70; // giro pro lado do lateral
+static constexpr unsigned long ASA_ADV_AVANCO_MS = 90;
+static constexpr int ASA_ADV_PWM = 100;
+
+// Dispara com "TEM ASA" marcado, o LDR coberto e UM lateral acusando: o que
+// subiu na rampa é a asa dele, e o corpo está do lado que o lateral vê. Gira pro
+// corpo e dá um avanço curto pra reencostar nele já alinhado.
+//
+// O tempo do giro é um CHUTE a calibrar em pista. A referência é a macro de RC do
+// Fumacinha, onde 135 ms a ±100 fecham ~180°; 70 ms é aproximadamente o quarto de
+// volta que aponta o robô pro lateral. Se ele passar do ponto ou ficar curto, é
+// este número que se mexe.
+static const MotionSequence ASA_ADV_ESQ = MACRO(
+    {-ASA_ADV_PWM, ASA_ADV_PWM, ASA_ADV_GIRO_MS}, // gira pro lateral esquerdo
+    { ASA_ADV_PWM, ASA_ADV_PWM, ASA_ADV_AVANCO_MS}
+);
+
+static const MotionSequence ASA_ADV_DIR = MACRO(
+    { ASA_ADV_PWM, -ASA_ADV_PWM, ASA_ADV_GIRO_MS}, // gira pro lateral direito
+    { ASA_ADV_PWM,  ASA_ADV_PWM, ASA_ADV_AVANCO_MS}
 );
 
 // === Macros de abertura =========================================================
@@ -222,6 +272,29 @@ static const MotionSequence VZAO_DIR = MACRO(
     { 100,  100, 170}  // segunda perna do V
 );
 
+// RECUO: ré curta em arco, uma roda segurando a outra. É a única abertura que
+// larga andando pra trás — o robô cede terreno em vez de disputá-lo, e apresenta
+// ao adversário a asa, que abre pro lado oposto ao escolhido (ver a regra da asa
+// no _largada).
+//
+// Os nomes são pelo LADO SELECIONADO, não pelo sentido do arco: RECUO_LADO_DIR é
+// o que roda com "DIREITA" escolhida na HUD.
+static const MotionSequence RECUO_LADO_DIR = MACRO({-60, -100, 180});
+static const MotionSequence RECUO_LADO_ESQ = MACRO({-100, -60, 180});
+
+// DESEMPATE: deriva curta pra um lado e giro no próprio eixo, terminando de lado
+// em relação a quem larga de frente. Mesma regra de asa do RECUO — ela abre pro
+// lado oposto ao escolhido, ou seja, pro lado de onde o robô está saindo.
+static const MotionSequence DESEMPATE_LADO_DIR = MACRO(
+    {  85,  100, 120}, // deriva: a roda de dentro segura, o robô sai de lado
+    {-100,  100, 180}  // giro no próprio eixo, fechando a posição
+);
+
+static const MotionSequence DESEMPATE_LADO_ESQ = MACRO(
+    { 100,   85, 120}, // espelhado
+    { 100, -100, 180}
+);
+
 // FRENTÃO, portado do frenteSemDelay: {255, 255, 200} -> {100, 100, 200}.
 // Avanço reto de ~3/4 do dohyo em força máxima, sem curva de aceleração.
 static const MotionSequence ABERTURA_FRENTAO = MACRO({100, 100, 200});
@@ -245,6 +318,10 @@ static const MotionSequence &macroDeAbertura(OpeningTactic tatica, Direction lad
             return esq ? VZINHO_ESQ : VZINHO_DIR;
         case OpeningTactic::VZAO:
             return esq ? VZAO_ESQ : VZAO_DIR;
+        case OpeningTactic::RECUO:
+            return esq ? RECUO_LADO_ESQ : RECUO_LADO_DIR;
+        case OpeningTactic::DESEMPATE:
+            return esq ? DESEMPATE_LADO_ESQ : DESEMPATE_LADO_DIR;
         case OpeningTactic::FRENTAO:
             return ABERTURA_FRENTAO; // reto: não tem lado
         case OpeningTactic::FRENTINHO:
@@ -267,6 +344,7 @@ void FumacinhaAuto::_executeCombat(Drive &motores) {
     // o ataque por um frame depois que o recuo acabou.
     if(!_macroPlayer.isPlaying()) {
         _recuandoBorda = false;
+        _corrigindoAsaAdv = false;
     }
 
     // Prioridade máxima: LDR acusou oponente embarcado na rampa -> ataca,
@@ -274,7 +352,12 @@ void FumacinhaAuto::_executeCombat(Drive &motores) {
     // cima da rampa, parar pra manobrar entregaria a única posição vantajosa da
     // luta. A abertura (flanco/arco) cai nessa regra. O recuo de borda NÃO: ver
     // a exceção logo abaixo.
-    bool rampaOcupada = _hardware->opponentOnRamp();
+    // FINALIZAÇÃO POR TEMPO ignora o LDR desde o primeiro frame da luta. Zerar
+    // a leitura aqui, e não em cada uso, desliga o bloco inteiro de uma vez: o
+    // ataque de rampa, o latch de log e o "S" de reengate (que depende da borda
+    // de descida de _ldrAtacando, e sem subida nunca há descida).
+    bool rampaOcupada = (combatProfile.attackTactic == AttackTactic::LDR_FINISH) &&
+                        _hardware->opponentOnRamp();
 
     if(rampaOcupada && !_ldrAtacando) {
         LOG_COMBATE("LDR: oponente na rampa -> ATAQUE.");
@@ -302,7 +385,35 @@ void FumacinhaAuto::_executeCombat(Drive &motores) {
     // acabar, e aí o ataque assume no frame seguinte; o que se perde é só o
     // resto do recuo. O latch de log acima já subiu, então o ataque não fica
     // mudo enquanto espera.
-    if(rampaOcupada && !_recuandoBorda) {
+    // Rampa livre rearma a correção: a próxima rampagem é um caso novo e merece
+    // sua própria checagem de asa.
+    if(!rampaOcupada) {
+        _corrigiuAsaAdv = false;
+    }
+
+    // CORREÇÃO DE ASA ADVERSÁRIA. Roda ACIMA do empurrão porque é justamente ele
+    // que ela substitui neste frame — ver o doc no header.
+    //
+    // UM lateral só, não "algum": com os DOIS acusando o corpo dele está centrado
+    // à nossa frente, que é o caso em que empurrar reto já é o certo. Corrigir aí
+    // giraria pra fora do alvo.
+    if(combatProfile.opponentHasWing && rampaOcupada && !_recuandoBorda && !_corrigiuAsaAdv) {
+        bool viuEsq = _hardware->leftDetected();
+        bool viuDir = _hardware->rightDetected();
+
+        if(viuEsq != viuDir) {
+            _corrigiuAsaAdv = true;
+            _corrigindoAsaAdv = true;
+            _macroPlayer.stop();
+            _macroPlayer.play(viuEsq ? ASA_ADV_ESQ : ASA_ADV_DIR);
+            _macroPlayer.update(motores);
+            _ultimoLado = viuEsq ? Direction::left : Direction::right;
+            LOG_COMBATE("LDR + lateral com ADVERSÁRIO C/ ASA -> girando pro corpo dele.");
+            return;
+        }
+    }
+
+    if(rampaOcupada && !_recuandoBorda && !_corrigindoAsaAdv) {
         _macroPlayer.stop();
         motores.setSpeed(LDR_ATTACK_PWM, LDR_ATTACK_PWM);
         return;
@@ -329,15 +440,41 @@ void FumacinhaAuto::_executeCombat(Drive &motores) {
     // Abertura: despachada pelo selecionável ABERTURA da HUD. Roda uma vez por
     // luta e, quando termina, devolve o frame pro combate normal abaixo. Fica
     // depois do LDR de propósito — rampa ocupada interrompe a abertura.
-    if(combatProfile.openingTactic == OpeningTactic::EDGE_POSITIONING) {
-        // CURVA DE BORDA: única abertura que lê sensor — o flanco pro LADO
-        // PREFERENCIAL, validado no robô. Todas as outras são macro cega.
-        if(_flanco(motores, combatProfile.preferredSide)) {
+    if(!_aberturaFinalizada) {
+        if(combatProfile.openingTactic == OpeningTactic::EDGE_POSITIONING) {
+            // CURVA DE BORDA: única abertura que lê sensor — o flanco pro LADO
+            // PREFERENCIAL, validado no robô. Todas as outras são macro cega.
+            if(_flanco(motores, combatProfile.preferredSide)) {
+                return;
+            }
+        }
+        else if(_aberturaCega(macroDeAbertura(combatProfile.openingTactic, combatProfile.preferredSide))) {
             return;
         }
+
+        // Passou reto pelos dois: a abertura entregou o frame ao combate e não
+        // roda mais nesta luta. O latch é o que deixa a BUSCA ASA rearmar os
+        // bools do flanco pra refazer a curva de borda no meio da luta sem
+        // ressuscitar a abertura junto — as duas usam o MESMO _flanco.
+        _aberturaFinalizada = true;
     }
-    else if(_aberturaCega(macroDeAbertura(combatProfile.openingTactic, combatProfile.preferredSide))) {
-        return;
+
+    // BUSCA ASA em recomeço: a curva de borda que ela refaz ao perder o alvo roda
+    // AQUI, no lugar da abertura, e não lá embaixo junto com a busca. O motivo é
+    // o bloco de linha, que fica entre os dois: esta manobra precisa ENCOSTAR na
+    // borda pra terminar, e disparada abaixo da leitura de linha ela levaria um
+    // recuo de borda em cima a cada tentativa — nunca acharia o que foi procurar,
+    // e o robô ficaria se debatendo na linha.
+    //
+    // O lado passado é o INVERTIDO do lado da asa, de propósito: o _flanco abre a
+    // asa pro lado oposto ao que recebe (regra da abertura — o arco varre pra um
+    // lado e a asa cobre o outro). Como aqui o objetivo é TERMINAR com a asa onde
+    // ela já está, inverter na entrada é o que preserva o lado.
+    if(_asaReabrindo) {
+        if(_flanco(motores, _asaLado == WingPosition::LEFT ? Direction::right : Direction::left)) {
+            return;
+        }
+        _asaReabrindo = false;
     }
 
     // Marco zero da BUSCA: primeiro frame depois que a abertura entregou o
@@ -390,12 +527,20 @@ void FumacinhaAuto::_executeCombat(Drive &motores) {
         return;
     }
 
+    // FINALIZAÇÃO POR TEMPO vencida: a tática de busca escolhida na HUD deixa de
+    // valer e a BUSCA OFENSIVA assume o resto da luta. Fica ACIMA do switch de
+    // propósito — é uma sobreposição, não uma quinta opção de busca.
+    if(_finalizacaoPorTempo(agora)) {
+        _buscaOfensiva(motores);
+        return;
+    }
+
     // Busca: despachada pelo selecionável BUSCA da HUD. Tudo que vem antes deste
     // ponto (LDR na rampa, abertura, recuo de borda) tem prioridade sobre a
     // tática escolhida e vale igual pras três — quem chega aqui já passou por
     // essas travas.
     switch(combatProfile.searchTactic) {
-        case SearchTactic::PERIODIC_PULSE:
+        case SearchTactic::PULSED_SEARCH:
             // Série de pulsos: enquanto ela não se cumpre, manda no frame.
             if(_pulsoPeriodico(motores, agora)) {
                 return;
@@ -407,7 +552,7 @@ void FumacinhaAuto::_executeCombat(Drive &motores) {
             if(!_pulsoConcluido) {
                 _pulsoConcluido = true;
                 _ultimaLinhaMs  = agora;
-                LOG_COMBATE("Pulso periódico cumprido -> busca linha.");
+                LOG_COMBATE("BUSCA PULSADA cumprida -> busca linha.");
             }
             _buscaLinha(motores, agora);
             break;
@@ -420,6 +565,11 @@ void FumacinhaAuto::_executeCombat(Drive &motores) {
         case SearchTactic::DEFENSIVE_SEARCH:
             // BUSCA DEFENSIVA: rasteja e só alinha; escala pro BUSCA LINHA.
             _buscaDefensiva(motores, agora);
+            break;
+
+        case SearchTactic::WING_SEARCH:
+            // BUSCA ASA: gira no eixo mantendo o alvo no setor varrido pela asa.
+            _buscaAsa(motores, agora);
             break;
 
         case SearchTactic::LINE_SEARCH:
@@ -521,6 +671,35 @@ bool FumacinhaAuto::_pulsoPeriodico(Drive &motores, unsigned long agora) {
     return true;
 }
 
+bool FumacinhaAuto::_finalizacaoPorTempo(unsigned long agora) {
+    if(combatProfile.attackTactic != AttackTactic::TIME_FINISH) {
+        return false;
+    }
+
+    // Porta de mão única: depois de aberta, nem o relógio é consultado de novo.
+    if(_finalizando) {
+        return true;
+    }
+
+    // Subtração de unsigned, imune ao estouro do millis(). O cast é o que
+    // importa aqui: finishTimeS é uint16_t e 1023 * 1000 estoura int de 16 bits
+    // — sem o UL a conta viraria lixo justamente nos tempos mais longos.
+    if(agora - _largadaMs < (unsigned long)combatProfile.finishTimeS * 1000UL) {
+        return false;
+    }
+
+    _finalizando = true;
+
+    // "Ativar todos os sensores" é isto: o emissor lateral é o único periférico
+    // de sensor desligável do robô, e ligá-lo troca a detecção lateral do IR
+    // puro (passivo, curto) pro JSumo (ativo, longo). A _buscaOfensiva refaz
+    // esta chamada a cada frame; aqui ela existe pra que o log e a mudança de
+    // alcance aconteçam no MESMO frame em que a finalização abre.
+    _hardware->setStealth(true);
+    LOG_COMBATE("FINALIZAÇÃO POR TEMPO: relógio vencido -> BUSCA OFENSIVA até o fim.");
+    return true;
+}
+
 void FumacinhaAuto::_buscaOfensiva(Drive &motores) {
     // Estrutura portada do FuegoAuto::autoEngage: os dois laterais decidem tudo
     // — viu alguém, ataca em arco; não viu ninguém, gira no eixo procurando.
@@ -555,7 +734,13 @@ void FumacinhaAuto::_buscaDefensiva(Drive &motores, unsigned long agora) {
     // Emissores DESLIGADOS: o oposto da BUSCA OFENSIVA e o ponto desta tática.
     // Sem emissor o HardwareCore troca a detecção lateral pro IR puro, passivo —
     // enxerga menos longe, mas não anuncia a posição do robô.
-    _hardware->setStealth(false);
+    //
+    // EXCEÇÃO: "TEM ASA" nas especificações do adversário força o emissor ligado
+    // e cancela a furtividade desta busca. A correção de asa adversária lê os
+    // laterais no frame em que o LDR fecha, e o JSumo só é confiável com o
+    // emissor já alimentado — ligá-lo naquele instante chegaria tarde. Marcar
+    // TEM ASA é, portanto, abrir mão do furtivo na BUSCA DEFENSIVA.
+    _hardware->setStealth(combatProfile.opponentHasWing);
 
     // Escalada por estagnação: passar DEFENSIVA_PACIENCIA_MS sem NENHUM contato
     // com a linha significa que o robô está parado no meio do dohyo sem nada
@@ -601,6 +786,132 @@ void FumacinhaAuto::_buscaDefensiva(Drive &motores, unsigned long agora) {
         // um alvo parado; o rastejo o mantém se reposicionando sem se comprometer.
         motores.setSpeed(DEFENSIVA_CRUZEIRO_PWM, DEFENSIVA_CRUZEIRO_PWM);
     }
+}
+
+// Giro que acompanha a TROCA DE LADO da asa na BUSCA ASA. Dispara no mesmo frame
+// em que o servo recebe o comando: enquanto a asa cruza pro outro lado, o chassi
+// gira pro mesmo lado, levando o setor que ela cobre até o alvo que o lateral
+// acabou de acusar. Sem ele, o robô só reposiciona a asa e continua varrendo a
+// 25 — o servo chega ao lado novo apontado para o lugar errado.
+//
+// Curto e em força máxima de propósito: é um tranco de reorientação, não uma
+// varredura. Os 80 ms são da ordem do curso do servo, então os dois terminam
+// juntos.
+static const MotionSequence ASA_TROCA_GIRO_ESQ = MACRO({-100, 100, 80});
+static const MotionSequence ASA_TROCA_GIRO_DIR = MACRO({100, -100, 80});
+
+void FumacinhaAuto::_giroAsa(Drive &motores, bool asaEsq, bool voltando) {
+    // Giro no próprio eixo: rodas em sentidos opostos, mesma potência. A volta de
+    // reaquisição é o mesmo giro ao contrário — por isso ela desfaz exatamente o
+    // setor que a varredura acabou de cobrir, em vez de procurar em outro lugar.
+    bool paraEsq = voltando ? !asaEsq : asaEsq;
+    motores.setSpeed(paraEsq ? -ASA_GIRO_PWM : ASA_GIRO_PWM,
+                     paraEsq ? ASA_GIRO_PWM : -ASA_GIRO_PWM);
+}
+
+void FumacinhaAuto::_buscaAsa(Drive &motores, unsigned long agora) {
+    // Emissores LIGADOS. Esta tática depende de dois sensores: o da asa, que tem
+    // emissor próprio e nunca é desligado, e o JSumo lateral do lado oposto, que
+    // é quem manda trocar a asa de lado. O lateral só é JSumo com o emissor
+    // alimentado — desligado, o HardwareCore cai no IR puro, curto demais pra
+    // essa troca chegar a acontecer.
+    _hardware->setStealth(true);
+
+    // Primeira entrada: o lado da asa é o que a ABERTURA deixou. É este o "lado
+    // atual" de que trata o resto da tática. RETRACTED não deveria chegar aqui
+    // (largada e aberturas sempre abrem a asa), mas se chegar o lado preferencial
+    // decide — melhor que girar pra um lado indefinido.
+    if(!_asaIniciada) {
+        _asaIniciada = true;
+        WingPosition daAbertura = _hardware->wing();
+        if(daAbertura == WingPosition::RETRACTED) {
+            daAbertura = (combatProfile.preferredSide == Direction::left) ? WingPosition::LEFT
+                                                                         : WingPosition::RIGHT;
+        }
+        _asaLado = daAbertura;
+        _hardware->setWing(_asaLado);
+        _asaTrocaMs = agora;
+    }
+
+    bool viuAsa = _hardware->frontDetected();
+
+    // Troca de lado: o lateral do lado OPOSTO ao da asa viu alguém, ou seja, o
+    // oponente está justamente no setor que a asa não cobre. A asa muda de lado e
+    // o giro passa a ser o equivalente pro lado novo.
+    //
+    // Só vale com a asa CEGA: o sensor da asa é o principal desta tática, e um
+    // lateral não tira o robô de um alvo que ela já está varrendo. O
+    // ASA_TROCA_MIN_MS é a outra trava, e essa é mecânica: os dois laterais
+    // piscando alternado mandariam o servo bater de um extremo ao outro a cada
+    // frame.
+    if(!viuAsa && (agora - _asaTrocaMs) >= ASA_TROCA_MIN_MS) {
+        bool asaEsq = (_asaLado == WingPosition::LEFT);
+        bool viuOposto = asaEsq ? _hardware->rightDetected() : _hardware->leftDetected();
+        if(viuOposto) {
+            _asaLado = asaEsq ? WingPosition::RIGHT : WingPosition::LEFT;
+            _hardware->setWing(_asaLado);
+            _asaTrocaMs = agora;
+            _ultimoLado = asaEsq ? Direction::right : Direction::left;
+
+            // Lado novo, varredura nova: o contato que valia era do lado antigo, e
+            // mantê-lo faria a volta de reaquisição procurar por um alvo que nunca
+            // esteve no setor que a asa cobre agora.
+            _asaViu = false;
+            _asaPerdeu = false;
+
+            // Giro de acompanhamento, pro lado NOVO da asa — que é o lado em que
+            // o lateral viu alguém. Tocado e atualizado no mesmo frame, igual ao
+            // recuo de borda; dos próximos frames em diante quem toca os passos é
+            // o ponto único de macro do _executeCombat, e o frame inteiro é dele.
+            // O servo continua andando durante a macro porque quem o move é o
+            // HardwareCore, no Core 0, alheio a quem está comandando os motores.
+            _macroPlayer.play(_asaLado == WingPosition::LEFT ? ASA_TROCA_GIRO_ESQ
+                                                            : ASA_TROCA_GIRO_DIR);
+            _macroPlayer.update(motores);
+            return;
+        }
+    }
+
+    bool esq = (_asaLado == WingPosition::LEFT);
+
+    // Asa enxergando: gira PRO lado dela, mantendo o alvo dentro do setor.
+    if(viuAsa) {
+        _asaViu = true;
+        _asaPerdeu = false;
+        _giroAsa(motores, esq, false);
+        return;
+    }
+
+    // Nenhum contato ainda com este lado da asa: é a varredura de entrada, o
+    // "modo defensivo que só gira". Não há alvo perdido pra reencontrar, então o
+    // relógio dos 250 ms não corre aqui — se corresse, o robô refaria a curva de
+    // borda a cada 250 ms sem nunca ter visto ninguém.
+    if(!_asaViu) {
+        _giroAsa(motores, esq, false);
+        return;
+    }
+
+    // Viu e perdeu: começa a volta de reaquisição e marca a hora.
+    if(!_asaPerdeu) {
+        _asaPerdeu = true;
+        _asaPerdaMs = agora;
+    }
+
+    // A volta inteira sem reencontrar: o alvo saiu do alcance de vez. Em vez de
+    // seguir oscilando no lugar, o robô refaz a CURVA DE BORDA preservando o lado
+    // da asa e recomeça a varredura do zero. Quem toca a manobra é o bloco de
+    // recomeço do _executeCombat, acima da leitura de linha.
+    if(agora - _asaPerdaMs >= ASA_REAQUISICAO_MS) {
+        _asaReabrindo = true;
+        _flancoGirou = false;
+        _flancoVoltando = false;
+        _asaViu = false;
+        _asaPerdeu = false;
+        LOG_COMBATE("BUSCA ASA: volta sem reencontrar -> nova curva de borda.");
+        return;
+    }
+
+    _giroAsa(motores, esq, true);
 }
 
 void FumacinhaAuto::_ataqueArco(Drive &motores, bool viuEsq, bool viuDir) {
