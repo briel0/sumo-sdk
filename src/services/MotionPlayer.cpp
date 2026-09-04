@@ -36,6 +36,7 @@ void MotionPlayer::update(Drive &motores) {
 
         if(currentStep >= sequence.numSteps) {
             active = false; // A macro inteira acabou
+            motores.setSpeed(0, 0); // Zera o PWM para garantir estado limpo ao devolver o controle
             Serial.println("[MACRO] Finalizada. Controle restaurado.");
         }
         else {

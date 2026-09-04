@@ -113,13 +113,16 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
         case SubState::READY:
             if(irReady) {
                 _readyReceived = true;
-                if(autoConfig.weapon) {
-                    armas.deploy();
-                }
             }
             if(irStart) {
                 _readyReceived = false;
                 subState = SubState::EXECUTING_ESTRATEGIA;
+
+                // A arma abre (ou nao) junto com a estrategia inicial, nunca no
+                // ready: ate a largada o robo tem que caber nas medidas.
+                if(autoConfig.weapon) {
+                    armas.deploy();
+                }
 
                 // O id vem cru de um parametro HTTP: sem isso, um indice invalido
                 // vira ponteiro lixo desreferenciado no exato instante da largada.

@@ -34,6 +34,7 @@ void setup() {
     statusLed.init(LED_BUILTIN, Config::PIN_STATUS_LED, Config::STATUS_LED_COUNT);
     delay(500);
 
+
     ir.init(IR_PIN);
     statusLed.confirmStep();
 

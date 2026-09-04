@@ -1,7 +1,7 @@
 PIO = pio
 UPLOAD = -t upload
 
-.PHONY: all caipora clean monitor
+.PHONY: all caipora smoker arruela clean monitor sensores
 
 caipora:
 	@echo "Robô Selecionado: CAIPORA"
@@ -14,6 +14,10 @@ smoker:
 arruela:
 	@echo "Robô Selecionado: ARRUELA"
 	$(PIO) run -e arruela $(UPLOAD)
+
+sensores:
+	@echo "Teste de Sensores: CAIPORA (bancada)"
+	$(PIO) run -e caipora_sensores $(UPLOAD) && $(PIO) device monitor -b 115200
 
 monitor:
 	@echo "Monitor Serial (Ctrl+C para sair)"

@@ -1,32 +1,21 @@
 #pragma once
 #include "CombatStrategy.hpp"
-#include "LDR.hpp"
-#include "MotionPlayer.hpp"
-#include "QRE1113.hpp"
 #include "RobotTypes.hpp"
-#include "ToFSensor.hpp"
+#include "hardware/sensors/LDR.hpp"
+#include "hardware/sensors/QRE1113.hpp"
+#include "MotionPlayer.hpp"
 
-class CaiporaAuto : public CombatStrategy {
+class MarolaAuto : public CombatStrategy {
   public:
-    static constexpr int PIN_LDR = 39;
-    static constexpr int PIN_XSHUT_FRENTE_ESQ = 5;
-    static constexpr int PIN_XSHUT_LATERAL_ESQ = 4;
-    static constexpr int PIN_XSHUT_FRENTE_DIR = 13;
-    static constexpr int PIN_XSHUT_LATERAL_DIR = 14;
-    static constexpr int PIN_LINHA_ESQ = 15;
-    static constexpr int PIN_LINHA_DIR = 36;
-
-    CaiporaAuto();
+    MarolaAuto();
     void init() override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
     String getSensorStatusJSON() override;
 
   private:
-    LDR _ldr;
-    ToFSensor _vlFrenteEsq;
-    ToFSensor _vlLateralEsq;
-    ToFSensor _vlFrenteDir;
-    ToFSensor _vlLateralDir;
+    LDR _ldrEsq;
+    LDR _ldrDir;
+    LDR _ldrFront;
     QRE1113 _linhaEsq;
     QRE1113 _linhaDir;
     MotionPlayer _player;

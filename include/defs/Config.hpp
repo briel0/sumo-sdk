@@ -12,20 +12,16 @@ using ActiveAuto = NoAuto;
 
 #elif defined(ROBOT_SMOKER)
 #include "profiles/smoker.hpp"
-#include "strategies/NoAuto.hpp"
-using ActiveAuto = NoAuto;
+#include "strategies/SmokerAuto.hpp"
+using ActiveAuto = SmokerAuto;
 #elif defined(ROBOT_ARRUELA)
 #include "profiles/arruela.hpp"
 #include "strategies/ArruelaAuto.hpp"
 using ActiveAuto = ArruelaAuto;
 #elif defined(ROBOT_MAROLA)
 #include "profiles/marola.hpp"
-#include "strategies/NoAuto.hpp"
-using ActiveAuto = NoAuto;
-#elif defined(ROBOT_SMOKERAUTO)
-#include "profiles/smokerAuto.hpp"
-#include "strategies/SmokerAuto.hpp"
-using ActiveAuto = SmokerAuto;
+#include "strategies/MarolaAuto.hpp"
+using ActiveAuto = MarolaAuto;
 #elif defined(ROBOT_FUEGO)
 #include "profiles/fuego.hpp"
 #include "strategies/NoAuto.hpp"
