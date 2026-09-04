@@ -13,6 +13,9 @@ static_assert(sizeof(Config::TABELA_MACROS_ESQ) == sizeof(Config::TABELA_MACROS_
 
 static constexpr int NUM_MACROS = (int)(sizeof(Config::TABELA_MACROS_ESQ) / sizeof(Config::TABELA_MACROS_ESQ[0]));
 
+// Cadencia do painel /sensors. Ver a justificativa no SELECTING_ESTRATEGIA.
+static constexpr unsigned long INTERVALO_READOUT_MS = 150;
+
 static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
     {60, 60, 500},
     {0, 0, 500},
@@ -57,7 +60,16 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
 
     switch(subState) {
         case SubState::SELECTING_ESTRATEGIA:
-            if(_testingSensor && _estrategia) {
+            // O readout do painel e ESPACADO de proposito. getSensorStatusJSON()
+            // e caro: monta String no heap e, na Arruela, faz uma leitura I2C do
+            // VL53L0X que BLOQUEIA ate sair amostra nova (dezenas de ms, ate 500
+            // no timeout). Chamando todo frame, o loop trava nesse I2C e o
+            // dnsServer.processNextRequest() logo abaixo deixa de responder as
+            // consultas do celular — o SO conclui que o portal caiu, fecha, e
+            // reabre no probe seguinte. Era esse o portal "entrando e saindo".
+            // A HUD nao precisa de mais que ~7 amostras por segundo.
+            if(_testingSensor && _estrategia && millis() - _ultimoReadout >= INTERVALO_READOUT_MS) {
+                _ultimoReadout = millis();
                 configServer.setTestReadout(_estrategia->getSensorStatusJSON());
             }
             configServer.update();

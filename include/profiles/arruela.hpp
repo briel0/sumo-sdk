@@ -35,6 +35,11 @@ namespace Config {
     static constexpr uint16_t LINHA_THRESHOLD_ESQ = 2800;
     static constexpr uint16_t LINHA_THRESHOLD_DIR = 2800;
 
+    // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
+    // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
+    // disputarem o mesmo espectro e derrubarem o portal um do outro.
+    static constexpr int WIFI_CHANNEL = 11;
+
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
 

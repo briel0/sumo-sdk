@@ -47,4 +47,5 @@ class AutoMode {
     bool _startMacroTest = false;
     MotionSequence _macroToTest;
     unsigned int _tempoDesligamento = 0;
+    unsigned long _ultimoReadout = 0;
 };
