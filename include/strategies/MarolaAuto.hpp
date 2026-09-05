@@ -1,9 +1,9 @@
 #pragma once
 #include "CombatStrategy.hpp"
+#include "MotionPlayer.hpp"
 #include "RobotTypes.hpp"
 #include "hardware/sensors/LDR.hpp"
 #include "hardware/sensors/QRE1113.hpp"
-#include "MotionPlayer.hpp"
 
 class MarolaAuto : public CombatStrategy {
   public:
@@ -20,13 +20,8 @@ class MarolaAuto : public CombatStrategy {
     QRE1113 _linhaDir;
     MotionPlayer _player;
 
-    Direction _ultimoLado = Direction::left;
-
-    static constexpr int VEL_BUSCA_GIRO = 90;
-    static constexpr int VEL_BUSCA_FRENTE = 40;
+    // Auto simplificado: arma o servo e anda pra frente até o STOP do IR
+    // (botão 3, ver main.cpp) — sem lógica de busca/ataque. LDRs e QRE1113
+    // continuam lidos só pro getSensorStatusJSON().
     static constexpr int VEL_ATAQUE_MAX = 100;
-    static constexpr int VEL_ATAQUE_REDUZIDA = 60;
-
-    void _busca(Drive &motores);
-    void _ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
 };
