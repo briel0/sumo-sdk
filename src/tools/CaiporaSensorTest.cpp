@@ -16,7 +16,6 @@
 
 #include "CaiporaAuto.hpp"
 #include "LDR.hpp"
-#include "QRE1113.hpp"
 #include "ToFSensor.hpp"
 #include <Arduino.h>
 #include <Wire.h>
@@ -28,7 +27,6 @@ static constexpr uint8_t ADDR_LATERAL_ESQ = 0x31;
 static constexpr uint8_t ADDR_FRENTE_DIR = 0x32;
 static constexpr uint8_t ADDR_LATERAL_DIR = 0x33;
 
-static constexpr uint16_t LIMIAR_LINHA = 2800;
 static constexpr unsigned long PERIODO_MS = 200;
 static constexpr int LINHAS_POR_CABECALHO = 20;
 
@@ -37,8 +35,6 @@ static ToFSensor vlFrenteEsq(CaiporaAuto::PIN_XSHUT_FRENTE_ESQ, ADDR_FRENTE_ESQ)
 static ToFSensor vlLateralEsq(CaiporaAuto::PIN_XSHUT_LATERAL_ESQ, ADDR_LATERAL_ESQ);
 static ToFSensor vlFrenteDir(CaiporaAuto::PIN_XSHUT_FRENTE_DIR, ADDR_FRENTE_DIR);
 static ToFSensor vlLateralDir(CaiporaAuto::PIN_XSHUT_LATERAL_DIR, ADDR_LATERAL_DIR);
-static QRE1113 linhaEsq(CaiporaAuto::PIN_LINHA_ESQ, LIMIAR_LINHA);
-static QRE1113 linhaDir(CaiporaAuto::PIN_LINHA_DIR, LIMIAR_LINHA);
 
 static bool okFrenteEsq = false;
 static bool okLateralEsq = false;
@@ -88,8 +84,8 @@ static void imprimirDistancia(bool ok, ToFSensor &sensor) {
 
 static void imprimirCabecalho() {
     Serial.println();
-    Serial.println("   FrEsq  LatEsq   FrDir  LatDir |  LDR |  LinEsq  LinDir");
-    Serial.println("  ---------------------------------------------------------");
+    Serial.println("   FrEsq  LatEsq   FrDir  LatDir |  LDR");
+    Serial.println("  -------------------------------------");
     linhasImpressas = 0;
 }
 
@@ -126,14 +122,9 @@ void setup() {
 
     Serial.println("\n-- Analogicos --");
     ldr.init();
-    linhaEsq.init();
-    linhaDir.init();
     Serial.printf("  LDR         pino %d\n", CaiporaAuto::PIN_LDR);
-    Serial.printf("  LINHA_ESQ   pino %d  limiar %u\n", CaiporaAuto::PIN_LINHA_ESQ, LIMIAR_LINHA);
-    Serial.printf("  LINHA_DIR   pino %d  limiar %u\n", CaiporaAuto::PIN_LINHA_DIR, LIMIAR_LINHA);
 
     Serial.println("\nDistancias em mm; ---- = sem retorno; off = sensor nao subiu.");
-    Serial.println("Linha: valor ADC cru, com B quando passa do limiar (branco).");
     imprimirCabecalho();
 }
 
@@ -155,12 +146,7 @@ void loop() {
     imprimirDistancia(okFrenteDir, vlFrenteDir);
     imprimirDistancia(okLateralDir, vlLateralDir);
 
-    Serial.printf(" | %4d |", ldr.readRaw());
-
-    uint16_t esq = linhaEsq.leituraRaw();
-    uint16_t dir = linhaDir.leituraRaw();
-    Serial.printf("   %4u%c   %4u%c\n", esq, linhaEsq.temLinhaBranca() ? 'B' : ' ', dir,
-                  linhaDir.temLinhaBranca() ? 'B' : ' ');
+    Serial.printf(" | %4d\n", ldr.readRaw());
 
     linhasImpressas++;
 }

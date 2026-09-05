@@ -2,7 +2,6 @@
 #include "CombatStrategy.hpp"
 #include "LDR.hpp"
 #include "MotionPlayer.hpp"
-#include "QRE1113.hpp"
 #include "RobotTypes.hpp"
 #include "ToFSensor.hpp"
 
@@ -13,8 +12,6 @@ class CaiporaAuto : public CombatStrategy {
     static constexpr int PIN_XSHUT_LATERAL_ESQ = 4;
     static constexpr int PIN_XSHUT_FRENTE_DIR = 27;
     static constexpr int PIN_XSHUT_LATERAL_DIR = 14;
-    static constexpr int PIN_LINHA_ESQ = 15;
-    static constexpr int PIN_LINHA_DIR = 36;
 
     CaiporaAuto();
     void init() override;
@@ -27,8 +24,6 @@ class CaiporaAuto : public CombatStrategy {
     ToFSensor _vlLateralEsq;
     ToFSensor _vlFrenteDir;
     ToFSensor _vlLateralDir;
-    QRE1113 _linhaEsq;
-    QRE1113 _linhaDir;
     MotionPlayer _player;
 
     Direction _ultimoLado = Direction::left;
@@ -41,8 +36,7 @@ class CaiporaAuto : public CombatStrategy {
     static constexpr int VEL_BUSCA_FRENTE = 50;
 
     // Espaçamento entre leituras dos VL frontais. readRangeContinuousMillimeters()
-    // gira no I2C até sair amostra nova — ler os dois todo frame prenderia o
-    // loop (e atrasaria a checagem da linha branca, que vem antes).
+    // gira no I2C até sair amostra nova — ler os dois todo frame prenderia o loop.
     static constexpr unsigned long INTERVALO_TOF_MS = 25;
     unsigned long _ultimaLeituraToF = 0;
     bool _viuFrenteEsq = false;
