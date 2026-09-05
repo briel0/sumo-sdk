@@ -19,11 +19,12 @@ namespace Config {
     static constexpr int PIN_LDR_ESQ = 34;
     static constexpr int PIN_LDR_DIR = 36;
     static constexpr int PIN_LDR_FRONT = 39;
+    static constexpr int LDR_THRESHOLD = 2500; // abaixo disso: oponente bloqueando a luz
 
     static constexpr uint8_t PIN_LINHA_ESQ = 15;
     static constexpr uint8_t PIN_LINHA_DIR = 14;
-    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 2800;
-    static constexpr uint16_t LINHA_THRESHOLD_DIR = 2800;
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 3950;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 3950;
 
     // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
     // nao-sobrepostos) pra dois robos ligados na mesma bancada nao

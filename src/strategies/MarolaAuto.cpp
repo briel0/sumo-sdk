@@ -49,11 +49,10 @@ void MarolaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         return;
     }
 
-    // Leitura dos sensores LDR - assumindo que a deteccao do oponente acontece quando isDark() eh verdadeiro.
-    // O limiar (1500 padrao) pode precisar de calibracao no dojo
-    bool viuEsq = _ldrEsq.isDark();
-    bool viuDir = _ldrDir.isDark();
-    bool viuFrente = _ldrFront.isDark();
+    // Leitura dos sensores LDR - deteccao do oponente acontece quando isDark() eh verdadeiro.
+    bool viuEsq = _ldrEsq.isDark(Config::LDR_THRESHOLD);
+    bool viuDir = _ldrDir.isDark(Config::LDR_THRESHOLD);
+    bool viuFrente = _ldrFront.isDark(Config::LDR_THRESHOLD);
 
     if(viuEsq)
         _ultimoLado = Direction::left;
