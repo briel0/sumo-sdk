@@ -62,9 +62,15 @@ void MarolaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     if(viuFrente || viuDir || viuEsq) {
         _ataque(motores, viuEsq, viuDir, viuFrente);
     }
+    else {
+        _busca(motores);
+    }
 }
 
-void MarolaAuto::_busca(Drive &motores, bool viuEsq, bool viuDir) {}
+void MarolaAuto::_busca(Drive &motores) {
+    // Nada na linha, nada nos LDRs: anda pra frente devagar em vez de ficar parado.
+    motores.setSpeed(VEL_BUSCA_FRENTE, VEL_BUSCA_FRENTE);
+}
 
 void MarolaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
     if(!viuFrente && !viuEsq && !viuDir) {

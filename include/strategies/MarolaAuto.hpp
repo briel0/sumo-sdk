@@ -23,9 +23,10 @@ class MarolaAuto : public CombatStrategy {
     Direction _ultimoLado = Direction::left;
 
     static constexpr int VEL_BUSCA_GIRO = 90;
+    static constexpr int VEL_BUSCA_FRENTE = 40;
     static constexpr int VEL_ATAQUE_MAX = 100;
     static constexpr int VEL_ATAQUE_REDUZIDA = 60;
 
-    void _busca(Drive &motores, bool viuEsq, bool viuDir);
+    void _busca(Drive &motores);
     void _ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
 };
