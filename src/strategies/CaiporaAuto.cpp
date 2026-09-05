@@ -35,35 +35,38 @@ void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         return;
     }
 
-    // 2. Busca por distância: só os dois VL frontais decidem. Leitura
-    // espaçada (ver INTERVALO_TOF_MS) — sem isso os dois reads bloqueantes
-    // travariam o loop e atrasariam a checagem da linha branca acima.
+    // 2. VL laterais: leitura espaçada (ver INTERVALO_TOF_MS) — sem isso os dois
+    // reads bloqueantes travariam o loop.
     unsigned long agora = millis();
     if(agora - _ultimaLeituraToF >= INTERVALO_TOF_MS) {
         _ultimaLeituraToF = agora;
-        _viuFrenteEsq = _vlFrenteEsq.temOponente(LIMIAR_BUSCA_MM);
-        _viuFrenteDir = _vlFrenteDir.temOponente(LIMIAR_BUSCA_MM);
+        _viuLateralEsq = _vlLateralEsq.temOponente(LIMIAR_BUSCA_MM);
+        _viuLateralDir = _vlLateralDir.temOponente(LIMIAR_BUSCA_MM);
     }
 
-    _busca(motores, _viuFrenteEsq, _viuFrenteDir);
+    // 3. LDR faz o papel do JS40F frontal do Arruela: abaixo do limiar, algo
+    // bloqueou a luz de cima — alvo na cara.
+    bool viuFrente = _ldr.readRaw() < LIMIAR_LDR;
+
+    _busca(motores, _viuLateralEsq, _viuLateralDir, viuFrente);
 }
 
-void CaiporaAuto::_busca(Drive &motores, bool viuFrenteEsq, bool viuFrenteDir) {
-    // Os dois veem: alvo na cara, vai pra frente devagarinho.
-    if(viuFrenteEsq && viuFrenteDir) {
-        motores.setSpeed(VEL_BUSCA_FRENTE, VEL_BUSCA_FRENTE);
-        return;
-    }
-    // Só a direita ve: gira pra direita devagarinho.
-    if(viuFrenteDir) {
-        _ultimoLado = Direction::right;
-        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
+void CaiporaAuto::_busca(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
+    // Alvo na cara (LDR): vai com tudo.
+    if(viuFrente) {
+        motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
         return;
     }
     // Só a esquerda ve: gira pra esquerda devagarinho.
-    if(viuFrenteEsq) {
+    if(viuEsq) {
         _ultimoLado = Direction::left;
         motores.setSpeed(-VEL_BUSCA_CUIDADOSA, VEL_BUSCA_CUIDADOSA);
+        return;
+    }
+    // Só a direita ve: gira pra direita devagarinho.
+    if(viuDir) {
+        _ultimoLado = Direction::right;
+        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
         return;
     }
     // Nenhum dos dois ve nada: continua girando pro lado que viu por último.

@@ -28,19 +28,21 @@ class CaiporaAuto : public CombatStrategy {
 
     Direction _ultimoLado = Direction::left;
 
-    // Busca por distância: só os dois VL frontais decidem, cuidadosa de
-    // propósito (velocidades baixas) — reage cedo (25cm) e gira pouco em vez
-    // de atacar forte feito o Arruela.
+    // Busca padrão igual à do Arruela: os VL laterais fazem o papel dos JS40F
+    // esq/dir (giram o robô na direção de quem viu algo), e o LDR faz o papel do
+    // JS40F frontal — abaixo do limiar (algo bloqueando a luz de cima) é alvo na
+    // cara, ataca com tudo.
     static constexpr uint16_t LIMIAR_BUSCA_MM = 250;
+    static constexpr uint16_t LIMIAR_LDR = 4000;
     static constexpr int VEL_BUSCA_CUIDADOSA = 40;
-    static constexpr int VEL_BUSCA_FRENTE = 50;
+    static constexpr int VEL_ATAQUE = 100;
 
-    // Espaçamento entre leituras dos VL frontais. readRangeContinuousMillimeters()
+    // Espaçamento entre leituras dos VL laterais. readRangeContinuousMillimeters()
     // gira no I2C até sair amostra nova — ler os dois todo frame prenderia o loop.
     static constexpr unsigned long INTERVALO_TOF_MS = 25;
     unsigned long _ultimaLeituraToF = 0;
-    bool _viuFrenteEsq = false;
-    bool _viuFrenteDir = false;
+    bool _viuLateralEsq = false;
+    bool _viuLateralDir = false;
 
-    void _busca(Drive &motores, bool viuFrenteEsq, bool viuFrenteDir);
+    void _busca(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
 };
