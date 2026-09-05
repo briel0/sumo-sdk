@@ -58,9 +58,10 @@ class ToFSensor {
     bool setSignalRateLimit(float limitMcps);
 
   private:
-    // > orçamento de medição (20000us, ver init()): garante que passou tempo
-    // suficiente pra um ciclo de medição completo novo antes de confiar na leitura.
-    static constexpr unsigned long INTERVALO_MIN_MS = 25;
+    // Debounce mínimo, não o tempo de um ciclo: leituraRaw() já bloqueia até sair
+    // amostra nova (espera RESULT_INTERRUPT_STATUS), então isso só evita contar a
+    // mesma leitura duas vezes em chamadas de altíssima frequência.
+    static constexpr unsigned long INTERVALO_MIN_MS = 5;
 
     VL53L0X _sensor;
     int8_t _pinXshut;
