@@ -49,11 +49,8 @@ bool ToFSensor::setSignalRateLimit(float limitMcps) {
     return _sensor.setSignalRateLimit(limitMcps);
 }
 
-uint8_t ToFSensor::statusBruto() {
-    return (_sensor.readReg(VL53L0X::RESULT_RANGE_STATUS) >> 3) & 0x0F;
-}
-
 bool ToFSensor::temOponente(uint16_t thresholdMm) {
+    unsigned long agora = millis();
     uint16_t dist = leituraRaw();
 
     // Filtra erros de leitura e timeouts para não gerar "falsos positivos" de ataque
@@ -61,13 +58,13 @@ bool ToFSensor::temOponente(uint16_t thresholdMm) {
         return false;
     }
 
-    // Lê o status logo após a distância: RESULT_RANGE_STATUS fica travado até o próximo
-    // SYSRANGE_START, mas em modo contínuo sem intervalo a próxima leitura já começa
-    // durante essa checagem, então status e distância podem, raramente, vir de ciclos
-    // adjacentes em vez do mesmo ciclo.
-    if(statusBruto() != RANGE_STATUS_VALIDO) {
+    // Só aceita a leitura se veio de um ciclo de medição novo o bastante desde a
+    // última aceita — em vez de reler RESULT_RANGE_STATUS à parte da distância
+    // (que corre risco de pegar o ciclo seguinte em modo contínuo sem intervalo).
+    if(agora - _ultimaLeituraMs < INTERVALO_MIN_MS) {
         return false;
     }
+    _ultimaLeituraMs = agora;
 
     return dist < thresholdMm;
 }

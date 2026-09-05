@@ -38,6 +38,11 @@ class ToFSensor {
     /**
      * @brief Retorna true se o oponente foi detectado dentro da zona de combate.
      * @param thresholdMm Distância máxima em milímetros (ex: 400mm = 40cm).
+     *
+     * Só aceita uma leitura como válida se pelo menos INTERVALO_MIN_MS tiver
+     * passado desde a última aceita — garante que veio de um ciclo de medição
+     * novo, sem depender de reler RESULT_RANGE_STATUS separado da distância
+     * (que corre risco de pegar o ciclo seguinte em modo contínuo sem intervalo).
      */
     bool temOponente(uint16_t thresholdMm = 400);
 
@@ -52,18 +57,14 @@ class ToFSensor {
      */
     bool setSignalRateLimit(float limitMcps);
 
-    /**
-     * @brief Status bruto (0-15) da última leitura, extraído de RESULT_RANGE_STATUS.
-     * 11 indica leitura válida; qualquer outro valor indica falha de sinal/fase/calibração
-     * e deve ser tratado como leitura não confiável.
-     */
-    uint8_t statusBruto();
-
   private:
-    static constexpr uint8_t RANGE_STATUS_VALIDO = 11;
+    // > orçamento de medição (20000us, ver init()): garante que passou tempo
+    // suficiente pra um ciclo de medição completo novo antes de confiar na leitura.
+    static constexpr unsigned long INTERVALO_MIN_MS = 25;
 
     VL53L0X _sensor;
     int8_t _pinXshut;
     uint8_t _address;
     float _signalRateLimitMcps;
+    unsigned long _ultimaLeituraMs = 0;
 };
