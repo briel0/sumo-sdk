@@ -64,33 +64,43 @@ void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         _player.update(motores);
         return;
     }
+
+    // 3. Busca por distância: só os dois VL frontais decidem. Leitura
+    // espaçada (ver INTERVALO_TOF_MS) — sem isso os dois reads bloqueantes
+    // travariam o loop e atrasariam a checagem da linha branca acima.
+    unsigned long agora = millis();
+    if(agora - _ultimaLeituraToF >= INTERVALO_TOF_MS) {
+        _ultimaLeituraToF = agora;
+        _viuFrenteEsq = _vlFrenteEsq.temOponente(LIMIAR_BUSCA_MM);
+        _viuFrenteDir = _vlFrenteDir.temOponente(LIMIAR_BUSCA_MM);
+    }
+
+    _busca(motores, _viuFrenteEsq, _viuFrenteDir);
 }
 
-void CaiporaAuto::_busca(Drive &motores, bool viuLateralEsq, bool viuLateralDir) {
-    if(viuLateralEsq) {
-        motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
+void CaiporaAuto::_busca(Drive &motores, bool viuFrenteEsq, bool viuFrenteDir) {
+    // Os dois veem: alvo na cara, vai pra frente devagarinho.
+    if(viuFrenteEsq && viuFrenteDir) {
+        motores.setSpeed(VEL_BUSCA_FRENTE, VEL_BUSCA_FRENTE);
         return;
     }
-    if(viuLateralDir) {
-        motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
+    // Só a direita ve: gira pra direita devagarinho.
+    if(viuFrenteDir) {
+        _ultimoLado = Direction::right;
+        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
         return;
     }
+    // Só a esquerda ve: gira pra esquerda devagarinho.
+    if(viuFrenteEsq) {
+        _ultimoLado = Direction::left;
+        motores.setSpeed(-VEL_BUSCA_CUIDADOSA, VEL_BUSCA_CUIDADOSA);
+        return;
+    }
+    // Nenhum dos dois ve nada: continua girando pro lado que viu por último.
     if(_ultimoLado == Direction::right)
-        motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
+        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
     else
-        motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
-}
-
-void CaiporaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
-    if(viuEsq && !viuDir) {
-        motores.setSpeed(VEL_ATAQUE_REDUZIDA, VEL_ATAQUE_MAX);
-        return;
-    }
-    if(viuDir && !viuEsq) {
-        motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_REDUZIDA);
-        return;
-    }
-    motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
+        motores.setSpeed(-VEL_BUSCA_CUIDADOSA, VEL_BUSCA_CUIDADOSA);
 }
 
 String CaiporaAuto::getSensorStatusJSON() {
