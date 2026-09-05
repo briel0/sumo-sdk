@@ -5,6 +5,12 @@
 #include "strategies/CaiporaAuto.hpp"
 using ActiveAuto = CaiporaAuto;
 
+#elif defined(ROBOT_CAIPORA_RC)
+// Firmware RC (ver src/tools/RCFirmware/main.cpp) não roda nenhuma
+// estratégia autônoma — sem ActiveAuto aqui, então não puxa
+// strategies/CaiporaAuto.hpp (e os sensores/dependências dele) à toa.
+#include "profiles/caiporarc.hpp"
+
 #elif defined(ROBOT_BRIGA)
 #include "profiles/briga.hpp"
 #include "strategies/NoAuto.hpp"
