@@ -2,7 +2,6 @@
 #include "CombatStrategy.hpp"
 #include "JS40F.hpp"
 #include "MotionPlayer.hpp"
-#include "QRE1113.hpp"
 #include "RobotTypes.hpp"
 #include "ToFSensor.hpp"
 
@@ -21,12 +20,6 @@ class ArruelaAuto : public CombatStrategy {
     JS40F _sensorFrontal;
     ToFSensor _sensorDistancia;
 
-    // Borda do dojo: dois QRE1113 analogicos, um por lado da frente.
-    QRE1113 _linhaEsq;
-    QRE1113 _linhaDir;
-
-    // Toca as fugas de borda. E o unico dono dos motores enquanto estiver ativo,
-    // inclusive por cima da busca escolhida no site.
     MotionPlayer _player;
 
     Direction _ultimoLado = Direction::left;
