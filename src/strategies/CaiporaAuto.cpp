@@ -24,56 +24,27 @@ void CaiporaAuto::init() {
     _vlFrenteDir.init();
     _vlLateralDir.init();
 
-    _ultimoLado = Direction::left;
     _player.stop();
 }
 
 void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
+    armas.update();
+
+    // Mesmo auto-armamento do RCMode: liga o servo assim que o robô entra em
+    // ação (aqui: sempre, já que o auto anda pra frente o tempo todo) e deixa
+    // o próprio WeaponSystem relaxar depois de RELAX_TIMEOUT_MS.
+    if(!armas.isDeployed()) {
+        armas.deploy();
+    }
+
     // 1. Se o MotionPlayer estiver tocando alguma macro (ex: largada), ele assume o controle
     if(_player.isPlaying()) {
         _player.update(motores);
         return;
     }
 
-    // 2. VL laterais: leitura espaçada (ver INTERVALO_TOF_MS) — sem isso os dois
-    // reads bloqueantes travariam o loop.
-    unsigned long agora = millis();
-    if(agora - _ultimaLeituraToF >= INTERVALO_TOF_MS) {
-        _ultimaLeituraToF = agora;
-        _viuLateralEsq = _vlLateralEsq.temOponente(LIMIAR_BUSCA_MM);
-        _viuLateralDir = _vlLateralDir.temOponente(LIMIAR_BUSCA_MM);
-    }
-
-    // 3. LDR faz o papel do JS40F frontal do Arruela: abaixo do limiar, algo
-    // bloqueou a luz de cima — alvo na cara.
-    bool viuFrente = _ldr.readRaw() < LIMIAR_LDR;
-
-    _busca(motores, _viuLateralEsq, _viuLateralDir, viuFrente);
-}
-
-void CaiporaAuto::_busca(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
-    // Alvo na cara (LDR): vai com tudo.
-    if(viuFrente) {
-        motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
-        return;
-    }
-    // Só a esquerda ve: gira pra esquerda devagarinho.
-    if(viuEsq) {
-        _ultimoLado = Direction::left;
-        motores.setSpeed(-VEL_BUSCA_CUIDADOSA, VEL_BUSCA_CUIDADOSA);
-        return;
-    }
-    // Só a direita ve: gira pra direita devagarinho.
-    if(viuDir) {
-        _ultimoLado = Direction::right;
-        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
-        return;
-    }
-    // Nenhum dos dois ve nada: continua girando pro lado que viu por último.
-    if(_ultimoLado == Direction::right)
-        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
-    else
-        motores.setSpeed(-VEL_BUSCA_CUIDADOSA, VEL_BUSCA_CUIDADOSA);
+    // 2. Auto simplificado: anda pra frente até o STOP do IR (botão 3, ver main.cpp).
+    motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
 }
 
 String CaiporaAuto::getSensorStatusJSON() {
