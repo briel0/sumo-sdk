@@ -25,8 +25,21 @@ static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
 
 void AutoMode::init(CombatStrategy &estrategia) {
     Serial.println("Modo Auto Iniciado.");
-    subState = SubState::SELECTING_ESTRATEGIA;
     autoConfig = AutoStrategy();
+
+    _estrategia = &estrategia;
+    _estrategia->init();
+
+    if(Config::SKIP_SITE_CONFIG) {
+        // Sem portal: nunca sobe WiFi, direto pra READY com o AutoStrategy
+        // default (macro 0, sem direção, sem arma — a estratégia se vira
+        // sozinha com isso, ver MarolaAuto).
+        subState = SubState::READY;
+        Serial.println("[AUTO] Sem configuracao pelo site. Aguardando largada IR (2).");
+        return;
+    }
+
+    subState = SubState::SELECTING_ESTRATEGIA;
 
     configServer.setMacroTestCallback([this](MotionSequence seq) {
         _macroToTest = seq;
@@ -48,9 +61,6 @@ void AutoMode::init(CombatStrategy &estrategia) {
     });
 
     configServer.begin();
-
-    _estrategia = &estrategia;
-    _estrategia->init();
 }
 
 // autoConfig é a struct com as configurações que vem do site :)

@@ -5,6 +5,8 @@ namespace Config {
 
     static constexpr const char *ROBOT_NAME = "Smoker";
 
+    static constexpr bool SKIP_SITE_CONFIG = false;
+
     static constexpr int RIGHT_POS_PIN = 17;
     static constexpr int RIGHT_NEG_PIN = 16;
     static constexpr int LEFT_POS_PIN = 18;

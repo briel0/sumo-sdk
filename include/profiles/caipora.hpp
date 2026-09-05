@@ -5,6 +5,8 @@ namespace Config {
 
     static constexpr const char *ROBOT_NAME = "Caipora";
 
+    static constexpr bool SKIP_SITE_CONFIG = false;
+
     static constexpr int RIGHT_POS_PIN = 16;
     static constexpr int RIGHT_NEG_PIN = 17;
     static constexpr int LEFT_POS_PIN = 18;
@@ -37,7 +39,7 @@ namespace Config {
         {23, 80, 150}, // Pino 23 | Começa em 80° | Arma em 145°
     };
 
-    static const MotionSequence MACRO_FRENTAO = MACRO({100, 100, 170});
+    static const MotionSequence MACRO_FRENTAO = MACRO({100, 100, 250});
 
     static const MotionSequence MACRO_DIAGONAL = MACRO({-100, 100, 50}, {100, 100, 100});
 
