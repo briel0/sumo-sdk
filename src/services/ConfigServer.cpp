@@ -45,9 +45,36 @@ bool ConfigServer::setupAccessPoint() {
     // Canal vem do perfil (Config::WIFI_CHANNEL), espalhado entre os canais
     // não-sobrepostos (1/6/11) pra dois robôs em bancada não competirem pelo
     // mesmo espectro durante a seleção de tática.
-    WiFi.softAP(Config::ROBOT_NAME, "sumo1234", Config::WIFI_CHANNEL, 0, 4);
+    //
+    // SSID visível (não oculto) — o SSID oculto foi testado em campo na
+    // competição e derrubou o handshake WPA2 (celular caía de volta pra tela
+    // de senha). Ganho do oculto era discutível de qualquer forma (não reduz
+    // probe request ambiente, só tira o beacon); não vale o risco.
+    //
+    // Testamos rede aberta (sem senha) pra descartar handshake WPA2 corrompido
+    // por ruído — não resolveu (associação falhou igual). Ou seja, a falha
+    // não é autenticação: é camada 2 (associação 802.11) mesmo, antes de
+    // qualquer DNS/HTTP entrar em jogo. Voltando pra WPA2: rede aberta só
+    // adicionava risco (qualquer celular perto podia ocupar os 4 slots de
+    // conexão) sem nenhum ganho comprovado.
+    //
+    // max_connections = 1 (era 4): só o piloto precisa conectar por vez.
+    // Não blinda contra tráfego de fundo de celulares alheios (probe/scan não
+    // consome slot de associação, só quem efetivamente entra), mas fecha a
+    // porta pra qualquer estranho ocupar o único slot que sobrar.
+    WiFi.softAP(Config::ROBOT_NAME, "sumo1234", Config::WIFI_CHANNEL, 0, 1);
 
     esp_wifi_set_inactive_time(WIFI_IF_AP, AP_INACTIVITY_TIMEOUT_S);
+
+    // Sobe a potência de TX pro teto do ESP32 (84 = 21dBm, em unidades de
+    // 0.25dBm). Ganha SNR contra o ruído RF da arena — sinal mais forte que o
+    // ambiente competindo pelos mesmos 3 canais não-sobrepostos.
+    esp_wifi_set_max_tx_power(84);
+
+    // NÃO force WIFI_PROTOCOL_11B aqui — testado em campo na competição e
+    // também quebrou o handshake WPA2 (mesmo sintoma do SSID oculto: celular
+    // caindo pra tela de senha). Fica o protocolo padrão do ESP32
+    // (11b+11g+11n), que negocia taxa por cliente automaticamente.
 
     Serial.printf("[WIFI] IP: %s\n", WiFi.softAPIP().toString().c_str());
 
@@ -56,6 +83,14 @@ bool ConfigServer::setupAccessPoint() {
         return false;
     }
 
+    // DNS wildcard de volta ligado. Testamos desligar (matar o captive portal
+    // automático) esperando que sumisse o "entra e sai" — piorou: sem DNS o
+    // Android nunca vê sinal de "rede pede login", classifica como "sem
+    // internet, permanente" e é ESSE veredito que dispara ele trocar sozinho
+    // pra outra rede/dados móveis (confirmado em casos parecidos de
+    // WiFiManager/AutoConnect — mesma classe de projeto). Com DNS ligado o
+    // Android entra no estado "sign-in required", que ele mantém com bem
+    // menos agressividade.
     dnsServer.start(DNS_PORT, "*", ip);
     return true;
 }

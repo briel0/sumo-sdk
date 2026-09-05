@@ -1,7 +1,7 @@
 #include "AutoMode.hpp"
+#include "BleConfigServer.hpp"
 #include "CombatStrategy.hpp"
 #include "Config.hpp"
-#include "ConfigServer.hpp"
 #include "RobotTypes.hpp"
 #include <Arduino.h>
 

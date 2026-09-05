@@ -1,6 +1,6 @@
 #pragma once
+#include "BleConfigServer.hpp"
 #include "CombatStrategy.hpp"
-#include "ConfigServer.hpp"
 #include "Drive.hpp"
 #include "JS40F.hpp"
 #include "MotionPlayer.hpp"
@@ -33,7 +33,7 @@ class AutoMode {
   private:
     SubState subState = SubState::SELECTING_ESTRATEGIA;
     MotionPlayer estrategiaPlayer;
-    ConfigServer configServer;
+    BleConfigServer configServer;
     AutoStrategy autoConfig;
 
     void executingEstrategia(Drive &motores);

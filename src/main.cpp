@@ -2,27 +2,24 @@
 #include "Config.hpp"
 #include "Drive.hpp"
 #include "IRreader.hpp"
-#include "RCMode.hpp"
 #include "ServoMechanism.hpp"
 #include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
 #include <Wire.h>
 
-enum class RobotState {
-    IDLE,
-    RC,
-    AUTO
-};
-
-// Aqui mudamos pra ir pra RC ou AUTO direto
-RobotState currentState = RobotState::AUTO;
+// Firmware AUTO — desacoplado do RC (ver tools/RCFirmware/main.cpp) pra
+// tirar o Bluepad32/BTstack do binário: eram duas stacks Bluetooth
+// disputando o mesmo controller quando RC e AUTO viviam no mesmo main.cpp
+// (suspeita levantada ao investigar o BLE do BleConfigServer que nunca
+// aparecia em nenhum scanner, nem com todos os comandos HCI retornando OK).
+// Trade-off aceito: perde a troca RC<->AUTO por IR em runtime, agora e'
+// reflash pra trocar de modo.
 
 Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
 WeaponSystem sistemaDeArmas;
 IRReader ir;
 StatusLed statusLed;
-RCMode modoRC;
 AutoMode modoAuto;
 
 ActiveAuto taticaAtual;
@@ -30,10 +27,9 @@ ActiveAuto taticaAtual;
 void setup() {
     Serial.begin(115200);
     Wire.begin(); // Inicializa I2C
-    Serial.println("[MAIN] Inicializando subsistemas do Sumô.");
+    Serial.println("[MAIN] Inicializando subsistemas do Sumô (firmware AUTO).");
     statusLed.init(LED_BUILTIN, Config::PIN_STATUS_LED, Config::STATUS_LED_COUNT);
     delay(500);
-
 
     ir.init(IR_PIN);
     statusLed.confirmStep();
@@ -46,20 +42,8 @@ void setup() {
     }
     statusLed.confirmStep();
 
-    switch(currentState) {
-        case RobotState::RC:
-            modoRC.init();
-            ir.shutdown();
-            Serial.println("[MAIN] BOOT DIRETO: Modo RC engatilhado.");
-            break;
-        case RobotState::AUTO:
-            modoAuto.init(taticaAtual);
-            Serial.println("[MAIN] BOOT DIRETO: Modo AUTO engatilhado.");
-            break;
-        case RobotState::IDLE:
-            Serial.println("[MAIN] Setup concluído. Aguardando sinal IR do juiz...");
-            break;
-    }
+    modoAuto.init(taticaAtual);
+    Serial.println("[MAIN] Modo AUTO engatilhado.");
 
     statusLed.confirmStep();
     statusLed.confirmStep();
@@ -81,54 +65,23 @@ void loop() {
         ESP.restart();
     }
 
-    if(currentState == RobotState::IDLE) {
-        if(ir.modeRC()) {
-            modoRC.init();
-            ir.shutdown();
-            currentState = RobotState::RC;
-            statusLed.setState(CRGB::Green);
-            Serial.println("[MAIN] -> MODO RC ENGATILHADO");
+    if(modoAuto.getSubState() == AutoMode::SubState::SELECTING_ESTRATEGIA ||
+       modoAuto.getSubState() == AutoMode::SubState::DISCONNECTING_WIFI) {
+        statusLed.strategyWave();
+    }
+    if(modoAuto.getSubState() == AutoMode::SubState::READY) {
+        if(ir.ready()) {
+            statusLed.blinkDebug(1, 20);
+            statusLed.setAll(CRGB::Red);
         }
-        else if(ir.modeAuto()) {
-            modoAuto.init(taticaAtual);
-            currentState = RobotState::AUTO;
+        if(!modoAuto.readyReceived()) {
             statusLed.setState(CRGB::Orange);
-            Serial.println("[MAIN] -> MODO AUTO ENGATILHADO");
+        }
+        if(ir.start()) {
+            statusLed.setState(CRGB::Black);
         }
     }
+    modoAuto.run(motores, sistemaDeArmas, ir.start(), ir.ready());
 
-    switch(currentState) {
-        case RobotState::RC:
-            if(!modoRC.controllerConnected()) {
-                statusLed.pairingWave();
-            }
-            else {
-                statusLed.setState(CRGB::Green); // limpa o laranja residual
-            }
-            modoRC.run(motores, sistemaDeArmas);
-            break;
-        case RobotState::AUTO:
-            if(modoAuto.getSubState() == AutoMode::SubState::SELECTING_ESTRATEGIA ||
-               modoAuto.getSubState() == AutoMode::SubState::DISCONNECTING_WIFI) {
-                statusLed.strategyWave();
-            }
-            if(modoAuto.getSubState() == AutoMode::SubState::READY) {
-                if(ir.ready()) {
-                    statusLed.blinkDebug(1, 20);
-                    statusLed.setAll(CRGB::Red);
-                }
-                if(!modoAuto.readyReceived()) {
-                    statusLed.setState(CRGB::Orange);
-                }
-                if(ir.start()) {
-                    statusLed.setState(CRGB::Black);
-                }
-            }
-            modoAuto.run(motores, sistemaDeArmas, ir.start(), ir.ready());
-            break;
-        case RobotState::IDLE:
-            statusLed.heartbeat();
-            break;
-    }
     yield();
 }
