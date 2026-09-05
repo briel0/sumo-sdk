@@ -126,6 +126,22 @@
             padding: 20px;
             letter-spacing: 2px;
         }
+
+        .connect-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 5px 0 15px;
+        }
+
+        .btn-connect {
+            width: auto;
+            background-color: var(--dark-spruce);
+            border: 3px solid var(--sea-green);
+            color: var(--lemon-chiffon);
+            padding: 16px 32px;
+            letter-spacing: 1px;
+        }
+        .btn-connect:active { filter: brightness(1.5); }
         
         /* TERMINAL DE LOG FIXO NO RODAPÉ */
         #terminal-log {
@@ -272,8 +288,8 @@
 
     <h1>SUMO AUTO</h1>
 
-    <div class="grid">
-        <button id="btn-connect" class="btn-macro" onclick="loadProfile()">CONECTAR AO ROBÔ (BLUETOOTH)</button>
+    <div class="connect-wrap">
+        <button id="btn-connect" class="btn-connect" onclick="loadProfile()">CONECTAR AO ROBÔ (BLUETOOTH)</button>
     </div>
 
     <h2>DIAGNÓSTICO DE BANCADA</h2>
