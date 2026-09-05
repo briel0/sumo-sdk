@@ -9,16 +9,17 @@
     Lê o valor analógico do fototransistor e compara com um limiar
     para detectar superfície branca (pista) vs escura (robô/sombra).
 
-    Superfície branca reflete mais luz → menor resistência → tensão mais alta → valor ADC maior.
-    O limiar padrão é calibrado para o dojo de competição (superfície branca sobre fundo preto).
+    A direção da comparação (branco = ADC maior ou menor) depende da
+    montagem/fiação de cada robô — não assuma, confirme com leituraRaw()
+    no painel /sensors antes de calibrar o threshold.
 */
 class QRE1113 {
   public:
     /**
     @brief Constrói o sensor associado a um pino analógico.
     @param pin Pino analógico GPIO conectado à saída do QRE1113.
-    @param threshold Valor ADC (0–4095) acima do qual a superfície é considerada branca.
-                     Padrão de 2800 calibrado para o dojo padrão de competição.
+    @param threshold Valor ADC (0–4095) abaixo do qual a superfície é considerada branca
+                     (ver leituraRaw() pra calibrar por robô).
     */
     explicit QRE1113(uint8_t pin, uint16_t threshold = 2800);
 

@@ -23,8 +23,8 @@ namespace Config {
 
     static constexpr uint8_t PIN_LINHA_ESQ = 15;
     static constexpr uint8_t PIN_LINHA_DIR = 14;
-    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 3950;
-    static constexpr uint16_t LINHA_THRESHOLD_DIR = 3950;
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 1700;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 1700;
 
     // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
     // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
