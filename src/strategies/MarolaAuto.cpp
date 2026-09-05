@@ -31,6 +31,14 @@ void MarolaAuto::init() {
 }
 
 void MarolaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
+    armas.update();
+
+    // Arma o mais rápido possível ao entrar em combate — sem esperar
+    // movimento nem linha, ao contrário do auto-armamento do RCMode.
+    if(!armas.isDeployed()) {
+        armas.deploy();
+    }
+
     // 1. Prioridade Máxima Absoluta: LINHA BRANCA
     bool leuEsq = _linhaEsq.temLinhaBranca();
     bool leuDir = _linhaDir.temLinhaBranca();
