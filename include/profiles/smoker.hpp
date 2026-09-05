@@ -43,7 +43,8 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        {22, 15, 120}, // Pino 22 | Começa em 15° | Arma em 120°
+        // ta no 22
+        {26, 15, 180}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
     // -----------------------------------------------------------------------
@@ -146,7 +147,8 @@ namespace Config {
     // DESEMPATE: deriva curta pra um lado e giro no próprio eixo, terminando de lado
     // em relação a quem larga de frente. Mesma regra de asa do RECUO — ela abre pro
     // lado oposto ao escolhido, ou seja, pro lado de onde o robô está saindo.
-    static const MotionSequence DESEMPATE_LADO_DIR = MACRO(
+    static const MotionSequence DESEMPATE_LADO_DIR =
+        MACRO(
         {  85,  100, 120}, // deriva: a roda de dentro segura, o robô sai de lado
         {-100,  100, 180}  // giro no próprio eixo, fechando a posição
     );

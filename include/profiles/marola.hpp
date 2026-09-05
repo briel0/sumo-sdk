@@ -5,10 +5,10 @@ namespace Config {
 
     static constexpr const char *ROBOT_NAME = "Marola";
 
-    static constexpr int RIGHT_POS_PIN = 19;
-    static constexpr int RIGHT_NEG_PIN = 18;
-    static constexpr int LEFT_POS_PIN = 17;
-    static constexpr int LEFT_NEG_PIN = 16;
+    static constexpr int RIGHT_POS_PIN = 17;
+    static constexpr int RIGHT_NEG_PIN = 16;
+    static constexpr int LEFT_POS_PIN = 18;
+    static constexpr int LEFT_NEG_PIN = 19;
 
     static constexpr int MAX_THROTTLE = 100;
     static constexpr int TURN_COEFFICIENT = 98;
@@ -35,7 +35,7 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        {26, 125, 10}, // Pino 22 | Começa em 15° | Arma em 120°
+        {26, 125, 35}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
     static const MotionSequence MACRO_FRENTAO = MACRO(
