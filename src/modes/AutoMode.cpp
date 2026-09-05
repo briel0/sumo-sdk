@@ -138,6 +138,18 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
             }
             if(irStart) {
                 _readyReceived = false;
+
+                if(Config::SKIP_SITE_CONFIG) {
+                    // Sem macro de abertura vinda do site: a própria estratégia
+                    // arma e anda no mesmo frame (ver MarolaAuto::autoEngage()),
+                    // então vai direto pro combate em vez de esperar
+                    // EXECUTING_ESTRATEGIA — senão a arma só abriria depois da
+                    // macro de saque terminar.
+                    subState = SubState::FIGHTING;
+                    Serial.println("[AUTO] LARGADA! Indo direto pro combate.");
+                    break;
+                }
+
                 subState = SubState::EXECUTING_ESTRATEGIA;
 
                 // A arma abre (ou nao) junto com a estrategia inicial, nunca no
