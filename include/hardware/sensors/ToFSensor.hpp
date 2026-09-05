@@ -18,8 +18,11 @@ class ToFSensor {
      * @param xshutPin Pino XSHUT para desligar o sensor. Essencial se houver múltiplos sensores no mesmo barramento
      * I2C. (Use -1 se não houver).
      * @param address Endereço I2C customizado (padrão é 0x29).
+     * @param signalRateLimitMcps Taxa mínima de sinal de retorno (Mcps) aceita como leitura válida. O VL53L0X não
+     * tem ROI real de hardware; subir esse valor descarta reflexos fracos/oblíquos (fora do eixo do sensor) e
+     * aproxima o efeito de um cone de detecção mais estreito. Padrão da lib Pololu é 0.25.
      */
-    explicit ToFSensor(int8_t xshutPin = -1, uint8_t address = 0x29);
+    explicit ToFSensor(int8_t xshutPin = -1, uint8_t address = 0x29, float signalRateLimitMcps = 0.25f);
 
     /**
      * @brief Desliga o sensor (coloca o pino XSHUT em LOW).
@@ -43,8 +46,24 @@ class ToFSensor {
      */
     uint16_t leituraRaw();
 
+    /**
+     * @brief Ajusta em runtime a taxa mínima de sinal de retorno aceita (Mcps).
+     * @return false se limitMcps estiver fora da faixa aceita pelo sensor (0 a 511.99).
+     */
+    bool setSignalRateLimit(float limitMcps);
+
+    /**
+     * @brief Status bruto (0-15) da última leitura, extraído de RESULT_RANGE_STATUS.
+     * 11 indica leitura válida; qualquer outro valor indica falha de sinal/fase/calibração
+     * e deve ser tratado como leitura não confiável.
+     */
+    uint8_t statusBruto();
+
   private:
+    static constexpr uint8_t RANGE_STATUS_VALIDO = 11;
+
     VL53L0X _sensor;
     int8_t _pinXshut;
     uint8_t _address;
+    float _signalRateLimitMcps;
 };

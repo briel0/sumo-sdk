@@ -1,6 +1,7 @@
 #include "ToFSensor.hpp"
 
-ToFSensor::ToFSensor(int8_t xshutPin, uint8_t address) : _pinXshut(xshutPin), _address(address) {}
+ToFSensor::ToFSensor(int8_t xshutPin, uint8_t address, float signalRateLimitMcps)
+    : _pinXshut(xshutPin), _address(address), _signalRateLimitMcps(signalRateLimitMcps) {}
 
 void ToFSensor::disable() {
     if(_pinXshut >= 0) {
@@ -32,10 +33,24 @@ bool ToFSensor::init() {
     // 4. Overclock Tático: Reduz de 33ms (padrão) para 20ms o tempo de resposta
     _sensor.setMeasurementTimingBudget(20000);
 
-    // 5. Entra em modo contínuo sem intervalo (0) entre as leituras
+    // 5. Sem ROI de hardware no VL53L0X: eleva o limite mínimo de sinal de retorno pra
+    // descartar reflexos fracos/oblíquos (fora do eixo do sensor), aproximando o efeito
+    // de um cone de detecção mais estreito.
+    _sensor.setSignalRateLimit(_signalRateLimitMcps);
+
+    // 6. Entra em modo contínuo sem intervalo (0) entre as leituras
     _sensor.startContinuous();
 
     return true;
+}
+
+bool ToFSensor::setSignalRateLimit(float limitMcps) {
+    _signalRateLimitMcps = limitMcps;
+    return _sensor.setSignalRateLimit(limitMcps);
+}
+
+uint8_t ToFSensor::statusBruto() {
+    return (_sensor.readReg(VL53L0X::RESULT_RANGE_STATUS) >> 3) & 0x0F;
 }
 
 bool ToFSensor::temOponente(uint16_t thresholdMm) {
@@ -43,6 +58,14 @@ bool ToFSensor::temOponente(uint16_t thresholdMm) {
 
     // Filtra erros de leitura e timeouts para não gerar "falsos positivos" de ataque
     if(_sensor.timeoutOccurred() || dist > 8000) {
+        return false;
+    }
+
+    // Lê o status logo após a distância: RESULT_RANGE_STATUS fica travado até o próximo
+    // SYSRANGE_START, mas em modo contínuo sem intervalo a próxima leitura já começa
+    // durante essa checagem, então status e distância podem, raramente, vir de ciclos
+    // adjacentes em vez do mesmo ciclo.
+    if(statusBruto() != RANGE_STATUS_VALIDO) {
         return false;
     }
 
