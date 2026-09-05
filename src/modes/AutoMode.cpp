@@ -1,7 +1,9 @@
+// Config.hpp primeiro: é quem decide (por robô) o alias ActiveConfigServer
+// que AutoMode.hpp usa no membro configServer — precisa estar resolvido
+// antes do compilador processar a classe AutoMode.
+#include "Config.hpp"
 #include "AutoMode.hpp"
 #include "CombatStrategy.hpp"
-#include "Config.hpp"
-#include "ConfigServer.hpp"
 #include "HardwareCore.hpp"
 #include "RobotTypes.hpp"
 #include <Arduino.h>

@@ -1,6 +1,5 @@
 #pragma once
 #include "CombatStrategy.hpp"
-#include "ConfigServer.hpp"
 #include "DiagnosticsPanel.hpp" // MotorTestState + painel de LED dos testes de bancada
 #include "Drive.hpp"
 #include "JS40F.hpp"
@@ -42,7 +41,10 @@ class AutoMode {
   private:
     SubState subState = SubState::SELECTING_ESTRATEGIA;
     MotionPlayer estrategiaPlayer;
-    ConfigServer configServer;
+    // Tipo escolhido por robô no Config.hpp (ConfigServer/WiFi pros que ainda
+    // têm RC; BleConfigServer pro Fuego/Fumacinha, que abriram mão do RC
+    // porque Bluedroid e Bluepad32 não cabem no mesmo binário nesse fork).
+    ActiveConfigServer configServer;
     AutoStrategy autoConfig;
 
     // Payload da HUD do Fumacinha. Só é consumido quando

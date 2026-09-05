@@ -10,26 +10,37 @@
 
 #elif defined(ROBOT_CAIPORA)
 #include "profiles/caipora.hpp"
+#include "services/ConfigServer.hpp"
 #include "strategies/FumacinhaAuto.hpp"
 using ActiveAuto = FumacinhaAuto; // mesma lógica do Fumacinha, sensores ToF (ver HardwareFamily.hpp)
+using ActiveConfigServer = ConfigServer;
 #elif defined(ROBOT_SMOKER)
 #include "profiles/smoker.hpp"
+#include "services/ConfigServer.hpp"
 #include "strategies/NoAuto.hpp"
 using ActiveAuto = NoAuto;
+using ActiveConfigServer = ConfigServer;
 #elif defined(ROBOT_ARRUELA)
 #include "profiles/arruela.hpp"
+#include "services/ConfigServer.hpp"
 #include "strategies/NoAuto.hpp"
 using ActiveAuto = NoAuto;
+using ActiveConfigServer = ConfigServer;
 #elif defined(ROBOT_MAROLA)
 #include "profiles/marola.hpp"
+#include "services/ConfigServer.hpp"
 #include "strategies/NoAuto.hpp"
 using ActiveAuto = NoAuto;
+using ActiveConfigServer = ConfigServer;
 #elif defined(ROBOT_SMOKERAUTO)
 #include "profiles/smokerAuto.hpp"
+#include "services/ConfigServer.hpp"
 #include "strategies/SmokerAuto.hpp"
 using ActiveAuto = SmokerAuto;
+using ActiveConfigServer = ConfigServer;
 #elif defined(ROBOT_FUEGO)
 #include "profiles/fuego.hpp"
+#include "services/BleConfigServer.hpp"
 #include "strategies/FumacinhaAuto.hpp"
 // Fuego e Fumacinha são o MESMO robô do ponto de vista do combate: mesma família
 // de hardware (HW_FAMILY_FUMACINHA: JSumo laterais + IR puro + 2 sensores de
@@ -42,14 +53,23 @@ using ActiveAuto = SmokerAuto;
 // não está mais no dispatch. Pra voltar atrás basta reverter esta linha e o
 // USES_FUMACINHA_FSM do perfil — os dois juntos, nunca um só.
 using ActiveAuto = FumacinhaAuto;
+// Fuego e Fumacinha usam BLE nativo (BleConfigServer) em vez do ConfigServer
+// (WiFi/HTTP) — Bluedroid e Bluepad32 não cabem no mesmo binário nesse fork
+// da Espressif, e por isso são os únicos dois robôs sem firmware RC nesta
+// branch (ver build_src_filter dos envs fuego/fumacinha no platformio.ini).
+using ActiveConfigServer = BleConfigServer;
 #elif defined(ROBOT_FUEGUITO)
 #include "profiles/fueguito.hpp"
+#include "services/ConfigServer.hpp"
 #include "strategies/NoAuto.hpp"
 using ActiveAuto = NoAuto;
+using ActiveConfigServer = ConfigServer;
 #elif defined(ROBOT_FUMACINHA)
 #include "profiles/fumacinha.hpp"
+#include "services/BleConfigServer.hpp"
 #include "strategies/FumacinhaAuto.hpp"
 using ActiveAuto = FumacinhaAuto;
+using ActiveConfigServer = BleConfigServer;
 #else
 #error "ERRO CRÍTICO: Nenhum perfil de robô foi definido na compilação!"
 #endif
