@@ -32,9 +32,11 @@ class BleConfigServer {
 
     bool consumePayload(AutoStrategy &outStrategy);
 
-    void setTestReadout(const String &json) {
-        _testReadoutJson = json;
-    }
+    // Definido no .cpp (não inline): protege a escrita com a mesma seção
+    // crítica que a leitura em handleWrite() usa — a leitura roda na task
+    // do Bluedroid, diferente da task do loop() que chama isso, e String
+    // não é thread-safe.
+    void setTestReadout(const String &json);
 
     void setMacroTestCallback(std::function<void(MotionSequence)> cb) {
         _macroTestCallback = cb;
