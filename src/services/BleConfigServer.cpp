@@ -35,6 +35,16 @@ namespace {
     // leitura inconsistente.
     char s_sensorSnapshot[512];
 
+    // _testReadoutJson é escrita no loop() principal (AutoMode::run(), a cada
+    // ~150ms logo após ler os sensores) e lida aqui em handleWrite() — que
+    // roda na task própria do Bluedroid, NÃO na task do loop(). String não é
+    // thread-safe: sem essa seção crítica, um GET_SENSORS podia pegar o
+    // .c_str() no meio de uma reatribuição e devolver JSON corrompido pro
+    // app (só acontecia com o teste de sensor ativo, que é quando essa
+    // reatribuição vira frequente — combinava exatamente com o sintoma
+    // relatado: erro intermitente só "quando lê junto com o VL").
+    portMUX_TYPE s_readoutMux = portMUX_INITIALIZER_UNLOCKED;
+
 } // namespace
 
 // A lib BLE nativa entrega o WRITE via uma classe de callback própria (não
@@ -71,8 +81,10 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
             return;
 
         case CMD_GET_SENSORS:
+            portENTER_CRITICAL(&s_readoutMux);
             strncpy(s_sensorSnapshot, _testReadoutJson.c_str(), sizeof(s_sensorSnapshot) - 1);
             s_sensorSnapshot[sizeof(s_sensorSnapshot) - 1] = '\0';
+            portEXIT_CRITICAL(&s_readoutMux);
             characteristic->setValue((uint8_t *)s_sensorSnapshot, strlen(s_sensorSnapshot));
             return;
 
@@ -179,6 +191,12 @@ void BleConfigServer::update() {
     // task interna do Bluedroid — não precisa de pump manual aqui. Mantido
     // só por simetria de interface com AutoMode, que chama update() todo
     // frame independente do transporte.
+}
+
+void BleConfigServer::setTestReadout(const String &json) {
+    portENTER_CRITICAL(&s_readoutMux);
+    _testReadoutJson = json;
+    portEXIT_CRITICAL(&s_readoutMux);
 }
 
 bool BleConfigServer::consumePayload(AutoStrategy &outStrategy) {

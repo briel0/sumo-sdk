@@ -130,6 +130,22 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             padding: 20px;
             letter-spacing: 2px;
         }
+
+        .connect-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 5px 0 15px;
+        }
+
+        .btn-connect {
+            width: auto;
+            background-color: var(--dark-spruce);
+            border: 3px solid var(--sea-green);
+            color: var(--lemon-chiffon);
+            padding: 16px 32px;
+            letter-spacing: 1px;
+        }
+        .btn-connect:active { filter: brightness(1.5); }
         
         /* TERMINAL DE LOG FIXO NO RODAPÉ */
         #terminal-log {
@@ -276,8 +292,8 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
 
     <h1>SUMO AUTO</h1>
 
-    <div class="grid">
-        <button id="btn-connect" class="btn-macro" onclick="loadProfile()">CONECTAR AO ROBÔ (BLUETOOTH)</button>
+    <div class="connect-wrap">
+        <button id="btn-connect" class="btn-connect" onclick="loadProfile()">CONECTAR AO ROBÔ (BLUETOOTH)</button>
     </div>
 
     <h2>DIAGNÓSTICO DE BANCADA</h2>
@@ -380,11 +396,31 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         // Escreve o comando e lê a resposta em seguida — mesmo ciclo
         // request/response que o BleConfigServer espera (um comando arma a
         // resposta, o READ que vem depois é que a entrega).
-        async function bleCommand(bytes) {
-            const characteristic = await bleGetCharacteristic();
-            await characteristic.writeValueWithResponse(bytes);
-            const value = await characteristic.readValue();
-            return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+        //
+        // Fila global: existe uma característica só, então dois bleCommand()
+        // em paralelo (ex: o polling de /sensors a cada 150ms disparando de
+        // novo antes do round-trip anterior voltar, ou um clique em outro
+        // botão enquanto o polling roda) podiam embaralhar WRITE/READ de
+        // comandos diferentes no ar — o READ de um pegava a resposta armada
+        // pelo outro. Era isso que fazia a telinha de sensores "piscar" com
+        // dado errado. bleQueue encadeia toda chamada, sempre esperando a
+        // anterior (sucesso ou erro) antes de começar a próxima.
+        let bleQueue = Promise.resolve();
+
+        function bleCommand(bytes) {
+            const run = async () => {
+                const characteristic = await bleGetCharacteristic();
+                await characteristic.writeValueWithResponse(bytes);
+                const value = await characteristic.readValue();
+                return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+            };
+            const result = bleQueue.then(run, run);
+            // bleQueue só serve pra ordenar a fila — nunca pode ficar "travada"
+            // rejeitada, senão todo comando futuro dispararia direto sem
+            // esperar a vez. O erro de verdade ainda propaga em `result`,
+            // pro chamador de bleCommand() tratar normalmente.
+            bleQueue = result.catch(() => {});
+            return result;
         }
 
         // Simula o formato de Response do fetch que os .then() abaixo (não
@@ -547,28 +583,49 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         const readoutBox = document.getElementById('test-readout');
         let readoutTimer = null;
         let testSensorActive = false;
+        // true assim que a primeira leitura boa chega — antes disso ainda
+        // vale mostrar "aguardando", depois disso um soluço pontual (JSON
+        // vazio/corrompido, ou a promise rejeitando) só é ignorado: mantém
+        // o último valor na tela em vez de piscar erro/espera a cada falha.
+        let readoutRecebido = false;
+        // A fila do bleCommand já serializa, mas se o round-trip demorar mais
+        // que os 150ms do intervalo, cada tick empilharia mais um comando na
+        // fila e o atraso só cresceria. Esse flag pula o tick se a leitura
+        // anterior ainda não voltou, em vez de acumular.
+        let readoutEmAndamento = false;
 
         function fetchReadout() {
+            if (readoutEmAndamento) return;
+            readoutEmAndamento = true;
             Transport.getSensorReadout()
                 .then(function(response) { return response.json(); })
                 .then(function(data) {
                     const keys = Object.keys(data);
                     if (keys.length === 0) {
-                        readoutBox.innerText = '> aguardando leitura (robô sem sensores mapeados)...';
+                        if (!readoutRecebido) {
+                            readoutBox.innerText = '> aguardando leitura (robô sem sensores mapeados)...';
+                        }
                         return;
                     }
+                    readoutRecebido = true;
                     readoutBox.innerText = keys.map(function(key) {
                         return '> ' + key.toUpperCase() + ': ' + data[key];
                     }).join('\n');
                 })
                 .catch(function() {
-                    readoutBox.innerText = '> [ERRO] FALHA AO LER /sensors';
+                    if (!readoutRecebido) {
+                        readoutBox.innerText = '> [ERRO] FALHA AO LER /sensors';
+                    }
+                })
+                .finally(function() {
+                    readoutEmAndamento = false;
                 });
         }
 
         function startReadoutPolling() {
             readoutBox.style.display = 'block';
             readoutBox.innerText = '> iniciando...';
+            readoutRecebido = false;
             fetchReadout();
             readoutTimer = setInterval(fetchReadout, 150); // Polling a ~6.6Hz
         }
