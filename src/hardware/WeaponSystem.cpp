@@ -72,5 +72,12 @@ void WeaponSystem::setServoAngle(int index, int angle) {
     if(index >= 0 && index < servoCount && servos[index] != nullptr) {
         servos[index]->setAngle(angle);
         isRelaxedFlag = false;
+        // Sem isso, isDeployedFlag ficava do jeito que estava antes desse
+        // comando (geralmente false) — e o auto-deploy do RCMode
+        // (!weaponsArmed && robô se movendo) rodava logo em seguida e
+        // sobrescrevia o ângulo pro _deployAngle padrão no mesmo frame (ou
+        // no próximo). Marcar como "deployed" aqui é o que faz o ângulo
+        // customizado realmente pegar, independente do estado anterior.
+        isDeployedFlag = true;
     }
 }

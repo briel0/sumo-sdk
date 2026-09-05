@@ -27,10 +27,15 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
         armas.retract();
     }
 
-    if(receptor.r3()) {
-        armas.setServoAngle(0, 20);
-        Serial.println("[SUMÔ] R3: Override de ângulo no servo 0");
+#ifndef ROBOT_CAIPORA_RC
+    // Só o Caipora RC tem esse override — os outros robôs não têm esse uso
+    // pro servo 0 no controle manual.
+#else
+    if(receptor.l3()) {
+        armas.setServoAngle(0, 0);
+        Serial.println("[SUMÔ] L3: joga a arma pro 0");
     }
+#endif
 
     if(autoDisarmFree) {
         if(!weaponsArmed && (playerIsMoving || macroRunning)) {

@@ -72,6 +72,9 @@ class Receiver {
     bool r3() const {
         return r3Flag;
     }
+    bool l3() const {
+        return l3Flag;
+    }
 
   private:
     ControllerPtr controller = nullptr;
@@ -102,6 +105,9 @@ class Receiver {
 
     bool r3Flag = false;
     bool lastR3 = false;
+
+    bool l3Flag = false;
+    bool lastL3 = false;
 
     static Receiver *instance;
     uint8_t savedMac[6] = {0};

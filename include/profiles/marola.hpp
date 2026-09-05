@@ -16,12 +16,12 @@ namespace Config {
 
     static constexpr int NUM_SERVOS = 1;
 
-    static constexpr int PIN_LDR_ESQ = 32;
-    static constexpr int PIN_LDR_DIR = 33;
-    static constexpr int PIN_LDR_FRONT = 34;
+    static constexpr int PIN_LDR_ESQ = 34;
+    static constexpr int PIN_LDR_DIR = 36;
+    static constexpr int PIN_LDR_FRONT = 39;
 
-    static constexpr uint8_t PIN_LINHA_ESQ = 35;
-    static constexpr uint8_t PIN_LINHA_DIR = 36;
+    static constexpr uint8_t PIN_LINHA_ESQ = 15;
+    static constexpr uint8_t PIN_LINHA_DIR = 14;
     static constexpr uint16_t LINHA_THRESHOLD_ESQ = 2800;
     static constexpr uint16_t LINHA_THRESHOLD_DIR = 2800;
 

@@ -123,6 +123,10 @@ void Receiver::updateButtons() {
     bool currentR3 = currentBtns & BUTTON_THUMB_R;
     r3Flag = currentR3 && !lastR3;
     lastR3 = currentR3;
+
+    bool currentL3 = currentBtns & BUTTON_THUMB_L;
+    l3Flag = currentL3 && !lastL3;
+    lastL3 = currentL3;
 }
 
 void Receiver::applyFailsafe() {
@@ -150,4 +154,7 @@ void Receiver::applyFailsafe() {
 
     lastR3 = false;
     r3Flag = false;
+
+    lastL3 = false;
+    l3Flag = false;
 }

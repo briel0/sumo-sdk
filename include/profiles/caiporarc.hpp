@@ -13,11 +13,11 @@ namespace Config {
 
     static constexpr int RIGHT_POS_PIN = 16;
     static constexpr int RIGHT_NEG_PIN = 17;
-    static constexpr int LEFT_POS_PIN = 18;
-    static constexpr int LEFT_NEG_PIN = 19;
+    static constexpr int LEFT_POS_PIN = 19;
+    static constexpr int LEFT_NEG_PIN = 18;
 
     static constexpr int MAX_THROTTLE = 100;
-    static constexpr int TURN_COEFFICIENT = 83;
+    static constexpr int TURN_COEFFICIENT = 95;
     static constexpr int PIVOT_COEFFICIENT = 70;
 
     static constexpr int NUM_SERVOS = 1;
@@ -27,7 +27,7 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        {23, 80, 150}, // Pino 23 | Começa em 80° | Arma em 145°
+        {4, 15, 90}, // Pino 23 | Começa em 80° | Arma em 145°
     };
 
     static const MotionSequence MACRO_FRENTAO = MACRO({100, 100, 170});

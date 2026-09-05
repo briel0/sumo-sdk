@@ -11,7 +11,7 @@ namespace Config {
     static constexpr int LEFT_NEG_PIN = 19;
 
     static constexpr int MAX_THROTTLE = 100;
-    static constexpr int TURN_COEFFICIENT = 83;
+    static constexpr int TURN_COEFFICIENT = 95;
     static constexpr int PIVOT_COEFFICIENT = 70;
 
     static constexpr int NUM_SERVOS = 1;
