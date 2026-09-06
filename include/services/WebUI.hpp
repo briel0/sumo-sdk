@@ -302,6 +302,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         <button id="btn-test-motor" class="btn-diag" onclick="toggleTest('motor')">TESTE MOTORES</button>
     </div>
     <div id="test-readout"></div>
+    <button id="btn-weapon-toggle" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="toggleWeapon()">ARMAR</button>
 
     <h2>MOVIMENTAÇÃO INICIAL</h2>
     <div class="grid" id="macro-grid">
@@ -377,6 +378,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             SET_STRATEGY: 0x03,
             SET_TEST: 0x04,
             TRIGGER_MACRO: 0x05,
+            SET_WEAPON: 0x06,
         };
 
         let bleCharacteristic = null;
@@ -499,6 +501,13 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
                     bytes[2 + i * 4 + 2] = d & 0xff;
                     bytes[2 + i * 4 + 3] = (d >> 8) & 0xff;
                 }
+                return bleCommand(bytes).then(bleAckResponse);
+            },
+
+            // arm=true arma (deploy), arm=false desarma (retract) — comando
+            // manual de bancada, direto no WeaponSystem (ver AutoMode::run()).
+            setWeapon: (arm) => {
+                const bytes = new Uint8Array([BLE_CMD.SET_WEAPON, arm ? 1 : 0]);
                 return bleCommand(bytes).then(bleAckResponse);
             },
         };
@@ -639,6 +648,36 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             readoutBox.innerText = '';
         }
 
+        let weaponArmed = false;
+
+        function updateWeaponButton() {
+            const btn = document.getElementById('btn-weapon-toggle');
+            btn.classList.toggle('active', weaponArmed);
+            btn.innerText = weaponArmed ? 'DESARMAR' : 'ARMAR';
+        }
+
+        function toggleWeapon() {
+            if (navigator.vibrate) navigator.vibrate(20);
+
+            const nextState = !weaponArmed;
+            printLog('> ' + (nextState ? 'ARMANDO' : 'DESARMANDO') + ' ARMA...');
+            Transport.setWeapon(nextState)
+                .then(res => {
+                    if (!res.ok) {
+                        printLog('> [ERRO] COMANDO DE ARMA RECUSADO', true);
+                        showUiAlert('[!] ERRO', 'O robô recusou o comando de arma.', true);
+                        return;
+                    }
+                    weaponArmed = nextState;
+                    updateWeaponButton();
+                    printLog('> [OK] ARMA ' + (weaponArmed ? 'ARMADA' : 'DESARMADA'));
+                })
+                .catch(() => {
+                    printLog('> [ERRO] ROBÔ NÃO RESPONDEU', true);
+                    showUiAlert('NETWORK ERROR', 'Falha ao comandar a arma.<br>Verifique a conexão.', true);
+                });
+        }
+
         let testMotorActive = false;
 
         function toggleTest(which) {
@@ -748,6 +787,12 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             searchGrid.innerHTML = profile.searches.map(s => 
                 `<button class="btn-search" data-category="search" data-val="${s.id}" data-label="${s.name}">${s.name}</button>`
             ).join('');
+
+            const weaponToggleBtn = document.getElementById('btn-weapon-toggle');
+            weaponToggleBtn.disabled = !profile.has_weapons;
+            weaponToggleBtn.style.opacity = profile.has_weapons ? '1' : '0.5';
+            weaponArmed = false;
+            updateWeaponButton();
 
             const weaponGrid = document.getElementById('weapon-grid');
             if(profile.has_weapons) {
