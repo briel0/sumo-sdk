@@ -36,21 +36,29 @@ namespace Config {
     static const MotionSequence MACRO_FRENTAO = MACRO(
         {100, 100, 200},);
 
+    static const MotionSequence MACRO_FRENTINHA = MACRO(
+        {100, 100, 60},);
+
+    static const MotionSequence MACRO_RECUO = MACRO(
+        {-80, -80, 60},);
+
     static const MotionSequence MACRO_DIAGONAL = MACRO(
         {-100, 100, 50},
         {100, 100, 100});
 
     static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
-        {100, -100, 72},
-        {100, 25, 245}, {100, 100, 72});
+        {100, -100, 70},
+        {60, 100, 150}, 
+        {-100, 100, 70});
 
     static const MotionSequence MACRO_CURVINHA_ESQUERDA = MACRO(
-        {-100, 100, 72},
-        {25, 100, 245}, {100, 100, 72});
+        {-100, 100, 70},
+        {100, 60, 150}, 
+        {100, -100, 70});
 
     static const MotionSequence MACRO_CURVAO_ESQUERDA = MACRO(
         {-100, 100, 70},
-        {100, 40, 600}
+        {100, 40, 500}
     );
 
     static const MotionSequence MACRO_CURVAO_DIREITA = MACRO(
@@ -61,24 +69,39 @@ namespace Config {
     // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
     static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
 
-    // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão, 2 = Sem Saque)
-    static const MotionSequence *const TABELA_MACROS_ESQ[] = {&MACRO_FRENTAO, &MACRO_CURVAO_ESQUERDA, &MACRO_SEM_SAQUE};
+    // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão, 2 = Sem Saque, 3 = Frentinha,
+    // 4 = Recuo, 5 = Curvinha)
+    static const MotionSequence *const TABELA_MACROS_ESQ[] = {&MACRO_FRENTAO, &MACRO_CURVAO_ESQUERDA, &MACRO_SEM_SAQUE,
+                                                              &MACRO_FRENTINHA, &MACRO_RECUO, &MACRO_CURVINHA_ESQUERDA};
 
-    static const MotionSequence *const TABELA_MACROS_DIR[] = {&MACRO_FRENTAO, &MACRO_CURVAO_DIREITA, &MACRO_SEM_SAQUE};
+    static const MotionSequence *const TABELA_MACROS_DIR[] = {&MACRO_FRENTAO, &MACRO_CURVAO_DIREITA, &MACRO_SEM_SAQUE,
+                                                              &MACRO_FRENTINHA, &MACRO_RECUO, &MACRO_CURVINHA_DIREITA};
 
+    // Sem indentação de propósito: essa string vai inteira pra uma BLE
+    // characteristic (BleConfigServer, CMD_GET_PROFILE) e o Bluedroid do
+    // ESP32 tem um teto rígido de ESP_GATT_MAX_ATTR_LEN = 600 bytes por
+    // characteristic — acima disso setValue() falha em silêncio (só loga
+    // erro) e o app lê o valor antigo. Indentado, esse mesmo JSON passava
+    // de 600 bytes com 6 macros + 5 buscas. Se for adicionar itens, prefira
+    // nomes curtos a reindentar.
     static constexpr const char *UI_PROFILE_JSON = R"({
-        "robot_name": "Arruela",
-        "macros": [
-            {"id": 0, "name": "FRENTÃO"},
-            {"id": 1, "name": "CURVÃO"},
-            {"id": 2, "name": "SEM SAQUE"}
-        ],
-        "searches": [
-            {"id": 1, "name": "BUSCA PADRÃO"},
-            {"id": 2, "name": "BUSCA LENTA"},
-            {"id": 3, "name": "BUSCA POR DISTÂNCIA"}
-        ],
-        "has_weapons": false
-    })";
+"robot_name": "Arruela",
+"macros": [
+{"id": 0, "name": "FRENTÃO"},
+{"id": 1, "name": "CURVÃO"},
+{"id": 2, "name": "SEM SAQUE"},
+{"id": 3, "name": "FRENTINHA"},
+{"id": 4, "name": "RECUO"},
+{"id": 5, "name": "CURVINHA"}
+],
+"searches": [
+{"id": 1, "name": "BUSCA PADRÃO"},
+{"id": 2, "name": "BUSCA LENTA"},
+{"id": 3, "name": "BUSCA POR DISTÂNCIA"},
+{"id": 4, "name": "BUSCA GATO PRETO"},
+{"id": 5, "name": "BUSCA BALA TENSA"}
+],
+"has_weapons": false
+})";
 
 }

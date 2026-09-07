@@ -127,6 +127,14 @@ void Receiver::updateButtons() {
     bool currentL3 = currentBtns & BUTTON_THUMB_L;
     l3Flag = currentL3 && !lastL3;
     lastL3 = currentL3;
+
+    bool currentR1 = currentBtns & BUTTON_SHOULDER_R;
+    r1Flag = currentR1 && !lastR1;
+    lastR1 = currentR1;
+
+    bool currentL1 = currentBtns & BUTTON_SHOULDER_L;
+    l1Flag = currentL1 && !lastL1;
+    lastL1 = currentL1;
 }
 
 void Receiver::applyFailsafe() {
@@ -157,4 +165,10 @@ void Receiver::applyFailsafe() {
 
     lastL3 = false;
     l3Flag = false;
+
+    lastR1 = false;
+    r1Flag = false;
+
+    lastL1 = false;
+    l1Flag = false;
 }

@@ -74,12 +74,7 @@ static void imprimirDistancia(bool ok, ToFSensor &sensor) {
         return;
     }
     uint16_t mm = sensor.leituraRaw();
-    if(mm > 8000) {
-        Serial.print("  ----");
-    }
-    else {
-        Serial.printf(" %5u", mm);
-    }
+    Serial.printf(" %5u", mm);
 }
 
 static void imprimirCabecalho() {

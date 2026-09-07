@@ -5,7 +5,9 @@ namespace Config {
 
     static constexpr const char *ROBOT_NAME = "Caipora";
 
-    static constexpr bool SKIP_SITE_CONFIG = false;
+    // Sem portal de configuração: AutoMode pula direto pra READY e espera a
+    // largada (IR botão 2) sem esperar payload nenhum do site.
+    static constexpr bool SKIP_SITE_CONFIG = true;
 
     static constexpr int RIGHT_POS_PIN = 16;
     static constexpr int RIGHT_NEG_PIN = 17;

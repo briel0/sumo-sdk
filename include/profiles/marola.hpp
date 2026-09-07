@@ -5,9 +5,7 @@ namespace Config {
 
     static constexpr const char *ROBOT_NAME = "Marola";
 
-    // Sem portal de configuração: AutoMode pula direto pra READY e espera a
-    // largada (IR botão 2) sem esperar payload nenhum do site.
-    static constexpr bool SKIP_SITE_CONFIG = true;
+    static constexpr bool SKIP_SITE_CONFIG = false;
 
     static constexpr int RIGHT_POS_PIN = 19;
     static constexpr int RIGHT_NEG_PIN = 18;
@@ -71,6 +69,17 @@ namespace Config {
     // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
     static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
 
+    // Giro inicial da ASA 100MS + GIRO (MarolaAuto::ASA_DELAY_100_GIRO): toca uma
+    // vez ao entrar em combate, antes do avanço reto — o lado vem da direção
+    // escolhida no site (cfg.direction), igual ao saque cego. Ajuste
+    // velocidade/duração aqui pra calibrar o ângulo — nenhum outro arquivo
+    // precisa mudar.
+    static const MotionSequence MACRO_GIRO_INICIAL_ESQUERDA = MACRO(
+        {-100, 100, 35});
+
+    static const MotionSequence MACRO_GIRO_INICIAL_DIREITA = MACRO(
+        {100, -100, 35});
+
     static constexpr const char *UI_PROFILE_JSON = R"({
         "robot_name": "Marola",
         "macros": [
@@ -79,7 +88,9 @@ namespace Config {
             {"id": 2, "name": "CURVAO"}
         ],
         "searches": [
-            {"id": 1, "name": "BUSCA PADRAO"}
+            {"id": 1, "name": "ASA 100MS"},
+            {"id": 2, "name": "ASA 500MS"},
+            {"id": 3, "name": "ASA 100MS + GIRO"}
         ],
         "has_weapons": true
     })";

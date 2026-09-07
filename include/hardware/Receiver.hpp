@@ -76,6 +76,13 @@ class Receiver {
         return l3Flag;
     }
 
+    bool r1() const {
+        return r1Flag;
+    }
+    bool l1() const {
+        return l1Flag;
+    }
+
   private:
     ControllerPtr controller = nullptr;
     static constexpr int STICKER_DEADZONE = 40;
@@ -108,6 +115,12 @@ class Receiver {
 
     bool l3Flag = false;
     bool lastL3 = false;
+
+    bool r1Flag = false;
+    bool lastR1 = false;
+
+    bool l1Flag = false;
+    bool lastL1 = false;
 
     static Receiver *instance;
     uint8_t savedMac[6] = {0};

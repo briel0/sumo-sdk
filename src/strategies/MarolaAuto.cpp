@@ -15,15 +15,67 @@ void MarolaAuto::init() {
     _linhaEsq.init();
     _linhaDir.init();
 
+    _tempoEntradaCombate = 0;
     _player.stop();
+}
+
+void MarolaAuto::configure(const AutoStrategy &cfg) {
+    _giroInicialMacro = nullptr;
+
+    switch(cfg.search) {
+        case ASA_DELAY_500:
+            _atrasoAbrirAsaMs = 500;
+            _bloqueiaAteAbrir = true;
+            Serial.println("[MAROLA] Asa abre durante os 500ms (parado até o fim da espera).");
+            break;
+        case ASA_DELAY_100_GIRO:
+            _atrasoAbrirAsaMs = 100;
+            _bloqueiaAteAbrir = false;
+            _giroInicialMacro =
+                cfg.direction == 'D' ? &Config::MACRO_GIRO_INICIAL_DIREITA : &Config::MACRO_GIRO_INICIAL_ESQUERDA;
+            Serial.printf("[MAROLA] Asa abre durante os 100ms, com giro inicial pra %s antes de avançar.\n",
+                          cfg.direction == 'D' ? "direita" : "esquerda");
+            break;
+        case ASA_DELAY_100:
+        default:
+            _atrasoAbrirAsaMs = 100;
+            _bloqueiaAteAbrir = false;
+            Serial.println("[MAROLA] Asa abre durante os 100ms (anda desde o início).");
+            break;
+    }
 }
 
 void MarolaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     armas.update();
 
-    // Arma o mais rápido possível ao entrar em combate.
+    if(_tempoEntradaCombate == 0) {
+        _tempoEntradaCombate = millis();
+        if(_giroInicialMacro != nullptr) {
+            _player.play(*_giroInicialMacro);
+        }
+    }
+
+    // A asa abre logo de cara em qualquer modo — inclusive durante o giro
+    // inicial — o delay escolhido no site e' só o tempo que ela física leva
+    // pra terminar de abrir, não um atraso pra começar a abrir.
     if(!armas.isDeployed()) {
         armas.deploy();
+    }
+
+    // Giro inicial (ASA_DELAY_100_GIRO) tem prioridade total sobre os motores
+    // até a macro terminar — só então o fluxo normal abaixo assume.
+    if(_player.isPlaying()) {
+        _player.update(motores);
+        return;
+    }
+
+    unsigned long decorrido = millis() - _tempoEntradaCombate;
+
+    // Só o modo 500ms é bloqueante pro movimento: fica parado até o fim da
+    // janela e só então sai andando. 100ms já anda desde o primeiro frame.
+    if(_bloqueiaAteAbrir && decorrido < _atrasoAbrirAsaMs) {
+        motores.setSpeed(0, 0);
+        return;
     }
 
     // Auto simplificado: anda pra frente até o STOP do IR (botão 3, ver main.cpp).

@@ -7,10 +7,10 @@ namespace Config {
 
     static constexpr bool SKIP_SITE_CONFIG = false;
 
-    static constexpr int RIGHT_POS_PIN = 17;
-    static constexpr int RIGHT_NEG_PIN = 16;
-    static constexpr int LEFT_POS_PIN = 18;
-    static constexpr int LEFT_NEG_PIN = 19;
+    static constexpr int RIGHT_POS_PIN = 16;
+    static constexpr int RIGHT_NEG_PIN = 17;
+    static constexpr int LEFT_POS_PIN = 19;
+    static constexpr int LEFT_NEG_PIN = 18;
 
     static constexpr int MAX_THROTTLE = 90;
     static constexpr int TURN_COEFFICIENT = 83;
@@ -22,8 +22,13 @@ namespace Config {
     // entao qualquer GPIO serve — mas 5 e 15 sao strapping pins: se o sensor
     // segurar eles no nivel errado durante o boot, a placa nao sobe limpa.
     static constexpr int PIN_JS_ESQ = 5;
-    static constexpr int PIN_JS_DIR = 15;
-    static constexpr int PIN_JS_FRONT = 14;
+    static constexpr int PIN_JS_DIR = 14;
+    static constexpr int PIN_JS_FRONT = 15;
+
+    // Transistor na placa que liga a alimentação dos três JS40F. Precisa ir
+    // pra HIGH o mais cedo possível no boot (ver main.cpp/SmokerSensorTest.cpp)
+    // pra dar o máximo de tempo de estabilização antes de ler qualquer sensor.
+    static constexpr int PIN_JS_POWER = 25;
 
     // Os dois QRE1113 sao analogicos e ficam no ADC1 (34 e 39): o ADC2 morre
     // enquanto o WiFi do painel esta de pe.
@@ -46,7 +51,7 @@ namespace Config {
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
         // ta no 22
-        {26, 15, 180}, // Pino 22 | Começa em 15° | Arma em 120°
+        {26, 23, 180}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
     // -----------------------------------------------------------------------
@@ -56,6 +61,10 @@ namespace Config {
     // Formato do passo: {velocidade esquerda, velocidade direita, duracao em ms}.
     // -----------------------------------------------------------------------
 
+    // Desativadas temporariamente: só FRENTÃO e FRENTINHO ficam disponíveis
+    // no Smoker por enquanto. Definições e tabelas mantidas comentadas pra
+    // religar rápido depois, sem precisar reescrever nada.
+    /*
     static const MotionSequence CURVA_ESQ = MACRO(
         {-100,  100, 100}, // giro no eixo pra esquerda
         { 100,   40, 144}, // arco aberto, roda de dentro segurando
@@ -159,6 +168,7 @@ namespace Config {
         { 100,   85, 120}, // espelhado
         { 100, -100, 180}
     );
+    */
 
     // FRENTÃO, portado do frenteSemDelay: {255, 255, 200} -> {100, 100, 200}.
     // Avanço reto de ~3/4 do dohyo em força máxima, sem curva de aceleração.
@@ -166,24 +176,18 @@ namespace Config {
 
     // FRENTINHO, portado do frentinho: {127, 127, 200} -> {50, 50, 200}.
     // Mesmo avanço reto, meia força: ~1/4 do dohyo.
-    static const MotionSequence ABERTURA_FRENTINHO = MACRO({50, 50, 200});
+    // Desativada junto com as outras aberturas acima: FRENTÃO passa a ser a
+    // única estratégia inicial na config.
+    // static const MotionSequence ABERTURA_FRENTINHO = MACRO({50, 50, 200});
 
     // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
-    static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
+    // Desativada junto com as outras aberturas acima — ver comentário lá em cima.
+    // static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
 
     static constexpr const char *UI_PROFILE_JSON = R"({
         "robot_name": "Smoker",
         "macros": [
-            {"id": 0, "name": "FRENTÃO"},
-            {"id": 1, "name": "FRENTINHO"},
-            {"id": 2, "name": "CURVA"},
-            {"id": 3, "name": "CURVÃO"},
-            {"id": 4, "name": "EM V"},
-            {"id": 5, "name": "VZINHO"},
-            {"id": 6, "name": "VZÃO"},
-            {"id": 7, "name": "RECUO"},
-            {"id": 8, "name": "DESEMPATE"},
-            {"id": 9, "name": "SEM SAQUE"}
+            {"id": 0, "name": "FRENTÃO"}
         ],
         "searches": [
             {"id": 1, "name": "BUSCA PADRAO"}
@@ -194,30 +198,33 @@ namespace Config {
     // As duas tabelas andam juntas pelo mesmo id da UI e precisam ter o mesmo
     // tamanho (tem um static_assert no AutoMode.cpp cobrando isso). As aberturas
     // sem lado — FRENTÃO, FRENTINHO e SEM SAQUE — repetem nas duas.
+    //
+    // FRENTÃO é a única estratégia inicial — as demais entradas (e suas
+    // MotionSequence lá em cima) ficam comentadas pra religar rápido depois.
     static const MotionSequence *const TABELA_MACROS_ESQ[] = {
         &ABERTURA_FRENTAO,   // 0 - FRENTÃO
-        &ABERTURA_FRENTINHO, // 1 - FRENTINHO
-        &CURVA_ESQ,          // 2 - CURVA
-        &CURVAO_ESQ,         // 3 - CURVÃO
-        &EM_V_ESQ,           // 4 - EM V
-        &VZINHO_ESQ,         // 5 - VZINHO
-        &VZAO_ESQ,           // 6 - VZÃO
-        &RECUO_LADO_ESQ,     // 7 - RECUO
-        &DESEMPATE_LADO_ESQ, // 8 - DESEMPATE
-        &MACRO_SEM_SAQUE     // 9 - SEM SAQUE
+        // &ABERTURA_FRENTINHO, // 1 - FRENTINHO
+        // &CURVA_ESQ,          // 2 - CURVA
+        // &CURVAO_ESQ,         // 3 - CURVÃO
+        // &EM_V_ESQ,           // 4 - EM V
+        // &VZINHO_ESQ,         // 5 - VZINHO
+        // &VZAO_ESQ,           // 6 - VZÃO
+        // &RECUO_LADO_ESQ,     // 7 - RECUO
+        // &DESEMPATE_LADO_ESQ, // 8 - DESEMPATE
+        // &MACRO_SEM_SAQUE     // 9 - SEM SAQUE
     };
 
     static const MotionSequence *const TABELA_MACROS_DIR[] = {
         &ABERTURA_FRENTAO,   // 0 - FRENTÃO
-        &ABERTURA_FRENTINHO, // 1 - FRENTINHO
-        &CURVA_DIR,          // 2 - CURVA
-        &CURVAO_DIR,         // 3 - CURVÃO
-        &EM_V_DIR,           // 4 - EM V
-        &VZINHO_DIR,         // 5 - VZINHO
-        &VZAO_DIR,           // 6 - VZÃO
-        &RECUO_LADO_DIR,     // 7 - RECUO
-        &DESEMPATE_LADO_DIR, // 8 - DESEMPATE
-        &MACRO_SEM_SAQUE     // 9 - SEM SAQUE
+        // &ABERTURA_FRENTINHO, // 1 - FRENTINHO
+        // &CURVA_DIR,          // 2 - CURVA
+        // &CURVAO_DIR,         // 3 - CURVÃO
+        // &EM_V_DIR,           // 4 - EM V
+        // &VZINHO_DIR,         // 5 - VZINHO
+        // &VZAO_DIR,           // 6 - VZÃO
+        // &RECUO_LADO_DIR,     // 7 - RECUO
+        // &DESEMPATE_LADO_DIR, // 8 - DESEMPATE
+        // &MACRO_SEM_SAQUE     // 9 - SEM SAQUE
     };
 
 }

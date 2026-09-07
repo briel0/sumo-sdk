@@ -18,11 +18,9 @@ void CaiporaAuto::init() {
     _vlLateralDir.disable();
     delay(20);
 
-    // Agora liga e inicializa um por um (trocando o endereço)
+    // Teste de crosstalk: só o Frente Esq ativo, os outros 3 ficam
+    // desligados (XSHUT em LOW).
     _vlFrenteEsq.init();
-    _vlLateralEsq.init();
-    _vlFrenteDir.init();
-    _vlLateralDir.init();
 
     _player.stop();
 }
@@ -50,10 +48,7 @@ void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
 String CaiporaAuto::getSensorStatusJSON() {
     String json = "{";
     json += "\"LDR\": " + String(_ldr.readRaw()) + ", ";
-    json += "\"VL Frente Esq (mm)\": " + String(_vlFrenteEsq.leituraRaw()) + ", ";
-    json += "\"VL Lat Esq (mm)\": " + String(_vlLateralEsq.leituraRaw()) + ", ";
-    json += "\"VL Frente Dir (mm)\": " + String(_vlFrenteDir.leituraRaw()) + ", ";
-    json += "\"VL Lat Dir (mm)\": " + String(_vlLateralDir.leituraRaw());
+    json += "\"VL Frente Esq (mm)\": " + String(_vlFrenteEsq.leituraRaw());
     json += "}";
     return json;
 }

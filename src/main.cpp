@@ -25,6 +25,13 @@ AutoMode modoAuto;
 ActiveAuto taticaAtual;
 
 void setup() {
+#if defined(ROBOT_SMOKER)
+    // Liga o transistor dos JS40F antes de qualquer outra coisa: quanto mais
+    // cedo ele sobe, mais tempo de estabilização o sensor tem até o combate.
+    pinMode(Config::PIN_JS_POWER, OUTPUT);
+    digitalWrite(Config::PIN_JS_POWER, HIGH);
+#endif
+
     Serial.begin(115200);
     Wire.begin(); // Inicializa I2C
     Serial.println("[MAIN] Inicializando subsistemas do Sumô (firmware AUTO).");

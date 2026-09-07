@@ -22,6 +22,7 @@ void ArruelaAuto::init() {
     _ultimoLado = Direction::left;
     _ultimaLeituraToF = 0;
     _toFViuAlvo = false;
+    _inicioGatoPreto = 0;
     _player.stop();
 }
 
@@ -45,6 +46,26 @@ void ArruelaAuto::configure(const AutoStrategy &cfg) {
                 Serial.println("[ARRUELA] BUSCA POR DISTANCIA pedida sem VL53L0X. Caindo na PADRAO.");
             }
             break;
+        case BUSCA_BALA_TENSA:
+            if(_toFOk) {
+                _buscaAtual = &ArruelaAuto::_buscaBalaTensa;
+                Serial.printf("[ARRUELA] Busca BALA TENSA (curvinha abaixo de %umm).\n", LIMIAR_TOF_MM);
+            }
+            else {
+                // Sem ToF esse modo nunca dispararia a curvinha. Melhor lutar
+                // com a busca padrao do que girar a luta inteira sem reagir.
+                _buscaAtual = &ArruelaAuto::_buscaPadrao;
+                Serial.println("[ARRUELA] BALA TENSA pedida sem VL53L0X. Caindo na PADRAO.");
+            }
+            break;
+        case BUSCA_GATO_PRETO:
+            _buscaAtual = &ArruelaAuto::_buscaGatoPreto;
+            if(!_toFOk) {
+                Serial.println("[ARRUELA] GATO PRETO sem VL53L0X: só alinha e cai pra PADRAO depois da janela.");
+            }
+            Serial.printf("[ARRUELA] Busca GATO PRETO (%lums, ataca abaixo de %umm) -> PADRAO.\n",
+                          DURACAO_GATO_PRETO_MS, LIMIAR_GATO_PRETO_MM);
+            break;
         case BUSCA_PADRAO:
         default:
             _buscaAtual = &ArruelaAuto::_buscaPadrao;
@@ -52,9 +73,11 @@ void ArruelaAuto::configure(const AutoStrategy &cfg) {
             break;
     }
 
-    // Zera o estado do ToF pra uma busca nova nao herdar leitura da anterior.
+    // Zera o estado do ToF e do gato preto pra uma busca nova nao herdar
+    // leitura/contagem da anterior.
     _ultimaLeituraToF = 0;
     _toFViuAlvo = false;
+    _inicioGatoPreto = 0;
 }
 
 void ArruelaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
@@ -70,10 +93,12 @@ void ArruelaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     bool viuDir = _sensorDir.temAlvo();
     bool viuFrente = _sensorFrontal.temAlvo();
 
-    if(viuEsq)
+    if(viuEsq) {
         _ultimoLado = Direction::left;
-    else if(viuDir)
+    }
+    else if(viuDir) {
         _ultimoLado = Direction::right;
+    }
 
     // Quem decide atacar e o modo de busca, nao o autoEngage: cada busca recebe o
     // frame completo e define seu proprio gatilho de ataque.
@@ -93,10 +118,12 @@ void ArruelaAuto::_buscaPadrao(Drive &motores, bool viuEsq, bool viuDir, bool vi
         motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
         return;
     }
-    if(_ultimoLado == Direction::right)
+    if(_ultimoLado == Direction::right) {
         motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
-    else
+    }
+    else {
         motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
+    }
 }
 
 void ArruelaAuto::_buscaLenta(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
@@ -112,15 +139,16 @@ void ArruelaAuto::_buscaLenta(Drive &motores, bool viuEsq, bool viuDir, bool viu
         motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
         return;
     }
-    if(_ultimoLado == Direction::right)
+    if(_ultimoLado == Direction::right) {
         motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
-    else
+    }
+    else {
         motores.setSpeed(-VEL_BUSCA_LENTA, VEL_BUSCA_LENTA);
+    }
 }
 
 void ArruelaAuto::_buscaToF(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
-    // O JS40F frontal e deliberadamente ignorado aqui: neste modo quem autoriza o
-    // ataque e o VL53L0X, e so ele.
+
     (void)viuFrente;
 
     // Leitura espacada. readRangeContinuousMillimeters() gira no I2C ate sair
@@ -150,10 +178,96 @@ void ArruelaAuto::_buscaToF(Drive &motores, bool viuEsq, bool viuDir, bool viuFr
         motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
         return;
     }
-    if(_ultimoLado == Direction::right)
+    if(_ultimoLado == Direction::right) {
         motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
-    else
+    }
+    else {
         motores.setSpeed(-VEL_BUSCA_LENTA, VEL_BUSCA_LENTA);
+    }
+}
+
+void ArruelaAuto::_buscaBalaTensa(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
+    (void)viuFrente;
+
+    // Mesma leitura espacada da BUSCA_TOF — reaproveita o cache
+    // _ultimaLeituraToF/_toFViuAlvo, nao le o sensor de novo aqui.
+    unsigned long agora = millis();
+    if(agora - _ultimaLeituraToF >= INTERVALO_TOF_MS) {
+        _ultimaLeituraToF = agora;
+        _toFViuAlvo = _sensorDistancia.temOponente(LIMIAR_TOF_MM);
+    }
+
+    if(_toFViuAlvo) {
+        // Em vez de partir reto pra cima, dispara uma curvinha pro ultimo
+        // lado conhecido. autoEngage() confere _player.isPlaying() antes de
+        // chamar a busca de novo, entao a partir daqui quem dirige os
+        // motores e' o MotionPlayer ate a macro terminar.
+        const MotionSequence &curvinha =
+            _ultimoLado == Direction::right ? Config::MACRO_CURVINHA_DIREITA : Config::MACRO_CURVINHA_ESQUERDA;
+        _player.play(curvinha);
+        Serial.println("[ARRUELA] BALA TENSA: VL confirmou alvo perto. Disparando curvinha.");
+        return;
+    }
+
+    // Fora do alcance: mesma varredura das outras buscas — laterais orientam
+    // o giro, cegueira total gira pro ultimo lado conhecido.
+    if(viuEsq) {
+        motores.setSpeed(-VEL_BUSCA_LENTA, VEL_BUSCA_LENTA);
+        return;
+    }
+    if(viuDir) {
+        motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
+        return;
+    }
+    if(_ultimoLado == Direction::right) {
+        motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
+    }
+    else {
+        motores.setSpeed(-VEL_BUSCA_LENTA, VEL_BUSCA_LENTA);
+    }
+}
+
+void ArruelaAuto::_buscaGatoPreto(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
+
+    (void)viuFrente;
+
+    if(_inicioGatoPreto == 0) {
+        _inicioGatoPreto = millis();
+    }
+
+    // Leitura espacada do ToF, mesma cadencia da BUSCA_TOF.
+    unsigned long agora = millis();
+    if(agora - _ultimaLeituraToF >= INTERVALO_TOF_MS) {
+        _ultimaLeituraToF = agora;
+        _toFViuAlvo = _sensorDistancia.temOponente(LIMIAR_GATO_PRETO_MM);
+    }
+
+    if(_toFViuAlvo) {
+        _buscaAtual = &ArruelaAuto::_buscaPadrao;
+        _buscaPadrao(motores, viuEsq, viuDir, viuFrente);
+        return;
+    }
+
+    if(millis() - _inicioGatoPreto >= DURACAO_GATO_PRETO_MS) {
+        _buscaAtual = &ArruelaAuto::_buscaPadrao;
+        _buscaPadrao(motores, viuEsq, viuDir, viuFrente);
+        return;
+    }
+
+    if(viuEsq) {
+        motores.setSpeed(-VEL_BUSCA_LENTA, VEL_BUSCA_LENTA);
+        return;
+    }
+    if(viuDir) {
+        motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
+        return;
+    }
+    if(_ultimoLado == Direction::right) {
+        motores.setSpeed(VEL_BUSCA_LENTA, -VEL_BUSCA_LENTA);
+    }
+    else {
+        motores.setSpeed(-VEL_BUSCA_LENTA, VEL_BUSCA_LENTA);
+    }
 }
 
 void ArruelaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {

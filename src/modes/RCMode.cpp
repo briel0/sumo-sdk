@@ -61,12 +61,16 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     else if(receptor.triangle()) {
         if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_DIR[1]);
     }
-    else if(receptor.dpadRight()) {
-        //triggerMacro(Config::MACRO_CURVINHA_DIREITA);
+#if defined(ROBOT_MAROLA) || defined(ROBOT_ARRUELA)
+    // MACRO_CURVINHA_DIREITA/ESQUERDA só existem nesses dois profiles (ver
+    // include/profiles/) — sem esse guard, o RC do Caipora/Smoker não compila.
+    else if(receptor.r1()) {
+        triggerMacro(Config::MACRO_CURVINHA_DIREITA);
     }
-    else if(receptor.dpadLeft()) {
-        //triggerMacro(Config::MACRO_CURVINHA_ESQUERDA);
+    else if(receptor.l1()) {
+        triggerMacro(Config::MACRO_CURVINHA_ESQUERDA);
     }
+#endif
 
     if(macroPlayer.isPlaying()) {
         macroPlayer.update(motores);
