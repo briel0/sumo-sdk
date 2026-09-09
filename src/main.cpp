@@ -30,6 +30,12 @@ void setup() {
     // cedo ele sobe, mais tempo de estabilização o sensor tem até o combate.
     pinMode(Config::PIN_JS_POWER, OUTPUT);
     digitalWrite(Config::PIN_JS_POWER, HIGH);
+#elif defined(ROBOT_ARRUELA)
+    // Fica desligado durante a estratégia inicial (saque cego) — evita
+    // qualquer interferência dos JS40F nesse trecho. ArruelaAuto::autoEngage()
+    // liga assim que o combate de verdade começa.
+    pinMode(Config::PIN_JS_POWER, OUTPUT);
+    digitalWrite(Config::PIN_JS_POWER, LOW);
 #endif
 
     Serial.begin(115200);

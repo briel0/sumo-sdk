@@ -2,6 +2,7 @@
 #include "Config.hpp"
 #include "Drive.hpp"
 #include "WeaponSystem.hpp"
+#include <Arduino.h>
 
 ArruelaAuto::ArruelaAuto()
     : _sensorEsq(Config::PIN_JS_ESQ), _sensorDir(Config::PIN_JS_DIR), _sensorFrontal(Config::PIN_JS_FRONT),
@@ -81,6 +82,12 @@ void ArruelaAuto::configure(const AutoStrategy &cfg) {
 }
 
 void ArruelaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
+    // Liga o transistor dos JS40F só agora — ficou desligado de propósito
+    // durante a estratégia inicial (ver main.cpp). Chamada redundante frame a
+    // frame de propósito: é um digitalWrite, custa nada, e dispensa flag de
+    // "já liguei".
+    digitalWrite(Config::PIN_JS_POWER, HIGH);
+
     // 1. Com a fuga tocando, ela e dona dos motores: nem busca nem ataque opinam.
     if(_player.isPlaying()) {
         _player.update(motores);

@@ -22,6 +22,11 @@ namespace Config {
     static constexpr int PIN_JS_DIR = 14;
     static constexpr int PIN_JS_FRONT = 4;
 
+    // Transistor na placa que liga a alimentação dos três JS40F. Precisa ir
+    // pra HIGH o mais cedo possível no boot (ver main.cpp) pra dar o máximo
+    // de tempo de estabilização antes de ler qualquer sensor.
+    static constexpr int PIN_JS_POWER = 25;
+
     // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
     // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
     // disputarem o mesmo espectro e derrubarem o portal um do outro.
@@ -69,13 +74,21 @@ namespace Config {
     // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
     static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
 
-    // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão, 2 = Sem Saque, 3 = Frentinha,
-    // 4 = Recuo, 5 = Curvinha)
-    static const MotionSequence *const TABELA_MACROS_ESQ[] = {&MACRO_FRENTAO, &MACRO_CURVAO_ESQUERDA, &MACRO_SEM_SAQUE,
-                                                              &MACRO_FRENTINHA, &MACRO_RECUO, &MACRO_CURVINHA_ESQUERDA};
+    // Placeholder pra calibrar em bancada: dá ré e volta com tudo. Valores
+    // (velocidade/duração) ainda não ajustados.
+    static const MotionSequence MACRO_REVENGE = MACRO(
+        {100, 100, 300},
+        {100, -100, 100}, {100, 100, 180}, {100,-100,110});
 
-    static const MotionSequence *const TABELA_MACROS_DIR[] = {&MACRO_FRENTAO, &MACRO_CURVAO_DIREITA, &MACRO_SEM_SAQUE,
-                                                              &MACRO_FRENTINHA, &MACRO_RECUO, &MACRO_CURVINHA_DIREITA};
+    // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão, 2 = Sem Saque, 3 = Frentinha,
+    // 4 = Recuo, 5 = Curvinha, 6 = Revenge)
+    static const MotionSequence *const TABELA_MACROS_ESQ[] = {
+        &MACRO_FRENTAO, &MACRO_CURVAO_ESQUERDA,   &MACRO_SEM_SAQUE, &MACRO_FRENTINHA,
+        &MACRO_RECUO,   &MACRO_CURVINHA_ESQUERDA, &MACRO_REVENGE};
+
+    static const MotionSequence *const TABELA_MACROS_DIR[] = {
+        &MACRO_FRENTAO, &MACRO_CURVAO_DIREITA,   &MACRO_SEM_SAQUE, &MACRO_FRENTINHA,
+        &MACRO_RECUO,   &MACRO_CURVINHA_DIREITA, &MACRO_REVENGE};
 
     // Sem indentação de propósito: essa string vai inteira pra uma BLE
     // characteristic (BleConfigServer, CMD_GET_PROFILE) e o Bluedroid do
@@ -92,7 +105,8 @@ namespace Config {
 {"id": 2, "name": "SEM SAQUE"},
 {"id": 3, "name": "FRENTINHA"},
 {"id": 4, "name": "RECUO"},
-{"id": 5, "name": "CURVINHA"}
+{"id": 5, "name": "CURVINHA"},
+{"id": 6, "name": "REVENGE"}
 ],
 "searches": [
 {"id": 1, "name": "BUSCA PADRÃO"},
