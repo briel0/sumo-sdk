@@ -86,11 +86,11 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
 // config certa.
 void RCMode::handleMotorPolarity(Drive &motores, StatusLed &led) {
     static constexpr unsigned long HOLD_MS = 700;
-    // Azul: única cor que StatusLed ainda não usa pra mais nada (Red/Orange/
-    // Green já têm significado — boot, pareamento, conectado). Sem confundir
-    // com nenhum outro estado do RC. Flash sólido e bloqueante — mesmo
-    // padrão de confirmStep()/blinkDebug(), aceitável aqui porque é um gesto
-    // deliberado de bancada, não o hot path de pilotagem.
+    // Purple: cor que StatusLed ainda não usa pra mais nada (Red/Orange/
+    // Green já têm significado — boot, pareamento, conectado), e mais fácil
+    // de distinguir delas a olho do que Blue. Flash sólido e bloqueante —
+    // mesmo padrão de confirmStep()/blinkDebug(), aceitável aqui porque é um
+    // gesto deliberado de bancada, não o hot path de pilotagem.
     static constexpr int FLASH_MS = 250;
 
     if(!receptor.startHeld()) {
@@ -107,7 +107,7 @@ void RCMode::handleMotorPolarity(Drive &motores, StatusLed &led) {
         _polarityArmed = false;
         uint8_t idx = motores.cyclePolarity();
         Serial.printf("[RC] Start segurado %lums: polaridade -> config #%u\n", HOLD_MS, idx);
-        led.setAll(CRGB::Blue);
+        led.setAll(CRGB::Purple);
         delay(FLASH_MS);
     }
 }
