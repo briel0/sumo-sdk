@@ -77,31 +77,29 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     }
 }
 
-// Start + analógico direito ciclam a polaridade dos motores (ver
-// MotorPolarity.hpp) sem precisar do site — combo escolhido de propósito
-// pra não colidir com pilotagem real: Start não é usado em mais nada aqui, e
-// o analógico DIREITO (não o esquerdo, que já é o steering em run()) também
-// não. Ciclar só avança (0..7, dá a volta) — não faz sentido "voltar", o
-// operador vai testando os motores até achar a config certa.
+// Segurar Start por HOLD_MS cicla a polaridade dos motores (ver
+// MotorPolarity.hpp) sem precisar do site. Start não é usado em mais nada em
+// RCMode — mas um toque rápido (encostar sem querer) não é suficiente,
+// precisa segurar de propósito. Ciclar só avança (0..7, dá a volta) — não
+// faz sentido "voltar", o operador vai testando os motores até achar a
+// config certa.
 void RCMode::handleMotorPolarity(Drive &motores) {
-    static constexpr int PUSH_THRESHOLD = 60;  // empurrão deliberado, não nudge
-    static constexpr int REARM_THRESHOLD = 20; // precisa voltar quase ao centro
+    static constexpr unsigned long HOLD_MS = 700;
 
     if(!receptor.startHeld()) {
-        _polarityComboArmed = true;
+        _polarityHoldStart = 0;
+        _polarityArmed = true;
         return;
     }
 
-    int rx = receptor.rightStickX();
-    int ry = receptor.rightStickY();
-
-    if(_polarityComboArmed && (abs(rx) > PUSH_THRESHOLD || abs(ry) > PUSH_THRESHOLD)) {
-        _polarityComboArmed = false;
-        uint8_t idx = motores.cyclePolarity();
-        Serial.printf("[RC] Start + analógico direito: polaridade -> config #%u\n", idx);
+    if(_polarityHoldStart == 0) {
+        _polarityHoldStart = millis();
     }
-    else if(abs(rx) < REARM_THRESHOLD && abs(ry) < REARM_THRESHOLD) {
-        _polarityComboArmed = true;
+
+    if(_polarityArmed && millis() - _polarityHoldStart >= HOLD_MS) {
+        _polarityArmed = false;
+        uint8_t idx = motores.cyclePolarity();
+        Serial.printf("[RC] Start segurado %lums: polaridade -> config #%u\n", HOLD_MS, idx);
     }
 }
 

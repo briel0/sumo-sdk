@@ -48,12 +48,17 @@ class RCMode {
 
     void handleMacros(Drive &motores, WeaponSystem &armas);
 
-    // Combo de bancada (Start + analógico direito) pra ciclar a config de
-    // polaridade dos motores sem precisar do site — ver .cpp.
+    // Segurar Start por um tempo cicla a config de polaridade dos motores
+    // sem precisar do site — ver .cpp.
     void handleMotorPolarity(Drive &motores);
 
-    // Destrava de novo só quando o analógico volta perto do centro (ou Start
-    // solta) — sem isso, segurar o combo além do threshold dispararia
-    // cyclePolarity() a cada frame (~toda vez que run() roda).
-    bool _polarityComboArmed = true;
+    // 0 = Start não está sendo segurado (ou acabou de soltar). Setado no
+    // instante em que Start desce, comparado contra millis() pra medir
+    // quanto tempo já ficou segurado.
+    unsigned long _polarityHoldStart = 0;
+
+    // Falso logo depois de disparar — precisa soltar Start pra rearmar, senão
+    // continuar segurando além do tempo dispararia cyclePolarity() todo
+    // frame.
+    bool _polarityArmed = true;
 };
