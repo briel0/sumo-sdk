@@ -1,6 +1,7 @@
 #include "RCMode.hpp"
 #include "Config.hpp"
 #include "Drive.hpp"
+#include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
 
@@ -83,8 +84,14 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
 // precisa segurar de propósito. Ciclar só avança (0..7, dá a volta) — não
 // faz sentido "voltar", o operador vai testando os motores até achar a
 // config certa.
-void RCMode::handleMotorPolarity(Drive &motores) {
+void RCMode::handleMotorPolarity(Drive &motores, StatusLed &led) {
     static constexpr unsigned long HOLD_MS = 700;
+    // Azul: única cor que StatusLed ainda não usa pra mais nada (Red/Orange/
+    // Green já têm significado — boot, pareamento, conectado). Sem confundir
+    // com nenhum outro estado do RC. Flash sólido e bloqueante — mesmo
+    // padrão de confirmStep()/blinkDebug(), aceitável aqui porque é um gesto
+    // deliberado de bancada, não o hot path de pilotagem.
+    static constexpr int FLASH_MS = 250;
 
     if(!receptor.startHeld()) {
         _polarityHoldStart = 0;
@@ -100,14 +107,16 @@ void RCMode::handleMotorPolarity(Drive &motores) {
         _polarityArmed = false;
         uint8_t idx = motores.cyclePolarity();
         Serial.printf("[RC] Start segurado %lums: polaridade -> config #%u\n", HOLD_MS, idx);
+        led.setAll(CRGB::Blue);
+        delay(FLASH_MS);
     }
 }
 
-void RCMode::run(Drive &motores, WeaponSystem &armas) {
+void RCMode::run(Drive &motores, WeaponSystem &armas, StatusLed &led) {
     receptor.update();
     armas.update();
 
-    handleMotorPolarity(motores);
+    handleMotorPolarity(motores, led);
 
     int throttle = receptor.rightTrigger() - receptor.leftTrigger();
 

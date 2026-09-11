@@ -5,6 +5,7 @@
 
 class Drive;
 class WeaponSystem;
+class StatusLed;
 
 /**
     @class RCMode
@@ -22,8 +23,10 @@ class RCMode {
     @brief Executes the manual control logic. Dependency injection: The FSM "lends" the motors for RCMode to drive.
     @param motores Reference to the Drive object to control the motors.
     @param armas   Reference to the WeaponSystem object to control the weapons.
+    @param led     Reference to the status LED strip — só usada pra piscar
+                    quando o combo de polaridade dispara (ver handleMotorPolarity()).
     */
-    void run(Drive &motores, WeaponSystem &armas);
+    void run(Drive &motores, WeaponSystem &armas, StatusLed &led);
 
     /**
     @brief Returns whether the controller is currently connected and recognized.
@@ -50,7 +53,7 @@ class RCMode {
 
     // Segurar Start por um tempo cicla a config de polaridade dos motores
     // sem precisar do site — ver .cpp.
-    void handleMotorPolarity(Drive &motores);
+    void handleMotorPolarity(Drive &motores, StatusLed &led);
 
     // 0 = Start não está sendo segurado (ou acabou de soltar). Setado no
     // instante em que Start desce, comparado contra millis() pra medir

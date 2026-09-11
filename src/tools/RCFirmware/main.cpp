@@ -65,7 +65,7 @@ void loop() {
     else {
         statusLed.setState(CRGB::Green); // limpa o laranja residual
     }
-    modoRC.run(motores, sistemaDeArmas);
+    modoRC.run(motores, sistemaDeArmas, statusLed);
 
     yield();
 }
