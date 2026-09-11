@@ -47,4 +47,13 @@ class RCMode {
     void handleWeapons(WeaponSystem &armas, int throttle, int steer);
 
     void handleMacros(Drive &motores, WeaponSystem &armas);
+
+    // Combo de bancada (Start + analógico direito) pra ciclar a config de
+    // polaridade dos motores sem precisar do site — ver .cpp.
+    void handleMotorPolarity(Drive &motores);
+
+    // Destrava de novo só quando o analógico volta perto do centro (ou Start
+    // solta) — sem isso, segurar o combo além do threshold dispararia
+    // cyclePolarity() a cada frame (~toda vez que run() roda).
+    bool _polarityComboArmed = true;
 };
