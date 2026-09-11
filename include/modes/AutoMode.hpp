@@ -45,6 +45,8 @@ class AutoMode {
     bool _testingMotor = false;
     bool _testingSensor = false;
     bool _startMacroTest = false;
+    bool _weaponCommandPending = false;
+    bool _weaponCommandArm = false;
     MotionSequence _macroToTest;
     unsigned int _tempoDesligamento = 0;
     unsigned long _ultimoReadout = 0;

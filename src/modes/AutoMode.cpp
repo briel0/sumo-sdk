@@ -60,6 +60,11 @@ void AutoMode::init(CombatStrategy &estrategia) {
             _testingSensor = true;
     });
 
+    configServer.setWeaponCallback([this](bool arm) {
+        _weaponCommandArm = arm;
+        _weaponCommandPending = true;
+    });
+
     configServer.begin();
 }
 
@@ -67,6 +72,19 @@ void AutoMode::init(CombatStrategy &estrategia) {
 
 void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irReady) {
     armas.update();
+
+    // Comando de bancada (botão ARMAR/DESARMAR do site): aplica fora da
+    // task do Bluedroid que recebeu o WRITE, e independente do subState —
+    // é um override manual, não faz parte da máquina de estados do combate.
+    if(_weaponCommandPending) {
+        _weaponCommandPending = false;
+        if(_weaponCommandArm) {
+            armas.deploy();
+        }
+        else {
+            armas.retract();
+        }
+    }
 
     switch(subState) {
         case SubState::SELECTING_ESTRATEGIA:

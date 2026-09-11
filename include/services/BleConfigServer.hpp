@@ -50,6 +50,12 @@ class BleConfigServer {
         _sensorTestCallback = cb;
     }
 
+    // true = armar (deploy), false = desarmar (retract). Comando de bancada,
+    // independente da estratégia de arme automático em combate.
+    void setWeaponCallback(std::function<void(bool)> cb) {
+        _weaponCallback = cb;
+    }
+
     // Chamado pelo callback de WRITE da characteristic (classe interna do
     // .cpp) — público porque quem chama não é membro de BleConfigServer,
     // é um BLECharacteristicCallbacks separado que guarda um ponteiro pra
@@ -62,6 +68,7 @@ class BleConfigServer {
     std::function<void(MotionSequence)> _macroTestCallback = nullptr;
     std::function<void(bool)> _motorTestCallback = nullptr;
     std::function<void(bool)> _sensorTestCallback = nullptr;
+    std::function<void(bool)> _weaponCallback = nullptr;
 
     String _testReadoutJson = "{}";
     AutoStrategy _currentAutoStrategy;

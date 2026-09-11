@@ -21,6 +21,7 @@ namespace {
         CMD_SET_STRATEGY = 0x03,
         CMD_SET_TEST = 0x04,
         CMD_TRIGGER_MACRO = 0x05,
+        CMD_SET_WEAPON = 0x06,
     };
 
     enum BleAck : uint8_t {
@@ -141,6 +142,17 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
                 MotionSequence seq = {_macroTestSteps, numSteps};
                 _macroTestCallback(seq);
             }
+            break;
+        }
+
+        case CMD_SET_WEAPON: {
+            if(bufferSize < 2) {
+                ack = ACK_ERROR;
+                break;
+            }
+            const bool arm = buffer[1] == 1;
+            if(_weaponCallback)
+                _weaponCallback(arm);
             break;
         }
 
