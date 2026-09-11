@@ -16,11 +16,20 @@ static constexpr int NUM_MACROS = (int)(sizeof(Config::TABELA_MACROS_ESQ) / size
 // Cadencia do painel /sensors. Ver a justificativa no SELECTING_ESTRATEGIA.
 static constexpr unsigned long INTERVALO_READOUT_MS = 150;
 
+// Frente, ré, curva leve pra direita, curva leve pra esquerda — nessa ordem
+// pra separar os dois defeitos que POLARIDADE MOTORES corrige: os dois
+// primeiros passos mostram motor invertido (gira ao contrário do comandado);
+// os dois últimos mostram lado trocado (curva pro lado errado). "Leve" =
+// um lado a 60, o outro a 20 — arco visível sem virar pivô no lugar.
 static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
-    {60, 60, 500},
-    {0, 0, 500},
-    {-60, -60, 500},
-    {0, 0, 500}
+    {60, 60, 500},   // frente
+    {0, 0, 300},
+    {-60, -60, 500}, // ré
+    {0, 0, 300},
+    {60, 20, 500},   // curva leve pra direita (roda direita mais devagar)
+    {0, 0, 300},
+    {20, 60, 500},   // curva leve pra esquerda (roda esquerda mais devagar)
+    {0, 0, 300}
 );
 
 void AutoMode::init(CombatStrategy &estrategia, Drive &motores) {
