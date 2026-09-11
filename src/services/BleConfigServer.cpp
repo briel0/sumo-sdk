@@ -22,6 +22,7 @@ namespace {
         CMD_SET_TEST = 0x04,
         CMD_TRIGGER_MACRO = 0x05,
         CMD_SET_WEAPON = 0x06,
+        CMD_CYCLE_MOTOR_POLARITY = 0x07,
     };
 
     enum BleAck : uint8_t {
@@ -154,6 +155,14 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
             if(_weaponCallback)
                 _weaponCallback(arm);
             break;
+        }
+
+        case CMD_CYCLE_MOTOR_POLARITY: {
+            // Resposta não é ACK_OK/ACK_ERROR — é o índice novo (0-7) direto,
+            // pro app mostrar sem precisar de um segundo round-trip.
+            uint8_t newIndex = _motorPolarityCallback ? _motorPolarityCallback() : 0;
+            characteristic->setValue(&newIndex, 1);
+            return;
         }
 
         default:

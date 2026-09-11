@@ -40,6 +40,11 @@ Drive::Drive(int rightPosPin, int rightNegPin, int leftPosPin, int leftNegPin) {
 
 void Drive::setSpeed(int leftSpeed, int rightSpeed) {
 
+    // Corrige motor invertido / lados trocados aqui, no único ponto por onde
+    // toda velocidade passa — nenhuma estratégia/modo precisa saber que isso
+    // existe. Ver MotorPolarity.hpp pro porquê disso não mexer em pino nenhum.
+    _polarity.apply(leftSpeed, rightSpeed);
+
     leftSpeed = constrain(leftSpeed, -100, 100);
     rightSpeed = constrain(rightSpeed, -100, 100);
 

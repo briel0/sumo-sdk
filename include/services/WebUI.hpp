@@ -302,6 +302,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
         <button id="btn-test-motor" class="btn-diag" onclick="toggleTest('motor')">TESTE MOTORES</button>
     </div>
     <div id="test-readout"></div>
+    <button id="btn-motor-polarity" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="cycleMotorPolarity()">POLARIDADE MOTORES</button>
     <button id="btn-weapon-toggle" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="toggleWeapon()">ARMAR</button>
 
     <h2>MOVIMENTAÇÃO INICIAL</h2>
@@ -379,6 +380,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
             SET_TEST: 0x04,
             TRIGGER_MACRO: 0x05,
             SET_WEAPON: 0x06,
+            CYCLE_MOTOR_POLARITY: 0x07,
         };
 
         let bleCharacteristic = null;
@@ -442,6 +444,13 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
                 json: () => Promise.resolve({}),
                 text: () => Promise.resolve(ok ? 'OK' : 'ERRO'),
             };
+        }
+
+        // CYCLE_MOTOR_POLARITY não devolve ACK_OK/ACK_ERROR — devolve o
+        // índice novo (0-7) direto no primeiro (e único) byte da resposta.
+        function blePolarityResponse(bytes) {
+            const ok = bytes.length > 0;
+            return { ok, index: ok ? bytes[0] : null };
         }
 
         const Transport = {
@@ -510,6 +519,10 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
                 const bytes = new Uint8Array([BLE_CMD.SET_WEAPON, arm ? 1 : 0]);
                 return bleCommand(bytes).then(bleAckResponse);
             },
+
+            // Sem payload: cada chamada avança uma config (0..7, dá a volta).
+            // Persiste na NVS do robô — sobrevive a reflash AUTO<->RC.
+            cycleMotorPolarity: () => bleCommand(new Uint8Array([BLE_CMD.CYCLE_MOTOR_POLARITY])).then(blePolarityResponse),
         };
 
         // =================================================
@@ -675,6 +688,29 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
                 .catch(() => {
                     printLog('> [ERRO] ROBÔ NÃO RESPONDEU', true);
                     showUiAlert('NETWORK ERROR', 'Falha ao comandar a arma.<br>Verifique a conexão.', true);
+                });
+        }
+
+        // Sem estado local pra "config certa" — quem decide é o operador,
+        // ouvindo/vendo os motores girarem depois de cada clique. O número
+        // só serve pra saber quantos cliques já deu (e voltar, se passar).
+        function cycleMotorPolarity() {
+            if (navigator.vibrate) navigator.vibrate(20);
+
+            printLog('> AVANÇANDO POLARIDADE DOS MOTORES...');
+            Transport.cycleMotorPolarity()
+                .then(res => {
+                    if (!res.ok) {
+                        printLog('> [ERRO] COMANDO DE POLARIDADE RECUSADO', true);
+                        showUiAlert('[!] ERRO', 'O robô recusou o comando de polaridade.', true);
+                        return;
+                    }
+                    document.getElementById('btn-motor-polarity').innerText = 'POLARIDADE: #' + res.index;
+                    printLog('> [OK] CONFIG #' + res.index + ' — TESTE OS MOTORES PRA CONFERIR');
+                })
+                .catch(() => {
+                    printLog('> [ERRO] ROBÔ NÃO RESPONDEU', true);
+                    showUiAlert('NETWORK ERROR', 'Falha ao comandar a polaridade.<br>Verifique a conexão.', true);
                 });
         }
 

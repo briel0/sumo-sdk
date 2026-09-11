@@ -23,7 +23,7 @@ static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
     {0, 0, 500}
 );
 
-void AutoMode::init(CombatStrategy &estrategia) {
+void AutoMode::init(CombatStrategy &estrategia, Drive &motores) {
     Serial.println("Modo Auto Iniciado.");
     autoConfig = AutoStrategy();
 
@@ -63,6 +63,15 @@ void AutoMode::init(CombatStrategy &estrategia) {
     configServer.setWeaponCallback([this](bool arm) {
         _weaponCommandArm = arm;
         _weaponCommandPending = true;
+    });
+
+    // &motores (referência a um objeto global de vida eterna, ver main.cpp)
+    // é seguro de capturar: configServer também é membro de um AutoMode
+    // global, então os dois nunca saem de escopo.
+    configServer.setMotorPolarityCallback([&motores]() {
+        uint8_t idx = motores.cyclePolarity();
+        Serial.printf("[AUTO] Polaridade dos motores -> config #%u\n", idx);
+        return idx;
     });
 
     configServer.begin();
