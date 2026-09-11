@@ -298,7 +298,7 @@
         <button id="btn-test-motor" class="btn-diag" onclick="toggleTest('motor')">TESTE MOTORES</button>
     </div>
     <div id="test-readout"></div>
-    <button id="btn-motor-polarity" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="cycleMotorPolarity()">POLARIDADE MOTORES</button>
+    <button id="btn-motor-polarity" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="openMotorPolarityConfirm()">POLARIDADE MOTORES</button>
     <button id="btn-weapon-toggle" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="toggleWeapon()">ARMAR</button>
 
     <h2>MOVIMENTAÇÃO INICIAL</h2>
@@ -687,10 +687,31 @@
                 });
         }
 
+        // Grava na NVS do robô e muda como ele interpreta "frente" — clique
+        // sem querer no meio de outra coisa é caro (perde tempo de bancada
+        // recalibrando). Passa sempre pelo modal de confirmação abaixo em
+        // vez de agir no primeiro clique como TESTE MOTORES/ARMAR.
+        function openMotorPolarityConfirm() {
+            if (navigator.vibrate) navigator.vibrate(20);
+
+            mContainer.className = "modal-box";
+            mTitle.innerText = "CONFIRMAR POLARIDADE";
+            mTitle.style.color = 'var(--lemon-chiffon)';
+            mBody.innerHTML = `<div class="modal-prompt">Isso avança a config de polaridade dos motores e grava na memória do robô — vale pra qualquer firmware que suba depois (AUTO ou RC). Só usar em bancada, com o robô no ar.</div>`;
+
+            mActions.className = "modal-actions";
+            mActions.innerHTML = `
+                <button class="btn-abort" onclick="closeModal()">CANCELAR</button>
+                <button class="btn-confirm" onclick="executeMotorPolarityCycle()">AVANÇAR</button>
+            `;
+            modal.style.display = 'flex';
+        }
+
         // Sem estado local pra "config certa" — quem decide é o operador,
         // ouvindo/vendo os motores girarem depois de cada clique. O número
         // só serve pra saber quantos cliques já deu (e voltar, se passar).
-        function cycleMotorPolarity() {
+        function executeMotorPolarityCycle() {
+            closeModal();
             if (navigator.vibrate) navigator.vibrate(20);
 
             printLog('> AVANÇANDO POLARIDADE DOS MOTORES...');
