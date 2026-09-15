@@ -11,57 +11,103 @@
             --lemon-chiffon: #eeecc5;
             --grey-olive: #847f79;
             --dim-grey: #6e6965;
-            --void-bg: #05140a; 
+            --void-bg: #05140a;
             --alert-red: #ff3333;
+
+            /* Escala de espaçamento — grid de 4px. Todo padding/margin/gap
+               abaixo referencia um destes em vez de valor solto, pra manter
+               o ritmo vertical/horizontal consistente pela página inteira. */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 24px;
+            --space-6: 32px;
+            --space-7: 48px;
+
+            /* Escala tipográfica — nomeia os tamanhos que já existiam no
+               arquivo (não inventa valor novo), só formaliza como escala
+               referenciável em vez de número solto em cada regra. */
+            --fs-xs: 0.7rem;
+            --fs-sm: 0.75rem;
+            --fs-base: 0.85rem;
+            --fs-md: 0.9rem;
+            --fs-lg: 1rem;
+            --fs-xl: 1.1rem;
+            --fs-xxl: 1.2rem;
+
+            --border-thin: 2px;
+            --border-thick: 3px;
+
+            /* Trava a largura de leitura em telas largas (tablet/desktop) —
+               em telas de celular (a maioria dos casos de uso real) isso
+               nunca entra em ação, o corpo continua ocupando 100% da tela. */
+            --content-max-width: 480px;
         }
 
         * { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-        
-        body { 
-            background-color: var(--void-bg); 
-            color: var(--lemon-chiffon); 
-            margin: 0; 
-            padding: 15px;
-            padding-bottom: 80px; 
-            user-select: none; 
+
+        body {
+            background-color: var(--void-bg);
+            color: var(--lemon-chiffon);
+            max-width: var(--content-max-width);
+            margin: 0 auto;
+            padding: var(--space-4);
+            padding-bottom: var(--space-7);
+            user-select: none;
             -webkit-user-select: none;
         }
-        
-        h1 { 
-            color: var(--sea-green); 
-            font-size: 1.2rem; 
-            text-align: center; 
-            border-bottom: 2px solid var(--dark-spruce); 
-            padding-bottom: 10px; 
-            margin-top: 5px; 
+
+        h1 {
+            color: var(--sea-green);
+            font-size: var(--fs-xxl);
+            text-align: center;
+            border-bottom: var(--border-thin) solid var(--dark-spruce);
+            padding-bottom: var(--space-3);
+            margin-top: var(--space-1);
         }
-        
-        h2 { 
-            font-size: 0.9rem; 
-            color: var(--lemon-chiffon); 
-            margin-top: 25px; 
-            margin-bottom: 10px; 
-            border-left: 4px solid var(--sea-green); 
-            padding-left: 8px; 
+
+        h2 {
+            font-size: var(--fs-md);
+            color: var(--lemon-chiffon);
+            margin-top: var(--space-6);
+            margin-bottom: var(--space-3);
+            border-left: 4px solid var(--sea-green);
+            padding-left: var(--space-2);
         }
-        
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+        .grid.grid-tight { margin-bottom: var(--space-2); }
+
         button {
             background-color: transparent;
-            font-size: 0.85rem;
+            font-size: var(--fs-base);
             font-weight: bold;
             text-transform: uppercase;
             width: 100%;
             cursor: pointer;
             transition: 0.1s;
-            padding: 18px 5px;
+            padding: var(--space-4) var(--space-1);
         }
-        
+
         button:active { filter: brightness(1.5); }
 
+        /* Enquanto um comando BLE desse botão está em voo — ver withBusy().
+           Sem isso um toque não dava nenhuma confirmação de "pegou" até a
+           resposta voltar, o que é perceptível quando a fila bleQueue já
+           tem algo pendente na frente. */
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Botão .btn-diag "solo" (não dentro de .grid) que antes levava
+           style="width:100%; margin-top:10px" inline — width já é 100% por
+           padrão em button, só faltava o espaçamento em cima consistente. */
+        .btn-diag-standalone { margin-top: var(--space-3); }
+
         .btn-diag {
-            border: 2px solid var(--alert-red);
+            border: var(--border-thin) solid var(--alert-red);
             color: var(--alert-red);
         }
         .btn-diag.active {
@@ -71,88 +117,112 @@
 
         #test-readout {
             display: none;
-            margin-top: 10px;
-            padding: 10px;
+            margin-top: var(--space-2);
+            padding: var(--space-2);
             background-color: #000;
-            border: 2px solid var(--alert-red);
-            font-size: 0.75rem;
+            border: var(--border-thin) solid var(--alert-red);
+            font-size: var(--fs-sm);
             color: var(--sea-green);
             white-space: pre-wrap;
             word-break: break-word;
         }
 
         .btn-macro {
-            border: 2px solid var(--sea-green);
+            border: var(--border-thin) solid var(--sea-green);
             color: var(--lemon-chiffon);
         }
-        .btn-macro.selected { 
-            background-color: var(--sea-green); 
+        .btn-macro.selected {
+            background-color: var(--sea-green);
             color: var(--void-bg);
         }
 
-        .btn-direction { 
-            border: 2px solid var(--dim-grey);
+        .btn-direction {
+            border: var(--border-thin) solid var(--dim-grey);
             color: var(--lemon-chiffon);
         }
-        .btn-direction.selected { 
-            background-color: var(--dim-grey); 
-            color: var(--void-bg); 
+        .btn-direction.selected {
+            background-color: var(--dim-grey);
+            color: var(--void-bg);
         }
 
-        .btn-search { 
-            border: 2px solid var(--grey-olive);
-            color: var(--lemon-chiffon); 
-        }
-        .btn-search.selected { 
-            background-color: var(--grey-olive); 
-            color: var(--void-bg); 
-        }
-
-        .btn-weapon { 
-            border: 2px solid var(--lemon-chiffon);
+        .btn-search {
+            border: var(--border-thin) solid var(--grey-olive);
             color: var(--lemon-chiffon);
         }
-        .btn-weapon.selected { 
-            background-color: var(--lemon-chiffon); 
-            color: var(--dark-spruce); 
+        .btn-search.selected {
+            background-color: var(--grey-olive);
+            color: var(--void-bg);
+        }
+
+        .btn-weapon {
+            border: var(--border-thin) solid var(--lemon-chiffon);
+            color: var(--lemon-chiffon);
+        }
+        .btn-weapon.selected {
+            background-color: var(--lemon-chiffon);
+            color: var(--dark-spruce);
         }
 
         .btn-submit {
-            margin-top: 30px;
+            margin-top: var(--space-6);
             background-color: var(--dark-spruce);
-            border: 3px solid var(--sea-green);
+            border: var(--border-thick) solid var(--sea-green);
             color: var(--lemon-chiffon);
-            font-size: 1.2rem;
-            padding: 20px;
+            font-size: var(--fs-xxl);
+            padding: var(--space-5);
             letter-spacing: 2px;
         }
 
         .connect-wrap {
             display: flex;
             justify-content: center;
-            margin: 5px 0 15px;
+            margin: var(--space-1) 0 var(--space-4);
         }
 
         .btn-connect {
             width: auto;
             background-color: var(--dark-spruce);
-            border: 3px solid var(--sea-green);
+            border: var(--border-thick) solid var(--sea-green);
             color: var(--lemon-chiffon);
-            padding: 16px 32px;
+            padding: var(--space-4) var(--space-6);
             letter-spacing: 1px;
         }
         .btn-connect:active { filter: brightness(1.5); }
-        
+
+        /* STATUS DA CONEXÃO BLE — sem isso a UI nunca avisava se a conexão caiu */
+        .conn-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            font-size: var(--fs-sm);
+            letter-spacing: 1px;
+            color: var(--dim-grey);
+            margin-bottom: var(--space-4);
+        }
+
+        .conn-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background-color: var(--dim-grey);
+            flex-shrink: 0;
+        }
+
+        .conn-dot.connected { background-color: var(--sea-green); }
+        .conn-dot.mock { background-color: var(--lemon-chiffon); }
+        .conn-dot.lost { background-color: var(--alert-red); }
+
         /* TERMINAL DE LOG FIXO NO RODAPÉ */
         #terminal-log {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 10px;
+            padding: var(--space-3);
             background-color: #000;
-            border-top: 2px solid var(--dark-spruce);
-            font-size: 0.7rem;
+            border-top: var(--border-thin) solid var(--dark-spruce);
+            font-size: var(--fs-xs);
             color: var(--sea-green);
             overflow-x: auto;
             white-space: nowrap;
@@ -166,17 +236,17 @@
             top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(5, 20, 10, 0.95);
             z-index: 100;
-            padding: 20px;
+            padding: var(--space-5);
             justify-content: center;
             align-items: center;
         }
-        
+
         .modal-box {
             background-color: #000;
-            border: 3px solid var(--sea-green);
+            border: var(--border-thick) solid var(--sea-green);
             width: 100%;
             max-width: 400px;
-            padding: 20px;
+            padding: var(--space-5);
         }
 
         .modal-box.error-mode {
@@ -184,103 +254,140 @@
         }
 
         .modal-title {
-            font-size: 1.1rem;
+            font-size: var(--fs-xl);
             font-weight: bold;
             text-align: center;
             letter-spacing: 2px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--dim-grey);
-            padding-bottom: 8px;
+            margin-bottom: var(--space-5);
+            border-bottom: var(--border-thin) solid var(--dim-grey);
+            padding-bottom: var(--space-2);
         }
 
         .modal-body {
-            font-size: 1.1rem; 
-            font-weight: bold; 
+            font-size: var(--fs-xl);
+            font-weight: bold;
             line-height: 1.5;
             letter-spacing: 1.5px;
-            margin-bottom: 25px;
-            color: var(--lemon-chiffon); 
+            margin-bottom: var(--space-6);
+            color: var(--lemon-chiffon);
         }
-        
+
         /* ESTILO DOS "MINI-BOTÕES" NO MODAL */
         .modal-chip {
             display: block;
             width: 100%;
-            padding: 12px;
-            margin-bottom: 8px;
+            padding: var(--space-3);
+            margin-bottom: var(--space-2);
             text-align: center;
-            font-size: 1rem;
+            font-size: var(--fs-lg);
             font-weight: bold;
             text-transform: uppercase;
             pointer-events: none; /* Impede clique */
         }
-        
+
         /* Texto final antes dos botões de ação */
         .modal-prompt {
             text-align: center;
-            margin-top: 20px;
-            font-size: 0.9rem;
+            margin-top: var(--space-5);
+            font-size: var(--fs-md);
             color: var(--grey-olive);
         }
 
         .modal-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: var(--space-4);
         }
 
         .modal-actions.single-btn {
             grid-template-columns: 1fr;
         }
 
-        .btn-abort { border: 2px solid var(--alert-red); color: var(--alert-red); letter-spacing: 1px; }
+        .btn-abort { border: var(--border-thin) solid var(--alert-red); color: var(--alert-red); letter-spacing: 1px; }
         .btn-abort:active { background-color: var(--alert-red); color: #fff; }
-        
-        .btn-confirm { border: 2px solid var(--sea-green); color: var(--sea-green); letter-spacing: 1px; }
+
+        .btn-confirm { border: var(--border-thin) solid var(--sea-green); color: var(--sea-green); letter-spacing: 1px; }
         .btn-confirm:active { background-color: var(--sea-green); color: #000; }
 
-        /* ESTILIZAÇÃO DO CONSTRUTOR DE MACROS */
-    .step-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 12px;
-        background-color: rgba(44, 146, 70, 0.05);
-        padding: 10px;
-        border-left: 3px solid var(--sea-green);
-    }
+        /* ESTILIZAÇÃO DO CONSTRUTOR DE MACROS (dentro do <details> — ver
+           TESTE DE MACRO no body) */
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+            background-color: rgba(44, 146, 70, 0.05);
+            padding: var(--space-3);
+            border-left: 3px solid var(--sea-green);
+        }
 
-    .step-row span {
-        font-weight: bold;
-        color: var(--lemon-chiffon);
-        min-width: 65px;
-        font-size: 0.85rem;
-    }
+        .step-row span {
+            font-weight: bold;
+            color: var(--lemon-chiffon);
+            min-width: 65px;
+            font-size: var(--fs-base);
+        }
 
-    .step-input {
-        flex: 1;
-        width: 100%;
-        background-color: transparent;
-        border: 1px solid var(--dark-spruce);
-        color: var(--sea-green);
-        padding: 10px 5px;
-        font-size: 0.9rem;
-        font-weight: bold;
-        text-align: center;
-        border-radius: 0;
-        appearance: textfield; /* Remove setinhas em alguns navegadores */
-    }
+        .step-input {
+            flex: 1;
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid var(--dark-spruce);
+            color: var(--sea-green);
+            padding: var(--space-3) var(--space-1);
+            font-size: var(--fs-md);
+            font-weight: bold;
+            text-align: center;
+            border-radius: 0;
+            appearance: textfield; /* Remove setinhas em alguns navegadores */
+        }
 
-    .step-input:focus {
-        outline: none;
-        border-color: var(--sea-green);
-        background-color: rgba(44, 146, 70, 0.15);
-    }
+        .step-input:focus {
+            outline: none;
+            border-color: var(--sea-green);
+            background-color: rgba(44, 146, 70, 0.15);
+        }
 
-    .step-input::placeholder {
-        color: var(--dim-grey);
-        font-size: 0.75rem;
-    }
+        .step-input::placeholder {
+            color: var(--dim-grey);
+            font-size: var(--fs-xs);
+        }
+
+        /* Campo com texto que não é um inteiro válido — ver isValidInt().
+           Sem isso um valor tipo "abc" virava 0 silenciosamente na hora de
+           montar o payload, sem nenhum aviso pro operador. */
+        .step-input.invalid {
+            border-color: var(--alert-red);
+            background-color: rgba(255, 51, 51, 0.08);
+        }
+
+        /* SEÇÃO RECOLHÍVEL — TESTE DE MACRO é ferramenta de bancada avançada
+           (poucos usam), fica fechada por padrão pra não alongar a rolagem
+           da tela principal (config tática + diagnóstico, usados sempre). */
+        details.collapsible {
+            margin-top: var(--space-6);
+            border-top: 1px solid var(--dark-spruce);
+            padding-top: var(--space-1);
+        }
+
+        details.collapsible summary {
+            cursor: pointer;
+            list-style: none;
+            font-size: var(--fs-md);
+            color: var(--lemon-chiffon);
+            padding: var(--space-2) 0;
+        }
+
+        details.collapsible summary::-webkit-details-marker { display: none; }
+
+        details.collapsible summary::before {
+            content: '▸ ';
+            color: var(--sea-green);
+        }
+
+        details.collapsible[open] summary::before {
+            content: '▾ ';
+        }
 
     </style>
 </head>
@@ -291,6 +398,10 @@
     <div class="connect-wrap">
         <button id="btn-connect" class="btn-connect" onclick="loadProfile()">CONECTAR AO ROBÔ (BLUETOOTH)</button>
     </div>
+    <div class="conn-status">
+        <span id="conn-dot" class="conn-dot"></span>
+        <span id="conn-label">DESCONECTADO</span>
+    </div>
 
     <h2>DIAGNÓSTICO DE BANCADA</h2>
     <div class="grid">
@@ -298,8 +409,8 @@
         <button id="btn-test-motor" class="btn-diag" onclick="toggleTest('motor')">TESTE MOTORES</button>
     </div>
     <div id="test-readout"></div>
-    <button id="btn-motor-polarity" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="openMotorPolarityConfirm()">POLARIDADE MOTORES</button>
-    <button id="btn-weapon-toggle" class="btn-diag" style="width: 100%; margin-top: 10px;" onclick="toggleWeapon()">ARMAR</button>
+    <button id="btn-motor-polarity" class="btn-diag btn-diag-standalone" onclick="openMotorPolarityConfirm()">POLARIDADE MOTORES</button>
+    <button id="btn-weapon-toggle" class="btn-diag btn-diag-standalone" onclick="toggleWeapon()">ARMAR</button>
 
     <h2>MOVIMENTAÇÃO INICIAL</h2>
     <div class="grid" id="macro-grid">
@@ -322,22 +433,24 @@
         <!-- Renderizado dinamicamente -->
     </div>
 
-    <button class="btn-submit" onclick="openTacticalConfirm()">[SUBMETER]</button>
+    <button id="btn-submit-tatica" class="btn-submit" onclick="openTacticalConfirm()">[SUBMETER]</button>
 
-    <h2>TESTE DE MACRO</h2>
-    <div id="macro-steps">
-        <div class="step-row" data-index="0">
-            <span>Passo 1</span>
-            <input type="text" class="step-input" placeholder="ESQ %" id="l0" min="-100" max="100">
-            <input type="text" class="step-input" placeholder="DIR %" id="r0" min="-100" max="100">
-            <input type="text" class="step-input" placeholder="MS" id="d0" min="50" max="5000">
+    <details class="collapsible">
+        <summary>TESTE DE MACRO</summary>
+        <div id="macro-steps">
+            <div class="step-row" data-index="0">
+                <span>Passo 1</span>
+                <input type="text" class="step-input" placeholder="ESQ %" id="l0" min="-100" max="100">
+                <input type="text" class="step-input" placeholder="DIR %" id="r0" min="-100" max="100">
+                <input type="text" class="step-input" placeholder="MS" id="d0" min="50" max="5000">
+            </div>
         </div>
-    </div>
-    <div class="grid" style="margin-bottom: 10px;">
-        <button class="btn-macro" onclick="addStep()">ADICIONAR PASSO</button>
-        <button class="btn-macro" onclick="removeStep()">REMOVER PASSO</button>
-    </div>
-    <button class="btn-submit" onclick="dispararMacro()">[DISPARAR MACRO]</button>
+        <div class="grid grid-tight">
+            <button class="btn-macro" onclick="addStep()">ADICIONAR PASSO</button>
+            <button class="btn-macro" onclick="removeStep()">REMOVER PASSO</button>
+        </div>
+        <button id="btn-disparar-macro" class="btn-submit" onclick="dispararMacro()">[DISPARAR MACRO]</button>
+    </details>
 
     <div id="terminal-log">> SYS STANDBY // UPLINK READY</div>
 
@@ -389,7 +502,16 @@
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService(BLE_SERVICE_UUID);
             bleCharacteristic = await service.getCharacteristic(BLE_CHARACTERISTIC_UUID);
-            device.addEventListener('gattserverdisconnected', () => { bleCharacteristic = null; });
+            // Único jeito de saber que a conexão caiu sozinha (fora do alcance,
+            // robô desligou, etc) — sem isso a UI ficava mostrando "conectado"
+            // pra sempre até o próximo comando falhar. setConnectionStatus() é
+            // definida mais abaixo, na camada de UI — está aqui na camada de
+            // transporte só porque este arquivo inteiro é um script só.
+            device.addEventListener('gattserverdisconnected', () => {
+                bleCharacteristic = null;
+                if (typeof setConnectionStatus === 'function') setConnectionStatus('lost');
+                printLog('> [AVISO] CONEXÃO BLUETOOTH PERDIDA', true);
+            });
             return bleCharacteristic;
         }
 
@@ -447,6 +569,17 @@
         function blePolarityResponse(bytes) {
             const ok = bytes.length > 0;
             return { ok, index: ok ? bytes[0] : null };
+        }
+
+        // Desabilita o botão que disparou o comando enquanto a promise BLE
+        // está em voo — reativa sozinho quando ela assenta (sucesso ou
+        // erro). Só toca em `disabled`, nunca em innerText: várias chamadas
+        // (ex: executeMotorPolarityCycle) mudam o texto do botão no .then()
+        // de sucesso, e um "restaura texto original" aqui apagaria isso.
+        function withBusy(btn, promise) {
+            if(!btn) return promise;
+            btn.disabled = true;
+            return promise.finally(() => { btn.disabled = false; });
         }
 
         const Transport = {
@@ -553,7 +686,40 @@
             return val !== '' ? parseInt(val) : fallback;
         }
 
+        // Só inteiro (com sinal opcional) ou vazio — vazio é válido aqui
+        // porque cada campo tem fallback (ver parseInput). Qualquer outra
+        // coisa ("abc", "12.5", "--5") é inválida: sem essa checagem,
+        // parseInt() delas vira NaN e o & 0xff na hora de montar o payload
+        // transforma isso em 0 silenciosamente — comando errado sai pro
+        // robô sem aviso nenhum.
+        function isValidInt(val) {
+            return val.trim() === '' || /^-?\d+$/.test(val.trim());
+        }
+
+        // Feedback em tempo real: pinta o campo de vermelho assim que o
+        // valor digitado deixa de ser um inteiro válido, em vez de só
+        // avisar no disparo.
+        document.getElementById('macro-steps').addEventListener('input', function(e) {
+            if(!e.target.classList.contains('step-input')) return;
+            e.target.classList.toggle('invalid', !isValidInt(e.target.value));
+        });
+
         function dispararMacro() {
+            let firstInvalid = null;
+            for(let i = 0; i < numSteps; i++) {
+                ['l', 'r', 'd'].forEach(function(prefix) {
+                    const input = document.getElementById(prefix + i);
+                    const valid = isValidInt(input.value);
+                    input.classList.toggle('invalid', !valid);
+                    if(!valid && !firstInvalid) firstInvalid = input;
+                });
+            }
+            if(firstInvalid) {
+                showUiAlert('[!] ERRO', 'Campo com valor inválido (só número inteiro, ex: -60 ou 100).<br>Corrija o campo destacado em vermelho.', true);
+                firstInvalid.focus();
+                return;
+            }
+
             const d0 = document.getElementById('d0').value;
             if(!d0) {
                 showUiAlert('[!] ERRO', 'Preencha pelo menos a duração do Passo 1.', true);
@@ -569,7 +735,7 @@
             }
 
             printLog('> DISPARANDO MACRO DE TESTE...');
-            Transport.triggerMacroTest(params)
+            withBusy(document.getElementById('btn-disparar-macro'), Transport.triggerMacroTest(params))
                 .then(res => res.text())
                 .then(txt => {
                     printLog('> [OK] MACRO DISPARADA NO ROBÔ');
@@ -577,7 +743,7 @@
                 })
                 .catch(() => {
                     printLog('> [ERRO] ROBÔ NÃO RESPONDEU', true);
-                    showUiAlert('NETWORK ERROR', 'Falha ao disparar macro.<br>Verifique o Wi-Fi.', true);
+                    showUiAlert('NETWORK ERROR', 'Falha ao disparar macro.<br>Verifique a conexão Bluetooth.', true);
         });
 }
 
@@ -665,12 +831,37 @@
             btn.innerText = weaponArmed ? 'DESARMAR' : 'ARMAR';
         }
 
+        // Armar passa por confirmação (igual POLARIDADE MOTORES — ver
+        // openMotorPolarityConfirm()); desarmar não, de propósito: tornar a
+        // ação perigosa mais lenta e a ação segura mais rápida.
         function toggleWeapon() {
             if (navigator.vibrate) navigator.vibrate(20);
 
             const nextState = !weaponArmed;
+            if (nextState) {
+                openWeaponArmConfirm();
+                return;
+            }
+            executeWeaponCommand(false);
+        }
+
+        function openWeaponArmConfirm() {
+            mContainer.className = "modal-box";
+            mTitle.innerText = "CONFIRMAR ARMAMENTO";
+            mTitle.style.color = 'var(--alert-red)';
+            mBody.innerHTML = `<div class="modal-prompt">Isso arma o sistema de armas do robô agora. Só usar em bancada, com o robô no ar e ninguém no raio de ação.</div>`;
+
+            mActions.className = "modal-actions";
+            mActions.innerHTML = `
+                <button class="btn-abort" onclick="closeModal()">CANCELAR</button>
+                <button class="btn-confirm" onclick="closeModal(); executeWeaponCommand(true);">ARMAR</button>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function executeWeaponCommand(nextState) {
             printLog('> ' + (nextState ? 'ARMANDO' : 'DESARMANDO') + ' ARMA...');
-            Transport.setWeapon(nextState)
+            withBusy(document.getElementById('btn-weapon-toggle'), Transport.setWeapon(nextState))
                 .then(res => {
                     if (!res.ok) {
                         printLog('> [ERRO] COMANDO DE ARMA RECUSADO', true);
@@ -715,7 +906,7 @@
             if (navigator.vibrate) navigator.vibrate(20);
 
             printLog('> AVANÇANDO POLARIDADE DOS MOTORES...');
-            Transport.cycleMotorPolarity()
+            withBusy(document.getElementById('btn-motor-polarity'), Transport.cycleMotorPolarity())
                 .then(res => {
                     if (!res.ok) {
                         printLog('> [ERRO] COMANDO DE POLARIDADE RECUSADO', true);
@@ -743,7 +934,7 @@
                 document.getElementById('btn-test-sensor').classList.toggle('active', testSensorActive);
                 
                 printLog('> TESTE DE SENSORES: ' + (testSensorActive ? 'ATIVO' : 'DESLIGADO'));
-                Transport.setTest('sensor=' + (testSensorActive ? '1' : '0') + '&t=' + Date.now())
+                withBusy(document.getElementById('btn-test-sensor'), Transport.setTest('sensor=' + (testSensorActive ? '1' : '0') + '&t=' + Date.now()))
                     .then(() => {
                         if (testSensorActive) startReadoutPolling();
                         else stopReadoutPolling();
@@ -757,13 +948,38 @@
                 document.getElementById('btn-test-motor').classList.toggle('active', testMotorActive);
                 
                 printLog('> TESTE DE MOTORES: ' + (testMotorActive ? 'ATIVO' : 'DESLIGADO'));
-                Transport.setTest('motor=' + (testMotorActive ? '1' : '0') + '&t=' + Date.now()).catch(e => console.log(e));
+                withBusy(document.getElementById('btn-test-motor'), Transport.setTest('motor=' + (testMotorActive ? '1' : '0') + '&t=' + Date.now())).catch(e => console.log(e));
             }
         }
 
         function printLog(msg, isError = false) {
             logTerm.innerText = msg;
             logTerm.style.color = isError ? 'var(--alert-red)' : 'var(--sea-green)';
+        }
+
+        // 'idle' (nunca conectou), 'connected' (BLE de verdade), 'mock' (sem
+        // Bluetooth no navegador, rodando com dados falsos só pra testar
+        // layout) ou 'lost' (estava conectado e caiu). Existe justamente
+        // porque antes a UI não distinguia nada disso — o botão dizia
+        // "CONECTAR" pra sempre e um mock silencioso passava por conexão real.
+        function setConnectionStatus(state) {
+            const dot = document.getElementById('conn-dot');
+            const label = document.getElementById('conn-label');
+            const btn = document.getElementById('btn-connect');
+
+            dot.className = 'conn-dot' + (state === 'idle' ? '' : ' ' + state);
+
+            const labels = {
+                idle: 'DESCONECTADO',
+                connected: 'CONECTADO',
+                mock: 'MODO MOCK — SEM ROBÔ DE VERDADE',
+                lost: 'CONEXÃO PERDIDA',
+            };
+            label.innerText = labels[state] || labels.idle;
+
+            btn.innerText = state === 'connected'
+                ? 'RECONECTAR / TROCAR ROBÔ'
+                : 'CONECTAR AO ROBÔ (BLUETOOTH)';
         }
 
         function closeModal() {
@@ -808,23 +1024,41 @@
 
         // Construtor dinâmico do painel
         function loadProfile() {
-            Transport.getProfile()
+            // Mock só entra quando o navegador NEM TEM Web Bluetooth (Safari/
+            // iOS, ou testando o layout no PC sem hardware) — isso é conhecido
+            // de antemão, sem precisar tentar conectar. Uma tentativa real que
+            // falha (usuário cancelou o pareamento, Bluetooth desligado, GATT
+            // não respondeu) cai no catch() abaixo e mostra erro de verdade —
+            // antes isso também caía no mock e escondia a falha.
+            if (!navigator.bluetooth) {
+                console.log("Web Bluetooth indisponível neste navegador. Usando Mock do Arruela.");
+                printLog('> BLUETOOTH INDISPONÍVEL NESTE NAVEGADOR — MODO MOCK (SÓ LAYOUT)', true);
+                renderProfile({
+                    robot_name: "Arruela (Local Mock)",
+                    macros: [
+                        {id: 0, name: "FRENTÃO"},
+                        {id: 1, name: "CURVÃO"}
+                    ],
+                    searches: [
+                        {id: 1, name: "BUSCA PADRÃO"}
+                    ],
+                    has_weapons: false
+                });
+                setConnectionStatus('mock');
+                return;
+            }
+
+            printLog('> CONECTANDO AO ROBÔ...');
+            withBusy(document.getElementById('btn-connect'), Transport.getProfile())
                 .then(res => res.json())
-                .then(data => renderProfile(data))
-                .catch(() => {
-                    // MOCK: Caso o usuário abra o HTML direto no PC para testar
-                    console.log("Servidor não encontrado. Usando Mock do Arruela.");
-                    renderProfile({
-                        robot_name: "Arruela (Local Mock)",
-                        macros: [
-                            {id: 0, name: "FRENTÃO"},
-                            {id: 1, name: "CURVÃO"}
-                        ],
-                        searches: [
-                            {id: 1, name: "BUSCA PADRÃO"}
-                        ],
-                        has_weapons: false
-                    });
+                .then(data => {
+                    renderProfile(data);
+                    setConnectionStatus('connected');
+                })
+                .catch((err) => {
+                    console.log(err);
+                    printLog('> [ERRO] FALHA AO CONECTAR / LER PERFIL DO ROBÔ', true);
+                    showUiAlert('[!] ERRO DE CONEXÃO', 'Não foi possível conectar ou ler o perfil do robô.<br>Verifique se o Bluetooth do robô está ligado e tente de novo.', true);
                 });
         }
 
@@ -927,8 +1161,8 @@
 
             const endpoint = '/set-strat?' + params.toString();
             printLog("> TX: " + endpoint);
-            
-            Transport.sendStrategy(endpoint)
+
+            withBusy(document.getElementById('btn-submit-tatica'), Transport.sendStrategy(endpoint))
                 .then(function(response) {
                     if(response.ok) {
                         showUiAlert("UPLINK SUCCESS", "Configuração salva com sucesso!<br><br>Status: 200 OK", false);
@@ -939,8 +1173,8 @@
                     }
                 })
                 .catch(function(err) {
-                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.<br><br>Verifique se o celular ainda está conectado no Wi-Fi do robô.", true);
-                    printLog("> [ERRO FATAL] SEM RESPOSTA DA REDE", true);
+                    showUiAlert("NETWORK ERROR", "Falha crítica de comunicação.<br><br>Verifique se o celular ainda está conectado por Bluetooth no robô.", true);
+                    printLog("> [ERRO FATAL] SEM RESPOSTA DO ROBÔ", true);
                 });
         }
     </script>
