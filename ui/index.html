@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SUMO AUTO</title>
+    <!-- JetBrains Mono no lugar de Courier New — mantém a pegada monoespaçada
+         "terminal", mas mais legível/técnica em telas pequenas. Se não
+         carregar (sem internet na bancada, por exemplo) cai pro fallback
+         abaixo sem quebrar nada, só perde o refinamento visual. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --sea-green: #2c9246;
@@ -39,13 +46,17 @@
             --border-thin: 2px;
             --border-thick: 3px;
 
+            /* Suaviza o canto reto do visual "brutalista" original sem
+               abandonar a estrutura quadrada — valor pequeno de propósito. */
+            --radius: 3px;
+
             /* Trava a largura de leitura em telas largas (tablet/desktop) —
                em telas de celular (a maioria dos casos de uso real) isso
                nunca entra em ação, o corpo continua ocupando 100% da tela. */
             --content-max-width: 480px;
         }
 
-        * { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        * { box-sizing: border-box; font-family: 'JetBrains Mono', 'Courier New', Courier, monospace; }
 
         body {
             background-color: var(--void-bg);
@@ -88,6 +99,7 @@
             cursor: pointer;
             transition: 0.1s;
             padding: var(--space-4) var(--space-1);
+            border-radius: var(--radius);
         }
 
         button:active { filter: brightness(1.5); }
@@ -121,6 +133,7 @@
             padding: var(--space-2);
             background-color: #000;
             border: var(--border-thin) solid var(--alert-red);
+            border-radius: var(--radius);
             font-size: var(--fs-sm);
             color: var(--sea-green);
             white-space: pre-wrap;
@@ -244,6 +257,7 @@
         .modal-box {
             background-color: #000;
             border: var(--border-thick) solid var(--sea-green);
+            border-radius: var(--radius);
             width: 100%;
             max-width: 400px;
             padding: var(--space-5);
@@ -282,6 +296,7 @@
             font-size: var(--fs-lg);
             font-weight: bold;
             text-transform: uppercase;
+            border-radius: var(--radius);
             pointer-events: none; /* Impede clique */
         }
 
@@ -319,6 +334,7 @@
             background-color: rgba(44, 146, 70, 0.05);
             padding: var(--space-3);
             border-left: 3px solid var(--sea-green);
+            border-radius: var(--radius);
         }
 
         .step-row span {
@@ -338,7 +354,7 @@
             font-size: var(--fs-md);
             font-weight: bold;
             text-align: center;
-            border-radius: 0;
+            border-radius: var(--radius);
             appearance: textfield; /* Remove setinhas em alguns navegadores */
         }
 
