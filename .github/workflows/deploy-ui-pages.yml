@@ -2,13 +2,13 @@ name: Publica UI no GitHub Pages
 
 # Publica só a pasta ui/ (a dashboard standalone, ver ui/index.html) no
 # GitHub Pages — não é o firmware, não builda nada de C++/PlatformIO aqui.
-# Fonte de verdade do HTML é ui/index.html; o WebUI.hpp embutido no firmware
-# é gerado dele via scripts/pack_html.py, os dois ficam sincronizados por
-# quem edita, não por este workflow.
+# ui/index.html é a única fonte de verdade do HTML (o WebUI.hpp que embutia
+# uma cópia no firmware foi removido — nada no firmware serve essa página
+# mais, o piloto abre ui/index.html direto e fala com o robô só por BLE).
 on:
   push:
     branches:
-      - feat/bluetooth-config
+      - main
     paths:
       - "ui/**"
   workflow_dispatch:
