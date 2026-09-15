@@ -41,6 +41,9 @@ void setup() {
     Serial.begin(115200);
     Wire.begin(); // Inicializa I2C
     Serial.println("[MAIN] Inicializando subsistemas do Sumô (firmware AUTO).");
+
+    motores.initPolarity();
+    Serial.printf("[MAIN] Polaridade dos motores: config #%u\n", motores.currentPolarity());
     statusLed.init(LED_BUILTIN, Config::PIN_STATUS_LED, Config::STATUS_LED_COUNT);
     delay(500);
 
@@ -55,7 +58,7 @@ void setup() {
     }
     statusLed.confirmStep();
 
-    modoAuto.init(taticaAtual);
+    modoAuto.init(taticaAtual, motores);
     Serial.println("[MAIN] Modo AUTO engatilhado.");
 
     statusLed.confirmStep();

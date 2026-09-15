@@ -1,6 +1,7 @@
 #include "RCMode.hpp"
 #include "Config.hpp"
 #include "Drive.hpp"
+#include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
 
@@ -77,12 +78,48 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     }
 }
 
-void RCMode::run(Drive &motores, WeaponSystem &armas) {
+// Segurar Start por HOLD_MS cicla a polaridade dos motores (ver
+// MotorPolarity.hpp) sem precisar do site. Start não é usado em mais nada em
+// RCMode — mas um toque rápido (encostar sem querer) não é suficiente,
+// precisa segurar de propósito. Ciclar só avança (0..7, dá a volta) — não
+// faz sentido "voltar", o operador vai testando os motores até achar a
+// config certa.
+void RCMode::handleMotorPolarity(Drive &motores, StatusLed &led) {
+    static constexpr unsigned long HOLD_MS = 700;
+    // Purple: cor que StatusLed ainda não usa pra mais nada (Red/Orange/
+    // Green já têm significado — boot, pareamento, conectado), e mais fácil
+    // de distinguir delas a olho do que Blue. Flash sólido e bloqueante —
+    // mesmo padrão de confirmStep()/blinkDebug(), aceitável aqui porque é um
+    // gesto deliberado de bancada, não o hot path de pilotagem.
+    static constexpr int FLASH_MS = 250;
+
+    if(!receptor.startHeld()) {
+        _polarityHoldStart = 0;
+        _polarityArmed = true;
+        return;
+    }
+
+    if(_polarityHoldStart == 0) {
+        _polarityHoldStart = millis();
+    }
+
+    if(_polarityArmed && millis() - _polarityHoldStart >= HOLD_MS) {
+        _polarityArmed = false;
+        uint8_t idx = motores.cyclePolarity();
+        Serial.printf("[RC] Start segurado %lums: polaridade -> config #%u\n", HOLD_MS, idx);
+        led.setAll(CRGB::Purple);
+        delay(FLASH_MS);
+    }
+}
+
+void RCMode::run(Drive &motores, WeaponSystem &armas, StatusLed &led) {
     receptor.update();
     armas.update();
 
+    handleMotorPolarity(motores, led);
+
     int throttle = receptor.rightTrigger() - receptor.leftTrigger();
-    
+
     // Acelerador digital: X força 100% pra frente se o gatilho não estiver acionado.
     if(receptor.crossHeld()) {
         throttle = 100;

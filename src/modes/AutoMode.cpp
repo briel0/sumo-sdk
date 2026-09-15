@@ -16,14 +16,24 @@ static constexpr int NUM_MACROS = (int)(sizeof(Config::TABELA_MACROS_ESQ) / size
 // Cadencia do painel /sensors. Ver a justificativa no SELECTING_ESTRATEGIA.
 static constexpr unsigned long INTERVALO_READOUT_MS = 150;
 
+// Frente, ré, pivô pra direita, pivô pra esquerda — nessa ordem pra separar
+// os dois defeitos que POLARIDADE MOTORES corrige: os dois primeiros passos
+// mostram motor invertido (gira ao contrário do comandado); os dois últimos
+// mostram lado trocado (pivota pro lado errado). Tudo a 100 PWM (potência
+// máxima deixa a inversão mais óbvia) e por bem pouco tempo, já que 100 PWM
+// desloca rápido o robô numa bancada.
 static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
-    {60, 60, 500},
-    {0, 0, 500},
-    {-60, -60, 500},
-    {0, 0, 500}
+    {100, 100, 150},   // frente
+    {0, 0, 300},
+    {-100, -100, 150}, // ré
+    {0, 0, 300},
+    {100, -100, 150},  // pivô pra direita
+    {0, 0, 300},
+    {-100, 100, 150},  // pivô pra esquerda
+    {0, 0, 300}
 );
 
-void AutoMode::init(CombatStrategy &estrategia) {
+void AutoMode::init(CombatStrategy &estrategia, Drive &motores) {
     Serial.println("Modo Auto Iniciado.");
     autoConfig = AutoStrategy();
 
@@ -63,6 +73,15 @@ void AutoMode::init(CombatStrategy &estrategia) {
     configServer.setWeaponCallback([this](bool arm) {
         _weaponCommandArm = arm;
         _weaponCommandPending = true;
+    });
+
+    // &motores (referência a um objeto global de vida eterna, ver main.cpp)
+    // é seguro de capturar: configServer também é membro de um AutoMode
+    // global, então os dois nunca saem de escopo.
+    configServer.setMotorPolarityCallback([&motores]() {
+        uint8_t idx = motores.cyclePolarity();
+        Serial.printf("[AUTO] Polaridade dos motores -> config #%u\n", idx);
+        return idx;
     });
 
     configServer.begin();

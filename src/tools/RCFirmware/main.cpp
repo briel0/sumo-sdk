@@ -23,6 +23,9 @@ RCMode modoRC;
 void setup() {
     Serial.begin(115200);
     Serial.println("[MAIN] Inicializando subsistemas do Sumô (firmware RC).");
+
+    motores.initPolarity();
+    Serial.printf("[MAIN] Polaridade dos motores: config #%u\n", motores.currentPolarity());
     statusLed.init(LED_BUILTIN, Config::PIN_STATUS_LED, Config::STATUS_LED_COUNT);
     delay(500);
 
@@ -62,7 +65,7 @@ void loop() {
     else {
         statusLed.setState(CRGB::Green); // limpa o laranja residual
     }
-    modoRC.run(motores, sistemaDeArmas);
+    modoRC.run(motores, sistemaDeArmas, statusLed);
 
     yield();
 }

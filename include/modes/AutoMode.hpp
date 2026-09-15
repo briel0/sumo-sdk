@@ -19,7 +19,7 @@ class AutoMode {
         FIGHTING,
     };
 
-    void init(CombatStrategy &estrategia);
+    void init(CombatStrategy &estrategia, Drive &motores);
     void run(Drive &motores, WeaponSystem &armas, bool irStart, bool irReady);
 
     SubState getSubState() const {

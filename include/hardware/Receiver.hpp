@@ -83,6 +83,14 @@ class Receiver {
         return l1Flag;
     }
 
+    // Nível, não borda — igual crossHeld(): "está segurando agora", não
+    // "acabou de apertar". Start/Options não é usado em mais nada aqui, é
+    // o modificador do combo pra ciclar a polaridade dos motores (ver
+    // RCMode::handleMotorPolarity()).
+    bool startHeld() const {
+        return startFlag;
+    }
+
   private:
     ControllerPtr controller = nullptr;
     static constexpr int STICKER_DEADZONE = 40;
@@ -121,6 +129,8 @@ class Receiver {
 
     bool l1Flag = false;
     bool lastL1 = false;
+
+    bool startFlag = false;
 
     static Receiver *instance;
     uint8_t savedMac[6] = {0};

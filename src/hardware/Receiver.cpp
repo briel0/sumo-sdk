@@ -135,6 +135,10 @@ void Receiver::updateButtons() {
     bool currentL1 = currentBtns & BUTTON_SHOULDER_L;
     l1Flag = currentL1 && !lastL1;
     lastL1 = currentL1;
+
+    // miscStart() lê MISC_BUTTON_START (Start/Options/+), um bitmask
+    // separado de buttons() — não dá pra pegar via currentBtns acima.
+    startFlag = controller->miscStart();
 }
 
 void Receiver::applyFailsafe() {
@@ -171,4 +175,6 @@ void Receiver::applyFailsafe() {
 
     lastL1 = false;
     l1Flag = false;
+
+    startFlag = false;
 }

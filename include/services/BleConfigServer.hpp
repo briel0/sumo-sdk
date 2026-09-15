@@ -56,6 +56,15 @@ class BleConfigServer {
         _weaponCallback = cb;
     }
 
+    // Avança pra próxima config de polaridade dos motores e devolve o índice
+    // novo (0-7). Diferente dos outros: chamado direto na task do Bluedroid
+    // (não via flag-pendente consumida no run()) porque só mexe em NVS/RAM
+    // via Drive::cyclePolarity() — nunca em GPIO/PWM — e o app precisa do
+    // número na hora, na resposta do próprio WRITE, pra mostrar na UI.
+    void setMotorPolarityCallback(std::function<uint8_t()> cb) {
+        _motorPolarityCallback = cb;
+    }
+
     // Chamado pelo callback de WRITE da characteristic (classe interna do
     // .cpp) — público porque quem chama não é membro de BleConfigServer,
     // é um BLECharacteristicCallbacks separado que guarda um ponteiro pra
@@ -69,6 +78,7 @@ class BleConfigServer {
     std::function<void(bool)> _motorTestCallback = nullptr;
     std::function<void(bool)> _sensorTestCallback = nullptr;
     std::function<void(bool)> _weaponCallback = nullptr;
+    std::function<uint8_t()> _motorPolarityCallback = nullptr;
 
     String _testReadoutJson = "{}";
     AutoStrategy _currentAutoStrategy;
