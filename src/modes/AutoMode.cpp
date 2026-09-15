@@ -16,19 +16,20 @@ static constexpr int NUM_MACROS = (int)(sizeof(Config::TABELA_MACROS_ESQ) / size
 // Cadencia do painel /sensors. Ver a justificativa no SELECTING_ESTRATEGIA.
 static constexpr unsigned long INTERVALO_READOUT_MS = 150;
 
-// Frente, ré, curva leve pra direita, curva leve pra esquerda — nessa ordem
-// pra separar os dois defeitos que POLARIDADE MOTORES corrige: os dois
-// primeiros passos mostram motor invertido (gira ao contrário do comandado);
-// os dois últimos mostram lado trocado (curva pro lado errado). "Leve" =
-// um lado a 60, o outro a 20 — arco visível sem virar pivô no lugar.
+// Frente, ré, pivô pra direita, pivô pra esquerda — nessa ordem pra separar
+// os dois defeitos que POLARIDADE MOTORES corrige: os dois primeiros passos
+// mostram motor invertido (gira ao contrário do comandado); os dois últimos
+// mostram lado trocado (pivota pro lado errado). Tudo a 100 PWM (potência
+// máxima deixa a inversão mais óbvia) e por bem pouco tempo, já que 100 PWM
+// desloca rápido o robô numa bancada.
 static const MotionSequence MACRO_TESTE_MOTOR = MACRO(
-    {60, 60, 500},   // frente
+    {100, 100, 150},   // frente
     {0, 0, 300},
-    {-60, -60, 500}, // ré
+    {-100, -100, 150}, // ré
     {0, 0, 300},
-    {60, 20, 500},   // curva leve pra direita (roda direita mais devagar)
+    {100, -100, 150},  // pivô pra direita
     {0, 0, 300},
-    {20, 60, 500},   // curva leve pra esquerda (roda esquerda mais devagar)
+    {-100, 100, 150},  // pivô pra esquerda
     {0, 0, 300}
 );
 
