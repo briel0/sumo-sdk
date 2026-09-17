@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SUMO AUTO — Concept</title>
+    <!-- Paleta e fontes vêm do guia de marca real da equipe (brand/1.png —
+         TamanduTech, Equipe de Robótica UFABC): as 12 cores oficiais viram
+         os tokens abaixo, e o logo (brand/mark-emblem.png, recortado do
+         mesmo guia) aparece de verdade no cabeçalho, não é mais placeholder.
+         Fontes: "Robo"/"Monument" (do guia) não são livres/não estão no
+         Google Fonts — troquei por Chakra Petch, que tem a mesma família
+         visual (geométrica, técnica, cantos cortados). Roboto é a fonte
+         oficial do guia e entrou direto. JetBrains Mono ficou só no log e
+         no painel de sensores — a única parte da tela que é "telemetria",
+         não identidade de marca. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* ===== PALETA OFICIAL — brand/1.png, "Paleta de cores" ===== */
+            --brand-void: #062406;        /* fundo — mesma cor do painel do logo no guia */
+            --brand-panel: #000000;       /* preenchimento de caixas/modais */
+            --brand-accent: #009541;      /* verde vívido — ação primária, ativo, "conectado" */
+            --brand-accent-fill: #1A5933; /* verde escuro — fundo atrás de borda grossa */
+            --brand-accent-soft: #8EC49F; /* verde claro — accent secundário (busca) */
+            --brand-ink: #C7D9CD;         /* texto claro principal */
+            --brand-muted: #75716B;       /* texto/borda secundária, inativo */
+            --brand-alert: #D20733;       /* perigo — arma, erro */
+            --brand-info: #0574EA;        /* informativo — usado no indicador "mock" */
+            --brand-white: #FFFFFF;
+
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 24px;
+            --space-6: 32px;
+            --space-7: 48px;
+
+            --fs-xs: 0.7rem;
+            --fs-sm: 0.75rem;
+            --fs-base: 0.85rem;
+            --fs-md: 0.9rem;
+            --fs-lg: 1rem;
+            --fs-xl: 1.1rem;
+            --fs-xxl: 1.25rem;
+
+            --border-thin: 2px;
+            --border-thick: 3px;
+            --radius: 3px;
+
+            --content-max-width: 480px;
+            /* Dimensionado pra 1 linha só (ver LOG_MAX_LINES) — só a última coisa feita. */
+            --terminal-clearance: 44px;
+
+            /* system-ui em vez de nomear uma fonte de desktop (Trebuchet MS
+               provavelmente nem existe no Android) — se a Google Fonts não
+               carregar (sem internet na bancada), cai na fonte nativa do
+               aparelho em vez de ir direto pro sans-serif genérico. */
+            --font-display: 'Chakra Petch', system-ui, -apple-system, sans-serif;
+            --font-body: 'Roboto', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
+
+            /* Grid fino de prancheta (blueprint) — reaproveitado no body E
+               na tira de status, pra textura não sumir atrás dela. */
+            --texture-grid:
+                repeating-linear-gradient(0deg, rgba(26,89,51,0.10) 0, rgba(26,89,51,0.10) 1px, transparent 1px, transparent 20px),
+                repeating-linear-gradient(90deg, rgba(26,89,51,0.10) 0, rgba(26,89,51,0.10) 1px, transparent 1px, transparent 20px);
+
+            /* Trilhas de PCB (retas + curva de 90° + via) — mesmas linhas
+               de quando tinha o chip junto, só sem o retângulo do chip. */
+            --texture-traces: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='140'%3E%3Cpath d='M52,61 L20,61 L20,20' fill='none' stroke='%231A5933' stroke-width='1' opacity='0.25'/%3E%3Ccircle cx='20' cy='20' r='1.8' fill='%231A5933' opacity='0.3'/%3E%3Cpath d='M98,69 L140,69 L140,120' fill='none' stroke='%231A5933' stroke-width='1' opacity='0.25'/%3E%3Ccircle cx='140' cy='120' r='1.8' fill='%231A5933' opacity='0.3'/%3E%3C/svg%3E");
+        }
+
+        * { box-sizing: border-box; font-family: var(--font-display); }
+
+        body {
+            background-color: var(--brand-void);
+            color: var(--brand-ink);
+            max-width: var(--content-max-width);
+            margin: 0 auto;
+            padding: 0 var(--space-4);
+            padding-bottom: var(--terminal-clearance);
+            user-select: none;
+            -webkit-user-select: none;
+            /* Blueprint (grid) + trilhas de PCB, sem o chip. attachment:
+               fixed ancora o padrão no viewport em vez de na caixa do
+               elemento — é o que faz esse grid bater exatamente com o da
+               .status-strip, que tem padding/origem diferentes. */
+            background-image: var(--texture-traces), var(--texture-grid);
+            background-attachment: fixed;
+        }
+
+        /* ===== TIRA DE STATUS (fixa) ===== */
+        /* Só isso fica grudado no topo ao rolar — logo/título/botão CONECTAR
+           não valem a pena ficarem permanentemente fixos numa tela pequena
+           (a página já ficou curta com as abas, o ganho de "nunca sair de
+           vista" é pequeno perto do espaço que consumiriam o tempo todo). */
+        .status-strip {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            background-color: var(--brand-void);
+            background-image: var(--texture-grid);
+            background-attachment: fixed;
+            padding: var(--space-2) 0 var(--space-1);
+            font-size: var(--fs-sm);
+            font-family: var(--font-body);
+            letter-spacing: 1px;
+            color: var(--brand-muted);
+        }
+
+        /* ===== CABEÇALHO (rola normal com a página) ===== */
+        .topbar {
+            padding-top: var(--space-2);
+            padding-bottom: var(--space-3);
+            border-bottom: var(--border-thin) solid var(--brand-accent-fill);
+            margin-bottom: var(--space-3);
+        }
+
+        .topbar-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .logo-badge {
+            width: 40px;
+            height: 42px;
+            flex-shrink: 0;
+            object-fit: contain;
+        }
+
+        .topbar-text { flex: 1; min-width: 0; }
+
+        h1 {
+            color: var(--brand-accent);
+            font-size: var(--fs-lg);
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.25;
+            letter-spacing: 0.5px;
+        }
+
+        .team-tag {
+            display: block;
+            font-size: var(--fs-xs);
+            font-family: var(--font-body);
+            color: var(--brand-muted);
+            letter-spacing: 1px;
+            margin-top: 1px;
+        }
+
+        .conn-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background-color: var(--brand-muted);
+            flex-shrink: 0;
+        }
+        .conn-dot.connected { background-color: var(--brand-accent); }
+        .conn-dot.mock { background-color: var(--brand-info); }
+        .conn-dot.lost { background-color: var(--brand-alert); }
+
+        button {
+            /* Sólido (não transparent) de propósito — sem isso a textura de
+               fundo (grid/trilhas) aparecia atravessando dentro do botão.
+               --brand-void é a mesma cor do body, então some por trás de
+               qualquer botão que não pinte seu próprio fundo (.btn-abort e
+               .btn-confirm, dentro do modal, sobrescrevem pra --brand-panel
+               — ver ali embaixo — porque o modal é preto, não void). */
+            background-color: var(--brand-void);
+            font-family: var(--font-display);
+            font-size: var(--fs-base);
+            font-weight: 600;
+            text-transform: uppercase;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.1s;
+            padding: var(--space-4) var(--space-1);
+            border-radius: var(--radius);
+        }
+        button:active { filter: brightness(1.4); transform: scale(0.98); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-connect {
+            margin-top: var(--space-3);
+            background-color: var(--brand-accent-fill);
+            border: var(--border-thick) solid var(--brand-accent);
+            color: var(--brand-ink);
+            padding: var(--space-3) var(--space-4);
+            letter-spacing: 1px;
+        }
+
+        /* ===== ABAS ===== */
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-2);
+            margin-bottom: var(--space-5);
+        }
+        .tab-btn {
+            border: var(--border-thin) solid var(--brand-muted);
+            color: var(--brand-muted);
+            font-size: var(--fs-base);
+        }
+        .tab-btn.active {
+            border-color: var(--brand-accent);
+            color: var(--brand-accent);
+            /* Sólido (não rgba transparente) — mesma cor que o tingimento
+               de 5% dava sobre --brand-void, só que opaco, pra não deixar
+               a textura vazar por trás da aba selecionada. */
+            background-color: #062A09;
+        }
+        .tab-panel[hidden] { display: none; }
+
+        h2 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--fs-md);
+            color: var(--brand-ink);
+            margin-top: var(--space-6);
+            margin-bottom: var(--space-3);
+        }
+        h2:first-child { margin-top: 0; }
+        /* Triângulo em vez da barra verde original — mesmo motivo do guia
+           de marca (ver os triângulos do painel "LOGO PRINCIPAL"). */
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 9px solid var(--brand-accent);
+            flex-shrink: 0;
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+        .grid.grid-tight { margin-bottom: var(--space-2); }
+
+        .btn-diag-standalone { margin-top: var(--space-3); }
+
+        .btn-diag {
+            border: var(--border-thin) solid var(--brand-alert);
+            color: var(--brand-alert);
+        }
+        .btn-diag.active {
+            background-color: var(--brand-alert);
+            color: var(--brand-white);
+        }
+
+        #test-readout {
+            display: none;
+            margin-top: var(--space-2);
+            padding: var(--space-2);
+            background-color: var(--brand-panel);
+            border: var(--border-thin) solid var(--brand-alert);
+            border-radius: var(--radius);
+            font-family: var(--font-mono);
+            font-size: var(--fs-sm);
+            color: var(--brand-accent);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .btn-macro {
+            border: var(--border-thin) solid var(--brand-accent);
+            color: var(--brand-ink);
+        }
+        .btn-macro.selected {
+            background-color: var(--brand-accent);
+            color: var(--brand-void);
+        }
+
+        .btn-direction {
+            border: var(--border-thin) solid var(--brand-muted);
+            color: var(--brand-ink);
+        }
+        .btn-direction.selected {
+            /* --brand-muted aqui ficava quase invisível contra o fundo
+               quase preto — branco cheio dá contraste máximo, e ainda sai
+               do verde que as outras três categorias já usam. */
+            background-color: var(--brand-white);
+            border-color: var(--brand-white);
+            color: var(--brand-void);
+        }
+
+        /* Busca usa o verde secundário do guia — distingue visualmente de
+           macro (verde vívido) sem sair da família de cores. */
+        .btn-search {
+            border: var(--border-thin) solid var(--brand-accent-soft);
+            color: var(--brand-ink);
+        }
+        .btn-search.selected {
+            background-color: var(--brand-accent-soft);
+            color: var(--brand-void);
+        }
+
+        .btn-weapon {
+            border: var(--border-thin) solid var(--brand-ink);
+            color: var(--brand-ink);
+        }
+        .btn-weapon.selected {
+            background-color: var(--brand-ink);
+            color: var(--brand-void);
+        }
+
+        .btn-submit {
+            margin-top: var(--space-6);
+            background-color: var(--brand-accent-fill);
+            border: var(--border-thick) solid var(--brand-accent);
+            color: var(--brand-ink);
+            font-size: var(--fs-xxl);
+            padding: var(--space-5);
+            letter-spacing: 2px;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(6, 36, 6, 0.95);
+            z-index: 100;
+            padding: var(--space-5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background-color: var(--brand-panel);
+            border: var(--border-thick) solid var(--brand-accent);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 400px;
+            padding: var(--space-5);
+        }
+        .modal-box.error-mode { border-color: var(--brand-alert); }
+
+        .modal-title {
+            font-size: var(--fs-xl);
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 2px;
+            margin-bottom: var(--space-5);
+            border-bottom: var(--border-thin) solid var(--brand-muted);
+            padding-bottom: var(--space-2);
+        }
+
+        .modal-body {
+            font-family: var(--font-body);
+            font-size: var(--fs-xl);
+            font-weight: 400;
+            line-height: 1.5;
+            letter-spacing: 0.3px;
+            margin-bottom: var(--space-6);
+            color: var(--brand-ink);
+        }
+
+        .modal-chip {
+            display: block;
+            width: 100%;
+            padding: var(--space-3);
+            margin-bottom: var(--space-2);
+            text-align: center;
+            font-size: var(--fs-lg);
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: var(--radius);
+            pointer-events: none;
+        }
+
+        .modal-prompt {
+            text-align: center;
+            font-family: var(--font-body);
+            margin-top: var(--space-5);
+            font-size: var(--fs-md);
+            color: var(--brand-muted);
+        }
+
+        .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+        .modal-actions.single-btn { grid-template-columns: 1fr; }
+
+        .btn-abort { background-color: var(--brand-panel); border: var(--border-thin) solid var(--brand-alert); color: var(--brand-alert); letter-spacing: 1px; }
+        .btn-abort:active { background-color: var(--brand-alert); color: var(--brand-white); }
+
+        .btn-confirm { background-color: var(--brand-panel); border: var(--border-thin) solid var(--brand-accent); color: var(--brand-accent); letter-spacing: 1px; }
+        .btn-confirm:active { background-color: var(--brand-accent); color: var(--brand-void); }
+
+        /* ===== CONSTRUTOR DE MACRO ===== */
+        /* ADICIONAR/REMOVER PASSO não tinham classe nenhuma antes — sem
+           borda, viravam texto solto flutuando sem contorno nenhum. */
+        .btn-step-action {
+            border: var(--border-thin) solid var(--brand-accent-soft);
+            color: var(--brand-ink);
+        }
+        .btn-step-action:active {
+            background-color: var(--brand-accent-soft);
+            color: var(--brand-void);
+        }
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+            /* Sólido — mesmo tingimento que o rgba(0,149,65,0.08) dava
+               sobre --brand-void, só que opaco (sem textura vazando). */
+            background-color: #062D0B;
+            padding: var(--space-3);
+            border-left: 3px solid var(--brand-accent);
+            border-radius: var(--radius);
+        }
+        .step-row span {
+            font-weight: 700;
+            color: var(--brand-ink);
+            min-width: 65px;
+            font-size: var(--fs-base);
+        }
+
+        .step-input {
+            flex: 1;
+            width: 100%;
+            background-color: var(--brand-panel);
+            border: 1px solid var(--brand-accent-fill);
+            color: var(--brand-accent);
+            font-family: var(--font-mono);
+            padding: var(--space-3) var(--space-1);
+            font-size: var(--fs-md);
+            font-weight: 700;
+            text-align: center;
+            border-radius: var(--radius);
+            appearance: textfield;
+        }
+        .step-input:focus {
+            outline: none;
+            border-color: var(--brand-accent);
+            background-color: #05350F;
+        }
+        .step-input::placeholder { color: var(--brand-muted); font-size: var(--fs-xs); }
+        .step-input.invalid { border-color: var(--brand-alert); background-color: #1A210B; }
+
+        details.collapsible {
+            margin-top: var(--space-6);
+            border-top: 1px solid var(--brand-accent-fill);
+            padding-top: var(--space-1);
+        }
+        details.collapsible summary {
+            cursor: pointer;
+            list-style: none;
+            font-size: var(--fs-md);
+            color: var(--brand-ink);
+            padding: var(--space-2) 0;
+            display: flex;
+            align-items: center;
+        }
+        details.collapsible summary::-webkit-details-marker { display: none; }
+        /* Triângulo desenhado em CSS (em vez de trocar ▸ por ▾) — gira
+           suave com transition em vez de trocar de glyph de golpe, e não
+           depende da fonte ter esses caracteres desenhados igual. */
+        details.collapsible summary::before {
+            content: '';
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 7px solid var(--brand-accent);
+            margin-right: var(--space-2);
+            transition: transform 0.2s ease;
+        }
+        details.collapsible[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        /* ===== TERMINAL COM HISTÓRICO ===== */
+        .terminal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: var(--terminal-clearance);
+            overflow-y: auto;
+            background-color: var(--brand-panel);
+            border-top: var(--border-thin) solid var(--brand-accent-fill);
+            z-index: 99;
+        }
+        .terminal .log-line {
+            padding: 3px var(--space-3);
+            font-family: var(--font-mono);
+            font-size: var(--fs-xs);
+            color: var(--brand-accent);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .terminal .log-line.error { color: var(--brand-alert); }
+    </style>
+</head>
+<body>
+
+    <div class="status-strip">
+        <span id="conn-dot" class="conn-dot"></span>
+        <span id="conn-label">DESCONECTADO</span>
+    </div>
+
+    <header class="topbar">
+        <div class="topbar-row">
+            <img class="logo-badge" src="assets/logo.png" alt="TamanduTech">
+            <div class="topbar-text">
+                <h1 id="robot-name">SUMO AUTO</h1>
+                <span class="team-tag">TAMANDUTECH // EQUIPE DE ROBÓTICA</span>
+            </div>
+        </div>
+        <button id="btn-connect" class="btn-connect" onclick="Actions.connect()">CONECTAR AO ROBÔ (BLUETOOTH)</button>
+    </header>
+
+    <nav class="tabs">
+        <button id="tab-btn-bancada" class="tab-btn active" onclick="Actions.switchTab('bancada')">BANCADA</button>
+        <button id="tab-btn-tatica" class="tab-btn" onclick="Actions.switchTab('tatica')">TÁTICA</button>
+    </nav>
+
+    <main>
+        <section id="tab-bancada" class="tab-panel">
+            <details class="collapsible" open>
+                <summary>DIAGNÓSTICO</summary>
+                <div class="grid">
+                    <button id="btn-test-sensor" class="btn-diag" onclick="Actions.toggleTest('sensor')">TESTE SENSORES</button>
+                    <button id="btn-test-motor" class="btn-diag" onclick="Actions.toggleTest('motor')">TESTE MOTORES</button>
+                </div>
+                <div id="test-readout"></div>
+                <button id="btn-motor-polarity" class="btn-diag btn-diag-standalone" onclick="Actions.confirmMotorPolarity()">POLARIDADE MOTORES</button>
+                <button id="btn-weapon-toggle" class="btn-diag btn-diag-standalone" onclick="Actions.toggleWeapon()">ARMAR</button>
+            </details>
+
+            <details class="collapsible">
+                <summary>TESTE DE MACRO</summary>
+                <div id="macro-steps">
+                    <div class="step-row" data-index="0">
+                        <span>Passo 1</span>
+                        <input type="text" class="step-input" placeholder="ESQ %" id="l0">
+                        <input type="text" class="step-input" placeholder="DIR %" id="r0">
+                        <input type="text" class="step-input" placeholder="MS" id="d0">
+                    </div>
+                </div>
+                <div class="grid grid-tight">
+                    <button class="btn-step-action" onclick="MacroBuilder.addStep()">ADICIONAR PASSO</button>
+                    <button class="btn-step-action" onclick="MacroBuilder.removeStep()">REMOVER PASSO</button>
+                </div>
+                <button id="btn-disparar-macro" class="btn-submit" onclick="Actions.dispatchMacroTest()">[DISPARAR MACRO]</button>
+            </details>
+        </section>
+
+        <section id="tab-tatica" class="tab-panel" hidden>
+            <h2>MOVIMENTAÇÃO INICIAL</h2>
+            <div class="grid" id="macro-grid"><!-- Renderizado dinamicamente --></div>
+
+            <h2>DIREÇÃO</h2>
+            <div class="grid">
+                <button class="btn-direction" data-category="direction" data-val="E" data-label="ESQUERDA">ESQUERDA</button>
+                <button class="btn-direction" data-category="direction" data-val="D" data-label="DIREITA">DIREITA</button>
+            </div>
+
+            <h2>BUSCA E TÁTICA</h2>
+            <div class="grid" id="search-grid"><!-- Renderizado dinamicamente --></div>
+
+            <h2>SISTEMA DE ARMAS</h2>
+            <div class="grid" id="weapon-grid"><!-- Renderizado dinamicamente --></div>
+
+            <button id="btn-submit-tatica" class="btn-submit" onclick="Actions.openTacticalConfirm()">[SUBMETER]</button>
+        </section>
+    </main>
+
+    <footer id="terminal-log" class="terminal">
+        <div id="log-lines"></div>
+    </footer>
+
+    <div id="custom-modal" class="modal-overlay">
+        <div id="modal-container" class="modal-box">
+            <div id="modal-title" class="modal-title">CONFIRMAÇÃO</div>
+            <div id="modal-body" class="modal-body"></div>
+            <div id="modal-actions" class="modal-actions"></div>
+        </div>
+    </div>
+
+    <script>
+        // =================================================
+        // TRANSPORT — protocolo BLE, idêntico ao de ui/index.html. Fonte de
+        // verdade é sempre src/services/BleConfigServer.cpp; isso aqui só
+        // fala a língua que o firmware já espera, nada mudou no wire format.
+        // =================================================
+        const BLE_SERVICE_UUID = '0000ff10-0000-1000-8000-00805f9b34fb';
+        const BLE_CHARACTERISTIC_UUID = '0000ff11-0000-1000-8000-00805f9b34fb';
+
+        const BLE_CMD = {
+            GET_PROFILE: 0x01,
+            GET_SENSORS: 0x02,
+            SET_STRATEGY: 0x03,
+            SET_TEST: 0x04,
+            TRIGGER_MACRO: 0x05,
+            SET_WEAPON: 0x06,
+            CYCLE_MOTOR_POLARITY: 0x07,
+        };
+
+        const Transport = (() => {
+            let characteristic = null;
+            let queue = Promise.resolve();
+
+            async function getCharacteristic() {
+                if (characteristic) return characteristic;
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [BLE_SERVICE_UUID] }],
+                });
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+                characteristic = await service.getCharacteristic(BLE_CHARACTERISTIC_UUID);
+                device.addEventListener('gattserverdisconnected', () => {
+                    characteristic = null;
+                    UI.setConnection('lost');
+                    UI.log('[AVISO] CONEXÃO BLUETOOTH PERDIDA', true);
+                });
+                return characteristic;
+            }
+
+            function command(bytes) {
+                const run = async () => {
+                    const ch = await getCharacteristic();
+                    await ch.writeValueWithResponse(bytes);
+                    const value = await ch.readValue();
+                    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+                };
+                const result = queue.then(run, run);
+                queue = result.catch(() => {});
+                return result;
+            }
+
+            function asJson(bytes) {
+                const text = new TextDecoder().decode(bytes);
+                try { return JSON.parse(text); } catch (e) { return {}; }
+            }
+            function asAck(bytes) {
+                return bytes.length > 0 && bytes[0] === 0x00;
+            }
+
+            return {
+                getProfile: () => command(new Uint8Array([BLE_CMD.GET_PROFILE])).then(asJson),
+                getSensors: () => command(new Uint8Array([BLE_CMD.GET_SENSORS])).then(asJson),
+
+                setStrategy: (macro, direction, search, weapon) => {
+                    const bytes = new Uint8Array([
+                        BLE_CMD.SET_STRATEGY,
+                        macro & 0xff,
+                        direction.charCodeAt(0),
+                        search & 0xff,
+                        weapon & 0xff,
+                    ]);
+                    return command(bytes).then(asAck);
+                },
+
+                setTest: (isMotor, state) => {
+                    const bytes = new Uint8Array([BLE_CMD.SET_TEST, isMotor ? 1 : 0, state ? 1 : 0]);
+                    return command(bytes).then(asAck);
+                },
+
+                triggerMacro: (steps) => {
+                    const n = Math.min(8, Math.max(1, steps.length));
+                    const bytes = new Uint8Array(2 + n * 4);
+                    bytes[0] = BLE_CMD.TRIGGER_MACRO;
+                    bytes[1] = n;
+                    for (let i = 0; i < n; i++) {
+                        bytes[2 + i * 4 + 0] = steps[i].l;
+                        bytes[2 + i * 4 + 1] = steps[i].r;
+                        bytes[2 + i * 4 + 2] = steps[i].d & 0xff;
+                        bytes[2 + i * 4 + 3] = (steps[i].d >> 8) & 0xff;
+                    }
+                    return command(bytes).then(asAck);
+                },
+
+                setWeapon: (arm) => command(new Uint8Array([BLE_CMD.SET_WEAPON, arm ? 1 : 0])).then(asAck),
+
+                cycleMotorPolarity: () => command(new Uint8Array([BLE_CMD.CYCLE_MOTOR_POLARITY]))
+                    .then(bytes => (bytes.length > 0 ? bytes[0] : null)),
+            };
+        })();
+
+        // =================================================
+        // UI — leitura/escrita de DOM centralizada.
+        // =================================================
+        const UI = (() => {
+            const el = {
+                connDot: document.getElementById('conn-dot'),
+                connLabel: document.getElementById('conn-label'),
+                connectBtn: document.getElementById('btn-connect'),
+                robotName: document.getElementById('robot-name'),
+                logLines: document.getElementById('log-lines'),
+                terminal: document.getElementById('terminal-log'),
+                modal: document.getElementById('custom-modal'),
+                modalBox: document.getElementById('modal-container'),
+                modalTitle: document.getElementById('modal-title'),
+                modalBody: document.getElementById('modal-body'),
+                modalActions: document.getElementById('modal-actions'),
+                weaponBtn: document.getElementById('btn-weapon-toggle'),
+                macroGrid: document.getElementById('macro-grid'),
+                searchGrid: document.getElementById('search-grid'),
+                weaponGrid: document.getElementById('weapon-grid'),
+                readoutBox: document.getElementById('test-readout'),
+            };
+
+            const LOG_MAX_LINES = 1;
+
+            function log(msg, isError = false) {
+                const line = document.createElement('div');
+                line.className = 'log-line' + (isError ? ' error' : '');
+                line.textContent = '> ' + msg;
+                el.logLines.appendChild(line);
+                while (el.logLines.children.length > LOG_MAX_LINES) {
+                    el.logLines.removeChild(el.logLines.firstChild);
+                }
+                el.terminal.scrollTop = el.terminal.scrollHeight;
+            }
+
+            function setConnection(state) {
+                el.connDot.className = 'conn-dot' + (state === 'idle' ? '' : ' ' + state);
+                const labels = {
+                    idle: 'DESCONECTADO',
+                    connected: 'CONECTADO',
+                    mock: 'MODO MOCK — SEM ROBÔ DE VERDADE',
+                    lost: 'CONEXÃO PERDIDA',
+                };
+                el.connLabel.textContent = labels[state] || labels.idle;
+                el.connectBtn.textContent = state === 'connected'
+                    ? 'RECONECTAR / TROCAR ROBÔ'
+                    : 'CONECTAR AO ROBÔ (BLUETOOTH)';
+            }
+
+            function switchTab(tab) {
+                document.getElementById('tab-bancada').hidden = tab !== 'bancada';
+                document.getElementById('tab-tatica').hidden = tab !== 'tatica';
+                document.getElementById('tab-btn-bancada').classList.toggle('active', tab === 'bancada');
+                document.getElementById('tab-btn-tatica').classList.toggle('active', tab === 'tatica');
+            }
+
+            function renderProfile(profile) {
+                el.robotName.textContent = 'SUMO AUTO // ' + profile.robot_name.toUpperCase();
+
+                el.macroGrid.innerHTML = profile.macros.map(m =>
+                    `<button class="btn-macro" data-category="macro" data-val="${m.id}" data-label="${m.name}">${m.name}</button>`
+                ).join('');
+
+                el.searchGrid.innerHTML = profile.searches.map(s =>
+                    `<button class="btn-search" data-category="search" data-val="${s.id}" data-label="${s.name}">${s.name}</button>`
+                ).join('');
+
+                el.weaponBtn.disabled = !profile.has_weapons;
+                el.weaponBtn.style.opacity = profile.has_weapons ? '1' : '0.5';
+                State.weaponArmed = false;
+                updateWeaponButton();
+
+                if (profile.has_weapons) {
+                    el.weaponGrid.innerHTML = `
+                        <button class="btn-weapon" data-category="weapon" data-val="0" data-label="DESARMAR">DESARMAR</button>
+                        <button class="btn-weapon" data-category="weapon" data-val="1" data-label="NÃO DESARMAR">NÃO DESARMAR</button>
+                    `;
+                } else {
+                    el.weaponGrid.innerHTML = `<button class="btn-weapon selected" data-category="weapon" data-val="0" data-label="SEM ARMAS" disabled style="opacity:0.5;">SEM ARMAS</button>`;
+                    State.tactic.weapon = { val: '0', label: 'SEM ARMAS' };
+                }
+
+                log('PERFIL ' + profile.robot_name.toUpperCase() + ' CARREGADO');
+            }
+
+            function updateWeaponButton() {
+                el.weaponBtn.classList.toggle('active', State.weaponArmed);
+                el.weaponBtn.textContent = State.weaponArmed ? 'DESARMAR' : 'ARMAR';
+            }
+
+            function openModal({ title, bodyHtml, actionsHtml, tone = 'normal' }) {
+                el.modalBox.className = tone === 'error' ? 'modal-box error-mode' : 'modal-box';
+                el.modalTitle.textContent = title;
+                el.modalTitle.style.color = (tone === 'error' || tone === 'warn') ? 'var(--brand-alert)' : 'var(--brand-ink)';
+                el.modalBody.innerHTML = bodyHtml;
+                el.modalActions.className = 'modal-actions' + (actionsHtml.singleBtn ? ' single-btn' : '');
+                el.modalActions.innerHTML = actionsHtml.html;
+                el.modal.style.display = 'flex';
+            }
+
+            function closeModal() {
+                el.modal.style.display = 'none';
+            }
+
+            function alertBox(title, text, isError = false) {
+                openModal({
+                    title,
+                    bodyHtml: `<div style="text-align:center;">${text}</div>`,
+                    actionsHtml: { html: `<button class="btn-confirm" onclick="UI.closeModal()">OK</button>`, singleBtn: true },
+                    tone: isError ? 'error' : 'normal',
+                });
+            }
+
+            function withBusy(btn, promise) {
+                if (!btn) return promise;
+                btn.disabled = true;
+                return promise.finally(() => { btn.disabled = false; });
+            }
+
+            return { el, log, setConnection, switchTab, renderProfile, updateWeaponButton, openModal, closeModal, alertBox, withBusy };
+        })();
+
+        // =================================================
+        // ESTADO
+        // =================================================
+        const State = {
+            weaponArmed: false,
+            testSensorActive: false,
+            testMotorActive: false,
+            readoutTimer: null,
+            readoutRecebido: false,
+            readoutEmAndamento: false,
+            tactic: {
+                macro: { val: '', label: 'NENHUM' },
+                direction: { val: '', label: 'NENHUM' },
+                search: { val: '', label: 'NENHUM' },
+                weapon: { val: '', label: 'NENHUM' },
+            },
+        };
+
+        // =================================================
+        // MACRO BUILDER
+        // =================================================
+        const MacroBuilder = (() => {
+            let numSteps = 1;
+            const container = document.getElementById('macro-steps');
+
+            function isValidInt(val) {
+                return val.trim() === '' || /^-?\d+$/.test(val.trim());
+            }
+
+            function addStep() {
+                if (numSteps >= 8) return;
+                const div = document.createElement('div');
+                div.className = 'step-row';
+                div.dataset.index = numSteps;
+                div.innerHTML = `
+                    <span>Passo ${numSteps + 1}</span>
+                    <input type="text" class="step-input" placeholder="ESQ %" id="l${numSteps}">
+                    <input type="text" class="step-input" placeholder="DIR %" id="r${numSteps}">
+                    <input type="text" class="step-input" placeholder="MS" id="d${numSteps}">
+                `;
+                container.appendChild(div);
+                numSteps++;
+            }
+
+            function removeStep() {
+                if (numSteps <= 1) return;
+                numSteps--;
+                const rows = container.querySelectorAll('.step-row');
+                rows[rows.length - 1].remove();
+            }
+
+            function parseField(id, fallback) {
+                const val = document.getElementById(id).value;
+                return val.trim() !== '' ? parseInt(val, 10) : fallback;
+            }
+
+            function validate() {
+                let firstInvalid = null;
+                for (let i = 0; i < numSteps; i++) {
+                    ['l', 'r', 'd'].forEach(prefix => {
+                        const input = document.getElementById(prefix + i);
+                        const valid = isValidInt(input.value);
+                        input.classList.toggle('invalid', !valid);
+                        if (!valid && !firstInvalid) firstInvalid = input;
+                    });
+                }
+                return firstInvalid;
+            }
+
+            function hasDuration() {
+                return document.getElementById('d0').value.trim() !== '';
+            }
+
+            function collectSteps() {
+                const steps = [];
+                for (let i = 0; i < numSteps; i++) {
+                    steps.push({
+                        l: parseField('l' + i, 0),
+                        r: parseField('r' + i, 0),
+                        d: parseField('d' + i, 300),
+                    });
+                }
+                return steps;
+            }
+
+            container.addEventListener('input', (e) => {
+                if (!e.target.classList.contains('step-input')) return;
+                e.target.classList.toggle('invalid', !isValidInt(e.target.value));
+            });
+
+            return { addStep, removeStep, validate, hasDuration, collectSteps };
+        })();
+
+        // =================================================
+        // ACTIONS
+        // =================================================
+        const Actions = (() => {
+
+            function switchTab(tab) {
+                UI.switchTab(tab);
+            }
+
+            function connect() {
+                if (!navigator.bluetooth) {
+                    UI.log('BLUETOOTH INDISPONÍVEL NESTE NAVEGADOR — MODO MOCK (SÓ LAYOUT)', true);
+                    UI.renderProfile({
+                        robot_name: 'Arruela (Local Mock)',
+                        macros: [{ id: 0, name: 'FRENTÃO' }, { id: 1, name: 'CURVÃO' }],
+                        searches: [{ id: 1, name: 'BUSCA PADRÃO' }],
+                        has_weapons: false,
+                    });
+                    UI.setConnection('mock');
+                    return;
+                }
+
+                UI.log('CONECTANDO AO ROBÔ...');
+                UI.withBusy(UI.el.connectBtn, Transport.getProfile())
+                    .then(profile => {
+                        UI.renderProfile(profile);
+                        UI.setConnection('connected');
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        UI.log('[ERRO] FALHA AO CONECTAR / LER PERFIL DO ROBÔ', true);
+                        UI.alertBox('[!] ERRO DE CONEXÃO', 'Não foi possível conectar ou ler o perfil do robô.<br>Verifique se o Bluetooth do robô está ligado e tente de novo.', true);
+                    });
+            }
+
+            function toggleTest(which) {
+                if (navigator.vibrate) navigator.vibrate(20);
+                const isMotor = which === 'motor';
+                const btn = document.getElementById(isMotor ? 'btn-test-motor' : 'btn-test-sensor');
+
+                if (isMotor) {
+                    State.testMotorActive = !State.testMotorActive;
+                    if (State.testMotorActive && State.testSensorActive) toggleTest('sensor');
+                } else {
+                    State.testSensorActive = !State.testSensorActive;
+                    if (State.testSensorActive && State.testMotorActive) toggleTest('motor');
+                }
+                btn.classList.toggle('active', isMotor ? State.testMotorActive : State.testSensorActive);
+                UI.log('TESTE DE ' + (isMotor ? 'MOTORES' : 'SENSORES') + ': ' + ((isMotor ? State.testMotorActive : State.testSensorActive) ? 'ATIVO' : 'DESLIGADO'));
+
+                const state = isMotor ? State.testMotorActive : State.testSensorActive;
+                UI.withBusy(btn, Transport.setTest(isMotor, state))
+                    .then(() => {
+                        if (!isMotor) {
+                            if (state) startReadoutPolling(); else stopReadoutPolling();
+                        }
+                    })
+                    .catch(e => console.log(e));
+            }
+
+            function startReadoutPolling() {
+                UI.el.readoutBox.style.display = 'block';
+                UI.el.readoutBox.textContent = '> iniciando...';
+                State.readoutRecebido = false;
+                fetchReadout();
+                State.readoutTimer = setInterval(fetchReadout, 150);
+            }
+
+            function stopReadoutPolling() {
+                if (State.readoutTimer) {
+                    clearInterval(State.readoutTimer);
+                    State.readoutTimer = null;
+                }
+                UI.el.readoutBox.style.display = 'none';
+                UI.el.readoutBox.textContent = '';
+            }
+
+            function fetchReadout() {
+                if (State.readoutEmAndamento) return;
+                State.readoutEmAndamento = true;
+                Transport.getSensors()
+                    .then(data => {
+                        const keys = Object.keys(data);
+                        if (keys.length === 0) {
+                            if (!State.readoutRecebido) UI.el.readoutBox.textContent = '> aguardando leitura (robô sem sensores mapeados)...';
+                            return;
+                        }
+                        State.readoutRecebido = true;
+                        UI.el.readoutBox.textContent = keys.map(k => '> ' + k.toUpperCase() + ': ' + data[k]).join('\n');
+                    })
+                    .catch(() => {
+                        if (!State.readoutRecebido) UI.el.readoutBox.textContent = '> [ERRO] FALHA AO LER SENSORES';
+                    })
+                    .finally(() => { State.readoutEmAndamento = false; });
+            }
+
+            function confirmMotorPolarity() {
+                if (navigator.vibrate) navigator.vibrate(20);
+                UI.openModal({
+                    title: 'CONFIRMAR POLARIDADE',
+                    bodyHtml: `<div class="modal-prompt">Isso avança a config de polaridade dos motores e grava na memória do robô — vale pra qualquer firmware que suba depois (AUTO ou RC). Só usar em bancada, com o robô no ar.</div>`,
+                    actionsHtml: {
+                        html: `<button class="btn-abort" onclick="UI.closeModal()">CANCELAR</button>
+                               <button class="btn-confirm" onclick="Actions.cycleMotorPolarity()">AVANÇAR</button>`,
+                    },
+                });
+            }
+
+            function cycleMotorPolarity() {
+                UI.closeModal();
+                if (navigator.vibrate) navigator.vibrate(20);
+                UI.log('AVANÇANDO POLARIDADE DOS MOTORES...');
+                const btn = document.getElementById('btn-motor-polarity');
+                UI.withBusy(btn, Transport.cycleMotorPolarity())
+                    .then(index => {
+                        if (index === null) {
+                            UI.log('[ERRO] COMANDO DE POLARIDADE RECUSADO', true);
+                            UI.alertBox('[!] ERRO', 'O robô recusou o comando de polaridade.', true);
+                            return;
+                        }
+                        btn.textContent = 'POLARIDADE: #' + index;
+                        UI.log('[OK] CONFIG #' + index + ' — TESTE OS MOTORES PRA CONFERIR');
+                    })
+                    .catch(() => {
+                        UI.log('[ERRO] ROBÔ NÃO RESPONDEU', true);
+                        UI.alertBox('NETWORK ERROR', 'Falha ao comandar a polaridade.<br>Verifique a conexão.', true);
+                    });
+            }
+
+            function toggleWeapon() {
+                if (navigator.vibrate) navigator.vibrate(20);
+                if (!State.weaponArmed) {
+                    UI.openModal({
+                        title: 'CONFIRMAR ARMAMENTO',
+                        tone: 'warn',
+                        bodyHtml: `<div class="modal-prompt">Isso arma o sistema de armas do robô agora. Só usar em bancada, com o robô no ar e ninguém no raio de ação.</div>`,
+                        actionsHtml: {
+                            html: `<button class="btn-abort" onclick="UI.closeModal()">CANCELAR</button>
+                                   <button class="btn-confirm" onclick="UI.closeModal(); Actions.setWeapon(true);">ARMAR</button>`,
+                        },
+                    });
+                    return;
+                }
+                setWeapon(false);
+            }
+
+            function setWeapon(nextState) {
+                UI.log((nextState ? 'ARMANDO' : 'DESARMANDO') + ' ARMA...');
+                UI.withBusy(UI.el.weaponBtn, Transport.setWeapon(nextState))
+                    .then(ok => {
+                        if (!ok) {
+                            UI.log('[ERRO] COMANDO DE ARMA RECUSADO', true);
+                            UI.alertBox('[!] ERRO', 'O robô recusou o comando de arma.', true);
+                            return;
+                        }
+                        State.weaponArmed = nextState;
+                        UI.updateWeaponButton();
+                        UI.log('[OK] ARMA ' + (State.weaponArmed ? 'ARMADA' : 'DESARMADA'));
+                    })
+                    .catch(() => {
+                        UI.log('[ERRO] ROBÔ NÃO RESPONDEU', true);
+                        UI.alertBox('NETWORK ERROR', 'Falha ao comandar a arma.<br>Verifique a conexão.', true);
+                    });
+            }
+
+            function dispatchMacroTest() {
+                const firstInvalid = MacroBuilder.validate();
+                if (firstInvalid) {
+                    UI.alertBox('[!] ERRO', 'Campo com valor inválido (só número inteiro, ex: -60 ou 100).<br>Corrija o campo destacado em vermelho.', true);
+                    firstInvalid.focus();
+                    return;
+                }
+                if (!MacroBuilder.hasDuration()) {
+                    UI.alertBox('[!] ERRO', 'Preencha pelo menos a duração do Passo 1.', true);
+                    return;
+                }
+
+                UI.log('DISPARANDO MACRO DE TESTE...');
+                UI.withBusy(document.getElementById('btn-disparar-macro'), Transport.triggerMacro(MacroBuilder.collectSteps()))
+                    .then(ok => {
+                        if (!ok) {
+                            UI.log('[ERRO] COMANDO DE MACRO RECUSADO', true);
+                            UI.alertBox('[!] ERRO', 'O robô recusou a macro de teste.', true);
+                            return;
+                        }
+                        UI.log('[OK] MACRO DISPARADA NO ROBÔ');
+                        UI.alertBox('MACRO DISPARADA', 'Comando enviado com sucesso.', false);
+                    })
+                    .catch(() => {
+                        UI.log('[ERRO] ROBÔ NÃO RESPONDEU', true);
+                        UI.alertBox('NETWORK ERROR', 'Falha ao disparar macro.<br>Verifique a conexão Bluetooth.', true);
+                    });
+            }
+
+            function selectCategory(btn) {
+                if (navigator.vibrate) navigator.vibrate(20);
+                const category = btn.getAttribute('data-category');
+                const val = btn.getAttribute('data-val');
+                const label = btn.getAttribute('data-label');
+
+                if (btn.classList.contains('selected')) {
+                    btn.classList.remove('selected');
+                    State.tactic[category] = { val: '', label: 'NENHUM' };
+                    UI.log('CATEGORIA ' + category.toUpperCase() + ' DESMARCADA');
+                    return;
+                }
+                document.querySelectorAll(`button[data-category="${category}"]`).forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                State.tactic[category] = { val, label };
+                UI.log('SEL: ' + category.toUpperCase() + ' -> ' + label);
+            }
+
+            function openTacticalConfirm() {
+                if (!State.tactic.macro.val) {
+                    UI.alertBox('[!] ERRO CRÍTICO', 'Selecione obrigatoriamente a Movimentação Inicial antes de realizar o Uplink.', true);
+                    UI.log('ERRO: PREENCHIMENTO INCOMPLETO', true);
+                    return;
+                }
+
+                let reportHtml = `<div class="modal-chip btn-macro selected">${State.tactic.macro.label}</div>`;
+                if (State.tactic.direction.val) reportHtml += `<div class="modal-chip btn-direction selected">${State.tactic.direction.label}</div>`;
+                if (State.tactic.search.val) reportHtml += `<div class="modal-chip btn-search selected">${State.tactic.search.label}</div>`;
+                if (State.tactic.weapon.val) reportHtml += `<div class="modal-chip btn-weapon selected">${State.tactic.weapon.label}</div>`;
+                reportHtml += `<div class="modal-prompt">Transmitir parâmetros para o robô?</div>`;
+
+                UI.openModal({
+                    title: 'CONFIRMAÇÃO TÁTICA',
+                    bodyHtml: reportHtml,
+                    actionsHtml: {
+                        html: `<button class="btn-abort" onclick="UI.closeModal()">ABORTAR</button>
+                               <button class="btn-confirm" onclick="Actions.transmitTactic()">TRANSMITIR</button>`,
+                    },
+                });
+            }
+
+            function transmitTactic() {
+                if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
+
+                if (State.testSensorActive) toggleTest('sensor');
+                if (State.testMotorActive) toggleTest('motor');
+
+                UI.closeModal();
+                UI.log('EXECUTANDO UPLINK...');
+
+                const macro = State.tactic.macro.val ? parseInt(State.tactic.macro.val, 10) : 0;
+                const direction = State.tactic.direction.val || 'X';
+                const search = State.tactic.search.val ? parseInt(State.tactic.search.val, 10) : 1;
+                const weapon = State.tactic.weapon.val ? parseInt(State.tactic.weapon.val, 10) : 0;
+
+                UI.withBusy(document.getElementById('btn-submit-tatica'), Transport.setStrategy(macro, direction, search, weapon))
+                    .then(ok => {
+                        if (ok) {
+                            UI.alertBox('UPLINK SUCCESS', 'Configuração salva com sucesso!', false);
+                            UI.log('[OK] PARÂMETROS TRAVADOS NO ROBÔ');
+                        } else {
+                            UI.alertBox('UPLINK FAILURE', 'O robô recebeu os dados mas recusou o comando.', true);
+                            UI.log('[ERRO] ROBÔ RECUSOU A ESTRATÉGIA', true);
+                        }
+                    })
+                    .catch(() => {
+                        UI.alertBox('NETWORK ERROR', 'Falha crítica de comunicação.<br><br>Verifique se o celular ainda está conectado por Bluetooth no robô.', true);
+                        UI.log('[ERRO FATAL] SEM RESPOSTA DO ROBÔ', true);
+                    });
+            }
+
+            return {
+                switchTab, connect, toggleTest, confirmMotorPolarity, cycleMotorPolarity,
+                toggleWeapon, setWeapon, dispatchMacroTest, selectCategory,
+                openTacticalConfirm, transmitTactic,
+            };
+        })();
+
+        document.body.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-category]');
+            if (btn) Actions.selectCategory(btn);
+        });
+
+        UI.log('SYS STANDBY // UPLINK READY');
+    </script>
+</body>
+</html>
