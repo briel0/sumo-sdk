@@ -81,3 +81,9 @@ void WeaponSystem::setServoAngle(int index, int angle) {
         isDeployedFlag = true;
     }
 }
+
+void WeaponSystem::nudgeServo(int index, int delta) {
+    if(index >= 0 && index < servoCount && servos[index] != nullptr) {
+        servos[index]->nudge(delta);
+    }
+}

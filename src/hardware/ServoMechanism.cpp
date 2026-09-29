@@ -22,6 +22,7 @@ void ServoMechanism::setAngle(int angle) {
     }
     angle = constrain(angle, 0, 180);
     _servo.write(angle);
+    _angle = angle;
 }
 
 void ServoMechanism::deploy() {
@@ -30,6 +31,15 @@ void ServoMechanism::deploy() {
 
 void ServoMechanism::retract() {
     setAngle(_retractAngle);
+}
+
+void ServoMechanism::nudge(int delta) {
+    if(_deployAngle < _retractAngle) {
+        delta = -delta;
+    }
+    int lo = min(_retractAngle, _deployAngle);
+    int hi = max(_retractAngle, _deployAngle);
+    setAngle(constrain(_angle + delta, lo, hi));
 }
 
 void ServoMechanism::relax() {

@@ -32,6 +32,13 @@ class ServoMechanism {
     void retract();
     void relax();
 
+    /**
+    @brief Anda delta graus a partir do ângulo atual, preso entre
+           retractAngle e deployAngle. delta > 0 anda rumo ao deployAngle,
+           delta < 0 rumo ao retractAngle — vale mesmo com deploy < retract.
+    */
+    void nudge(int delta);
+
   private:
     /**
     @brief The underlying ESP32Servo instance used to control hardware PWM.
@@ -52,4 +59,9 @@ class ServoMechanism {
     @brief The angle (in degrees) when the mechanism is fully deployed/armed.
     */
     int _deployAngle;
+
+    /**
+    @brief Último ângulo escrito no servo — base do nudge().
+    */
+    int _angle = 0;
 };

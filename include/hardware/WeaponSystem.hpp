@@ -15,6 +15,10 @@ class WeaponSystem {
 
     void setServoAngle(int index, int angle);
 
+    // Anda o servo `index` delta graus dentro dos limites dele — não mexe
+    // em isDeployed/relax, o servo segura a posição.
+    void nudgeServo(int index, int delta);
+
   private:
     static constexpr int MAX = 4;
     static constexpr unsigned long RELAX_TIMEOUT_MS = 1000;

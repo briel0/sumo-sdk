@@ -1,4 +1,5 @@
 #include "RCMode.hpp"
+#include "ArmMotor.hpp"
 #include "Config.hpp"
 #include "Drive.hpp"
 #include "StatusLED.hpp"
@@ -9,72 +10,37 @@ void RCMode::init() {
     receptor.init();
 }
 
-void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
-    if(receptor.circle()) {
-        _autoDisarmLocked = !_autoDisarmLocked;
-        Serial.printf("[SUMÔ] Auto-desarme: %s\n", _autoDisarmLocked ? "TRAVADO" : "ATIVO");
+void RCMode::handleArm(ArmMotor &braco) {
+    int dir = 0;
+    if(receptor.dpadUpHeld()) {
+        dir = 1;
     }
-
-    bool playerIsMoving = throttle != 0 || steer != 0;
-    bool weaponsArmed = armas.isDeployed();
-    bool macroRunning = macroPlayer.isPlaying();
-    bool autoDisarmFree = !_autoDisarmLocked;
-
-    if(receptor.dpadUp() && !weaponsArmed) {
-        armas.deploy();
+    else if(receptor.dpadDownHeld()) {
+        dir = -1;
     }
-
-    if(receptor.dpadDown() && weaponsArmed) {
-        armas.retract();
+    if(Config::ARM_INVERTED) {
+        dir = -dir;
     }
-
-#ifndef ROBOT_CAIPORA_RC
-    // Só o Caipora RC tem esse override — os outros robôs não têm esse uso
-    // pro servo 0 no controle manual.
-#else
-    if(receptor.l3()) {
-        armas.setServoAngle(0, 0);
-        Serial.println("[SUMÔ] L3: joga a arma pro 0");
-    }
-#endif
-
-    if(autoDisarmFree) {
-        if(!weaponsArmed && (playerIsMoving || macroRunning)) {
-            armas.deploy();
-        }
-    }
+    braco.setSpeed(dir * Config::ARM_MAX_SPEED);
 }
 
-void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
-    auto triggerMacro = [&](const MotionSequence &seq) {
-        if(!_autoDisarmLocked) {
-            armas.deploy();
-        }
-        macroPlayer.play(seq);
+void RCMode::handleServos(WeaponSystem &armas) {
+    // L2/R2 são analógicos (0..100); a partir daqui conta como apertado.
+    static constexpr int TRIGGER_PRESSED = 30;
+
+    // 1 = ir (rumo ao deployAngle), -1 = voltar, 0 = parado. Os dois
+    // apertados ao mesmo tempo se anulam.
+    int dir[2] = {
+        (receptor.leftTrigger() > TRIGGER_PRESSED) - receptor.l1Held(),
+        (receptor.rightTrigger() > TRIGGER_PRESSED) - receptor.r1Held(),
     };
 
-    // CONFIGURE AS MACROS AQUI!!!
-    int numMacros = sizeof(Config::TABELA_MACROS_ESQ) / sizeof(Config::TABELA_MACROS_ESQ[0]);
-
-    if(receptor.square()) {
-        if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_ESQ[1]);
-    }
-    else if(receptor.triangle()) {
-        if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_DIR[1]);
-    }
-#if defined(ROBOT_MAROLA) || defined(ROBOT_ARRUELA)
-    // MACRO_CURVINHA_DIREITA/ESQUERDA só existem nesses dois profiles (ver
-    // include/profiles/) — sem esse guard, o RC do Caipora/Smoker não compila.
-    else if(receptor.r1()) {
-        triggerMacro(Config::MACRO_CURVINHA_DIREITA);
-    }
-    else if(receptor.l1()) {
-        triggerMacro(Config::MACRO_CURVINHA_ESQUERDA);
-    }
-#endif
-
-    if(macroPlayer.isPlaying()) {
-        macroPlayer.update(motores);
+    unsigned long now = millis();
+    for(int i = 0; i < 2; i++) {
+        if(dir[i] != 0 && now - _servoLastStep[i] >= Config::SERVO_MS_PER_DEG) {
+            armas.nudgeServo(i, dir[i]);
+            _servoLastStep[i] = now;
+        }
     }
 }
 
@@ -112,36 +78,19 @@ void RCMode::handleMotorPolarity(Drive &motores, StatusLed &led) {
     }
 }
 
-void RCMode::run(Drive &motores, WeaponSystem &armas, StatusLed &led) {
+void RCMode::run(Drive &motores, ArmMotor &braco, WeaponSystem &armas, StatusLed &led) {
     receptor.update();
-    armas.update();
 
     handleMotorPolarity(motores, led);
 
-    int throttle = receptor.rightTrigger() - receptor.leftTrigger();
+    // Um analógico por lado, sem limite: stick no fundo = 100%. Stick pra
+    // cima vem negativo do Bluepad32 — inverte pra "cima = frente".
+    int left = -receptor.leftStickY();
+    int right = -receptor.rightStickY();
 
-    // Acelerador digital: X força 100% pra frente se o gatilho não estiver acionado.
-    if(receptor.crossHeld()) {
-        throttle = 100;
-    }
+    handleArm(braco);
 
-    int steer = receptor.leftStickX();
+    handleServos(armas);
 
-    handleWeapons(armas, throttle, steer);
-
-    handleMacros(motores, armas);
-
-    if(macroPlayer.isPlaying()) {
-        return;
-    }
-
-    throttle = (throttle * Config::MAX_THROTTLE) / 100;
-    if(throttle == 0) {
-        steer = (steer * Config::PIVOT_COEFFICIENT) / 100;
-    }
-    else {
-        steer = (steer * Config::TURN_COEFFICIENT) / 100;
-    }
-
-    motores.setSpeed(throttle + steer, throttle - steer);
+    motores.setSpeed(left, right);
 }

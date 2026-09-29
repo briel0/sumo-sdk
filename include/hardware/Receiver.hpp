@@ -53,6 +53,22 @@ class Receiver {
         return dpadRightFlag;
     }
 
+    // Nível ("está segurando"), não borda — igual crossHeld(). Leem o
+    // estado do frame atual guardado em lastDpad/lastL1/lastR1, que o
+    // applyFailsafe() zera quando o controle cai.
+    bool dpadUpHeld() const {
+        return lastDpad & DPAD_UP;
+    }
+    bool dpadDownHeld() const {
+        return lastDpad & DPAD_DOWN;
+    }
+    bool l1Held() const {
+        return lastL1;
+    }
+    bool r1Held() const {
+        return lastR1;
+    }
+
     bool circle() const {
         return circleFlag;
     }

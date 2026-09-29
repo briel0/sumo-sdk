@@ -1,46 +1,27 @@
-#include "AutoMode.hpp"
+#include "ArmMotor.hpp"
 #include "Config.hpp"
 #include "Drive.hpp"
 #include "IRreader.hpp"
+#include "RCMode.hpp"
 #include "ServoMechanism.hpp"
 #include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
-#include <Wire.h>
 
-// Firmware AUTO — desacoplado do RC (ver tools/RCFirmware/main.cpp) pra
-// tirar o Bluepad32/BTstack do binário: eram duas stacks Bluetooth
-// disputando o mesmo controller quando RC e AUTO viviam no mesmo main.cpp
-// (suspeita levantada ao investigar o BLE do BleConfigServer que nunca
-// aparecia em nenhum scanner, nem com todos os comandos HCI retornando OK).
-// Trade-off aceito: perde a troca RC<->AUTO por IR em runtime, agora e'
-// reflash pra trocar de modo.
+// Firmware do mini trator: só RC (Bluepad32), sem sensor nem modo autônomo.
+// Analógicos (vertical) = motor esquerdo/direito | setas cima/baixo = braço |
+// L1/L2 = servo 0, R1/R2 = servo 1 (ver RCMode.cpp).
 
 Drive motores(Config::RIGHT_POS_PIN, Config::RIGHT_NEG_PIN, Config::LEFT_POS_PIN, Config::LEFT_NEG_PIN);
+ArmMotor braco(Config::ARM_POS_PIN, Config::ARM_NEG_PIN);
 WeaponSystem sistemaDeArmas;
 IRReader ir;
 StatusLed statusLed;
-AutoMode modoAuto;
-
-ActiveAuto taticaAtual;
+RCMode modoRC;
 
 void setup() {
-#if defined(ROBOT_SMOKER)
-    // Liga o transistor dos JS40F antes de qualquer outra coisa: quanto mais
-    // cedo ele sobe, mais tempo de estabilização o sensor tem até o combate.
-    pinMode(Config::PIN_JS_POWER, OUTPUT);
-    digitalWrite(Config::PIN_JS_POWER, HIGH);
-#elif defined(ROBOT_ARRUELA)
-    // Fica desligado durante a estratégia inicial (saque cego) — evita
-    // qualquer interferência dos JS40F nesse trecho. ArruelaAuto::autoEngage()
-    // liga assim que o combate de verdade começa.
-    pinMode(Config::PIN_JS_POWER, OUTPUT);
-    digitalWrite(Config::PIN_JS_POWER, LOW);
-#endif
-
     Serial.begin(115200);
-    Wire.begin(); // Inicializa I2C
-    Serial.println("[MAIN] Inicializando subsistemas do Sumô (firmware AUTO).");
+    Serial.println("[MAIN] Inicializando subsistemas do Sumô (firmware do trator).");
 
     motores.initPolarity();
     Serial.printf("[MAIN] Polaridade dos motores: config #%u\n", motores.currentPolarity());
@@ -58,8 +39,9 @@ void setup() {
     }
     statusLed.confirmStep();
 
-    modoAuto.init(taticaAtual, motores);
-    Serial.println("[MAIN] Modo AUTO engatilhado.");
+    modoRC.init();
+    ir.shutdown();
+    Serial.println("[MAIN] Modo RC engatilhado.");
 
     statusLed.confirmStep();
     statusLed.confirmStep();
@@ -69,35 +51,21 @@ void setup() {
 void loop() {
     ir.update();
 
-    // Feedback visual para códigos IRs válidos (menos '1')
-    if(ir.modeRC() || ir.modeAuto() || ir.stop()) {
-        statusLed.blinkDebug(5, 20);
-    }
-
     if(ir.stop()) {
         motores.setSpeed(0, 0);
+        braco.setSpeed(0);
         Serial.println("[MAIN] COMANDO DE PARAGEM (3). Reiniciando o sistema...");
         delay(50);
         ESP.restart();
     }
 
-    if(modoAuto.getSubState() == AutoMode::SubState::SELECTING_ESTRATEGIA ||
-       modoAuto.getSubState() == AutoMode::SubState::DISCONNECTING_WIFI) {
-        statusLed.strategyWave();
+    if(!modoRC.controllerConnected()) {
+        statusLed.pairingWave();
     }
-    if(modoAuto.getSubState() == AutoMode::SubState::READY) {
-        if(ir.ready()) {
-            statusLed.blinkDebug(1, 20);
-            statusLed.setAll(CRGB::Red);
-        }
-        if(!modoAuto.readyReceived()) {
-            statusLed.setState(CRGB::Orange);
-        }
-        if(ir.start()) {
-            statusLed.setState(CRGB::Black);
-        }
+    else {
+        statusLed.setState(CRGB::Green); // limpa o laranja residual
     }
-    modoAuto.run(motores, sistemaDeArmas, ir.start(), ir.ready());
+    modoRC.run(motores, braco, sistemaDeArmas, statusLed);
 
     yield();
 }
