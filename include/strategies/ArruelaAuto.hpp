@@ -38,11 +38,13 @@ class ArruelaAuto : public CombatStrategy {
 
     // BUSCA_TOF: so ataca com o VL53L0X enxergando alvo abaixo deste limiar.
     static constexpr uint16_t LIMIAR_TOF_MM = 200;
+
     // Espacamento entre leituras do ToF. Precisa ser maior que o orcamento de
     // 20ms configurado no ToFSensor, senao a leitura gira no I2C esperando amostra.
     static constexpr unsigned long INTERVALO_TOF_MS = 25;
 
     unsigned long _ultimaLeituraToF = 0;
+
     bool _toFViuAlvo = false;
     // Resultado do init() do VL53L0X. Se o sensor nao subiu, a BUSCA_TOF nunca
     // atacaria (todo temOponente() daria timeout), entao o configure() a recusa.
@@ -68,6 +70,7 @@ class ArruelaAuto : public CombatStrategy {
     void _buscaLenta(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
     void _buscaToF(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
     void _buscaGatoPreto(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
+    
     // BUSCA_BALA_TENSA: mesma deteccao da BUSCA_TOF (reaproveita LIMIAR_TOF_MM,
     // INTERVALO_TOF_MS e o cache _ultimaLeituraToF/_toFViuAlvo), mas em vez de
     // atacar reto na confirmacao ela dispara uma MACRO_CURVINHA (Config.hpp)

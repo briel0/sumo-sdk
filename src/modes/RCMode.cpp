@@ -59,6 +59,7 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     if(receptor.square()) {
         if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_ESQ[1]);
     }
+    
     else if(receptor.triangle()) {
         if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_DIR[1]);
     }
