@@ -27,6 +27,19 @@ namespace Config {
     // de tempo de estabilização antes de ler qualquer sensor.
     static constexpr int PIN_JS_POWER = 25;
 
+    // Os dois QRE1113 (linha, analogico). Por enquanto so o teste de bancada
+    // (ArruelaSensorTest) le eles — o ArruelaAuto ainda nao usa linha.
+    // ATENCAO: 26 e ADC2, que morre enquanto o WiFi do painel esta de pe. Na
+    // bancada (sem WiFi) le normal; pra usar em combate, mover pro ADC1
+    // (32-39). O 32 ja e ADC1.
+    static constexpr uint8_t PIN_LINHA_ESQ = 26;
+    static constexpr uint8_t PIN_LINHA_DIR = 32;
+
+    // Limiares separados de proposito: os dois QRE nunca leem igual no mesmo
+    // dojo. Calibre cada um na bancada antes da luta.
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 2800;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 2800;
+
     // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
     // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
     // disputarem o mesmo espectro e derrubarem o portal um do outro.
