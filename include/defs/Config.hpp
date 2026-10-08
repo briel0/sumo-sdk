@@ -11,10 +11,14 @@ using ActiveAuto = CaiporaAuto;
 // strategies/CaiporaAuto.hpp (e os sensores/dependências dele) à toa.
 #include "profiles/caiporarc.hpp"
 
-#elif defined(ROBOT_BRIGA)
-#include "profiles/briga.hpp"
-#include "strategies/NoAuto.hpp"
-using ActiveAuto = NoAuto;
+#elif defined(ROBOT_SMOKER_RC)
+#include "profiles/smoker.hpp"
+
+#elif defined(ROBOT_ARRUELA_RC)
+#include "profiles/arruela.hpp"
+
+#elif defined(ROBOT_MAROLA_RC)
+#include "profiles/marola.hpp"
 
 #elif defined(ROBOT_SMOKER)
 #include "profiles/smoker.hpp"
@@ -28,14 +32,6 @@ using ActiveAuto = ArruelaAuto;
 #include "profiles/marola.hpp"
 #include "strategies/MarolaAuto.hpp"
 using ActiveAuto = MarolaAuto;
-#elif defined(ROBOT_FUEGO)
-#include "profiles/fuego.hpp"
-#include "strategies/NoAuto.hpp"
-using ActiveAuto = NoAuto;
-#elif defined(ROBOT_FUEGUITO)
-#include "profiles/fueguito.hpp"
-#include "strategies/NoAuto.hpp"
-using ActiveAuto = NoAuto;
 #else
 #error "ERRO CRÍTICO: Nenhum perfil de robô foi definido na compilação!"
 #endif
