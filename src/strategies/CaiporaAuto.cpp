@@ -34,6 +34,21 @@ void CaiporaAuto::init() {
     _player.stop();
 }
 
+void CaiporaAuto::configure(const AutoStrategy &cfg) {
+    // Id desconhecido cai na UM SENSOR pelo default — nunca deixa o robô sem busca.
+    switch(cfg.search) {
+        case BUSCA_DOIS_SENSORES:
+            _buscaAtual = &CaiporaAuto::_buscaDoisSensores;
+            Serial.println("[CAIPORA] Busca DOIS SENSORES.");
+            break;
+        case BUSCA_UM_SENSOR:
+        default:
+            _buscaAtual = &CaiporaAuto::_buscaUmSensor;
+            Serial.println("[CAIPORA] Busca UM SENSOR.");
+            break;
+    }
+}
+
 void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
 
     // 1. Se o MotionPlayer estiver tocando alguma macro (ex: largada), ele assume o controle
@@ -55,31 +70,51 @@ void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     // bloqueou a luz de cima — alvo na cara.
     int rawLdr = _ldr.readRaw();
 
-    _busca(motores, _rawFrenteEsq, _rawLateralEsq, _rawFrenteDir, _rawLateralDir, rawLdr);
+    (this->*_buscaAtual)(motores, _rawFrenteEsq, _rawLateralEsq, _rawFrenteDir, _rawLateralDir, rawLdr);
 }
 
-void CaiporaAuto::_busca(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
-                         uint16_t rawLateralDir, int rawLdr) {
-    
+void CaiporaAuto::_buscaUmSensor(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                                 uint16_t rawLateralDir, int rawLdr) {
+
     if(rawLdr < LIMIAR_LDR) {
         motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
         return;
     }
-    
-    if(rawFrenteEsq <= 500 && rawFrenteDir <= 500){
+
+    if(rawFrenteEsq <= 500 && rawFrenteDir <= 500) {
         motores.setSpeed(50, 50);
         return;
     }
 
-    if(rawLateralEsq <= 500){
-        motores.setSpeed(-55, 55);
+    motores.setSpeed(0, 0);
+}
+
+void CaiporaAuto::_buscaDoisSensores(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq,
+                                     uint16_t rawFrenteDir, uint16_t rawLateralDir, int rawLdr) {
+
+    if(rawLdr < LIMIAR_LDR) {
+        motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
         return;
     }
 
-    if(rawLateralDir <= 500){
-        motores.setSpeed(55, -55);
+    if(rawFrenteEsq <= 500 && rawFrenteDir <= 500) {
+        motores.setSpeed(50, 50);
+        return;
     }
 
+    if(rawFrenteEsq <= 500) {
+        motores.setSpeed(-55, 55);
+        _ultimoLado = Direction::left;
+        return;
+    }
+
+    if(rawFrenteDir <= 500) {
+        motores.setSpeed(55, -55);
+        _ultimoLado = Direction::right;
+        return;
+    }
+
+    motores.setSpeed(0, 0);
 }
 
 String CaiporaAuto::getSensorStatusJSON() {

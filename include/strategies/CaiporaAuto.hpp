@@ -15,6 +15,7 @@ class CaiporaAuto : public CombatStrategy {
 
     CaiporaAuto();
     void init() override;
+    void configure(const AutoStrategy &cfg) override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
     String getSensorStatusJSON() override;
 
@@ -43,7 +44,7 @@ class CaiporaAuto : public CombatStrategy {
     // JS40F frontal — abaixo do limiar (algo bloqueando a luz de cima) é alvo na
     // cara, ataca com tudo.
     static constexpr uint16_t LIMIAR_BUSCA_MM = 250;
-    static constexpr uint16_t LIMIAR_LDR = 4000;
+    static constexpr uint16_t LIMIAR_LDR = 300;
     static constexpr int VEL_BUSCA_CUIDADOSA = 40;
     static constexpr int VEL_ATAQUE = 100;
 
@@ -60,6 +61,18 @@ class CaiporaAuto : public CombatStrategy {
     uint16_t _rawFrenteDir = SEM_LEITURA_MM;
     uint16_t _rawLateralDir = SEM_LEITURA_MM;
 
-    void _busca(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
-                uint16_t rawLateralDir, int rawLdr);
+    // Ids de busca que chegam do site (AutoStrategy::search).
+    static constexpr int BUSCA_UM_SENSOR = 1;
+    static constexpr int BUSCA_DOIS_SENSORES = 2;
+
+    // Mesmo esquema do ArruelaAuto: o configure() escolhe a função uma única vez
+    // e o autoEngage() só desreferencia o ponteiro.
+    using BuscaFn = void (CaiporaAuto::*)(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq,
+                                          uint16_t rawFrenteDir, uint16_t rawLateralDir, int rawLdr);
+    BuscaFn _buscaAtual = &CaiporaAuto::_buscaUmSensor;
+
+    void _buscaUmSensor(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                        uint16_t rawLateralDir, int rawLdr);
+    void _buscaDoisSensores(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                            uint16_t rawLateralDir, int rawLdr);
 };
