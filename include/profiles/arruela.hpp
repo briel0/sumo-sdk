@@ -19,7 +19,7 @@ namespace Config {
     static constexpr int NUM_SERVOS = 0;
 
     static constexpr int PIN_JS_ESQ = 27;
-    static constexpr int PIN_JS_DIR = 14;
+    static constexpr int PIN_JS_DIR = 36;
     static constexpr int PIN_JS_FRONT = 4;
 
     // Transistor na placa que liga a alimentação dos três JS40F. Precisa ir
@@ -27,11 +27,11 @@ namespace Config {
     // de tempo de estabilização antes de ler qualquer sensor.
     static constexpr int PIN_JS_POWER = 25;
 
-    // Os dois QRE1113 (linha, analogico). Por enquanto so o teste de bancada
-    // (ArruelaSensorTest) le eles — o ArruelaAuto ainda nao usa linha.
-    // ATENCAO: 26 e ADC2, que morre enquanto o WiFi do painel esta de pe. Na
-    // bancada (sem WiFi) le normal; pra usar em combate, mover pro ADC1
-    // (32-39). O 32 ja e ADC1.
+    // Os dois QRE1113 (linha, analogico), usados pela fuga de borda do
+    // ArruelaAuto.
+    // ATENCAO: 26 e ADC2, que morre com WiFi ligado. O painel hoje e BLE (sem
+    // WiFi), entao le normal; se o WiFi voltar, mover pro ADC1 (32-39). O 32
+    // ja e ADC1.
     static constexpr uint8_t PIN_LINHA_ESQ = 26;
     static constexpr uint8_t PIN_LINHA_DIR = 32;
 
@@ -59,6 +59,19 @@ namespace Config {
 
     static const MotionSequence MACRO_RECUO = MACRO(
         {-80, -80, 60},);
+
+    // Fugas de borda: o ArruelaAuto toca uma delas quando um QRE1113 ve a
+    // linha branca. O nome e o lado do sensor que viu — a fuga gira pro lado
+    // oposto.
+    static const MotionSequence MACRO_FUGA_LINHA_ESQUERDA = MACRO(
+        {-100, -100, 60}, // Da re com tudo
+        {100, -100, 60}   // Gira pra direita pra fugir
+    );
+
+    static const MotionSequence MACRO_FUGA_LINHA_DIREITA = MACRO(
+        {-100, -100, 60}, // Da re com tudo
+        {-100, 100, 60}   // Gira pra esquerda pra fugir
+    );
 
     static const MotionSequence MACRO_DIAGONAL = MACRO(
         {-100, 100, 50},
