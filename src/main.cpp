@@ -24,17 +24,12 @@ AutoMode modoAuto;
 ActiveAuto taticaAtual;
 
 void setup() {
-#if defined(ROBOT_SMOKER)
+#if defined(ROBOT_SMOKER) || defined(ROBOT_ARRUELA)
     // Liga o transistor dos JS40F antes de qualquer outra coisa: quanto mais
-    // cedo ele sobe, mais tempo de estabilização o sensor tem até o combate.
+    // cedo ele sobe, mais tempo de estabilização o sensor tem até o combate —
+    // e o teste de sensores do painel já lê eles alimentados antes da luta.
     pinMode(Config::PIN_JS_POWER, OUTPUT);
     digitalWrite(Config::PIN_JS_POWER, HIGH);
-#elif defined(ROBOT_ARRUELA)
-    // Fica desligado durante a estratégia inicial (saque cego) — evita
-    // qualquer interferência dos JS40F nesse trecho. ArruelaAuto::autoEngage()
-    // liga assim que o combate de verdade começa.
-    pinMode(Config::PIN_JS_POWER, OUTPUT);
-    digitalWrite(Config::PIN_JS_POWER, LOW);
 #endif
 
     Serial.begin(115200);
