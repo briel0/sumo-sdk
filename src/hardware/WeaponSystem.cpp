@@ -1,4 +1,6 @@
 #include "WeaponSystem.hpp"
+#include "ContinuousServoMechanism.hpp"
+#include "RobotTypes.hpp"
 #include "ServoMechanism.hpp"
 #include <Arduino.h>
 
@@ -10,10 +12,20 @@ void WeaponSystem::init() {
     }
 }
 
-void WeaponSystem::addServo(ServoMechanism *servo) {
+void WeaponSystem::addServo(Mechanism *servo) {
     if(servoCount < MAX && servo != nullptr) {
         servos[servoCount] = servo;
         servoCount++;
+    }
+}
+
+void WeaponSystem::addServo(const ServoConfig &config) {
+    if(config.kind == ServoKind::Continuous) {
+        addServo(new ContinuousServoMechanism(config.pin, config.retractAngle, config.deployAngle, config.retractMs,
+                                              config.deployMs));
+    }
+    else {
+        addServo(new ServoMechanism(config.pin, config.retractAngle, config.deployAngle));
     }
 }
 
@@ -23,8 +35,6 @@ void WeaponSystem::deploy() {
     }
     deployAll();
     isDeployedFlag = true;
-    isRelaxedFlag = false;
-    deployTimeStart = millis();
 }
 
 void WeaponSystem::retract() {
@@ -33,14 +43,13 @@ void WeaponSystem::retract() {
     }
     retractAll();
     isDeployedFlag = false;
-    isRelaxedFlag = false;
-    deployTimeStart = 0;
 }
 
 void WeaponSystem::update() {
-    if(isDeployedFlag && !isRelaxedFlag && (millis() - deployTimeStart > RELAX_TIMEOUT_MS)) {
-        relaxAll();
-        isRelaxedFlag = true;
+    for(int i = 0; i < servoCount; i++) {
+        if(servos[i] != nullptr) {
+            servos[i]->update();
+        }
     }
 }
 
@@ -60,18 +69,9 @@ void WeaponSystem::retractAll() {
     }
 }
 
-void WeaponSystem::relaxAll() {
-    for(int i = 0; i < servoCount; i++) {
-        if(servos[i] != nullptr) {
-            servos[i]->relax();
-        }
-    }
-}
-
 void WeaponSystem::setServoAngle(int index, int angle) {
     if(index >= 0 && index < servoCount && servos[index] != nullptr) {
         servos[index]->setAngle(angle);
-        isRelaxedFlag = false;
         // Sem isso, isDeployedFlag ficava do jeito que estava antes desse
         // comando (geralmente false) — e o auto-deploy do RCMode
         // (!weaponsArmed && robô se movendo) rodava logo em seguida e

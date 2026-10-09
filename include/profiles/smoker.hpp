@@ -16,7 +16,7 @@ namespace Config {
     static constexpr int TURN_COEFFICIENT = 83;
     static constexpr int PIVOT_COEFFICIENT = 70;
 
-    static constexpr int NUM_SERVOS = 1;
+    static constexpr int NUM_SERVOS = 2;
 
     // Os tres JS40F do arco frontal. Leitura digital direta no registrador,
     // entao qualquer GPIO serve — mas 5 e 15 sao strapping pins: se o sensor
@@ -50,8 +50,13 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        // ta no 22
-        {26, 23, 180}, // Pino 22 | Começa em 15° | Arma em 120°
+        // MG90 360 (rotação contínua): os dois números não são ângulo, são
+        // velocidade/sentido (90 = parado), e o quanto a peça anda é o tempo
+        // de giro. Formato: {pino, recolhe, arma, tipo, ms armando, ms recolhendo}.
+        {26, 23, 180, ServoKind::Continuous, 1000, 1000},
+        // Sentidos espelhados do servo do 26 (montado do lado oposto) —
+        // ainda não conferido na peça, nem os tempos.
+        {32, 157, 0, ServoKind::Continuous, 1000, 1000},
     };
 
     // -----------------------------------------------------------------------
@@ -202,7 +207,7 @@ namespace Config {
     // FRENTÃO é a única estratégia inicial — as demais entradas (e suas
     // MotionSequence lá em cima) ficam comentadas pra religar rápido depois.
     static const MotionSequence *const TABELA_MACROS_ESQ[] = {
-        &ABERTURA_FRENTAO,   // 0 - FRENTÃO
+        &ABERTURA_FRENTAO, // 0 - FRENTÃO
         // &ABERTURA_FRENTINHO, // 1 - FRENTINHO
         // &CURVA_ESQ,          // 2 - CURVA
         // &CURVAO_ESQ,         // 3 - CURVÃO
@@ -215,7 +220,7 @@ namespace Config {
     };
 
     static const MotionSequence *const TABELA_MACROS_DIR[] = {
-        &ABERTURA_FRENTAO,   // 0 - FRENTÃO
+        &ABERTURA_FRENTAO, // 0 - FRENTÃO
         // &ABERTURA_FRENTINHO, // 1 - FRENTINHO
         // &CURVA_DIR,          // 2 - CURVA
         // &CURVAO_DIR,         // 3 - CURVÃO

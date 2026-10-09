@@ -2,7 +2,6 @@
 #include "Drive.hpp"
 #include "IRreader.hpp"
 #include "RCMode.hpp"
-#include "ServoMechanism.hpp"
 #include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
@@ -33,11 +32,9 @@ void setup() {
     statusLed.confirmStep();
 
     for(int i = 0; i < Config::NUM_SERVOS; i++) {
-        ServoMechanism *s =
-            new ServoMechanism(Config::SERVOS[i].pin, Config::SERVOS[i].retractAngle, Config::SERVOS[i].deployAngle);
-        s->init();
-        sistemaDeArmas.addServo(s);
+        sistemaDeArmas.addServo(Config::SERVOS[i]);
     }
+    sistemaDeArmas.init();
     statusLed.confirmStep();
 
     modoRC.init();

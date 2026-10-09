@@ -2,10 +2,21 @@
 #include <stdint.h>
 
 // Esta struct é apenas um envelope de dados. Não aciona hardware nenhum.
+// Positional precisa ser o primeiro (= 0): quem escreve só {pino, recolhe, arma}
+// no profile deixa o resto zerado e cai em servo de posição.
+enum class ServoKind : uint8_t {
+    Positional, // ângulo = posição (ServoMechanism)
+    Continuous  // servo 360: ângulo = velocidade/sentido (ContinuousServoMechanism)
+};
+
 struct ServoConfig {
     int pin;
     int retractAngle;
     int deployAngle;
+    ServoKind kind;
+    // Só pro Continuous: por quanto tempo girar pra armar e pra recolher.
+    unsigned long deployMs;
+    unsigned long retractMs;
 };
 
 struct MotionStep {
