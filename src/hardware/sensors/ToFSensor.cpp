@@ -53,8 +53,9 @@ bool ToFSensor::temOponente(uint16_t thresholdMm) {
     unsigned long agora = millis();
     uint16_t dist = leituraRaw();
 
-    // Filtra erros de leitura e timeouts para não gerar "falsos positivos" de ataque
-    if(_sensor.timeoutOccurred() || dist > 8000) {
+    // Filtra timeout, medição inválida (LEITURA_INVALIDA_MM) e "sem alvo" do
+    // sensor (~8190) para não gerar "falsos positivos" de ataque
+    if(dist > 8000) {
         return false;
     }
 
@@ -70,5 +71,32 @@ bool ToFSensor::temOponente(uint16_t thresholdMm) {
 }
 
 uint16_t ToFSensor::leituraRaw() {
-    return _sensor.readRangeContinuousMillimeters();
+    // Espera a amostra nova do modo contínuo, igual ao
+    // readRangeContinuousMillimeters() da lib.
+    unsigned long inicio = millis();
+    while((_sensor.readReg(VL53L0X::RESULT_INTERRUPT_STATUS) & 0x07) == 0) {
+        if(millis() - inicio > _sensor.getTimeout()) {
+            _ultimoStatus = STATUS_TIMEOUT;
+            return LEITURA_INVALIDA_MM;
+        }
+    }
+
+    // Status e distância saem do mesmo bloco de resultado, numa transação I2C
+    // só e antes de limpar a interrupção — os dois são garantidamente do mesmo
+    // ciclo. A lib lê só os 2 bytes da distância (offset 10) e ignora o status.
+    uint8_t resultado[12];
+    _sensor.readMulti(VL53L0X::RESULT_RANGE_STATUS, resultado, sizeof(resultado));
+    _sensor.writeReg(VL53L0X::SYSTEM_INTERRUPT_CLEAR, 0x01);
+
+    if(_sensor.last_status != 0) {
+        _ultimoStatus = STATUS_TIMEOUT;
+        return LEITURA_INVALIDA_MM;
+    }
+
+    _ultimoStatus = (resultado[0] & 0x78) >> 3;
+    if(_ultimoStatus != STATUS_VALIDO) {
+        return LEITURA_INVALIDA_MM;
+    }
+
+    return ((uint16_t)resultado[10] << 8) | resultado[11];
 }
