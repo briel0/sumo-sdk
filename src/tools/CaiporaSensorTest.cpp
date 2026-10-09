@@ -67,14 +67,23 @@ static void subirToF(const char *nome, int indice, int pinoXshut, uint8_t addr, 
     Serial.println(destino ? "OK" : "FALHOU");
 }
 
-// Imprime a distancia, ou ---- quando nao ha retorno (fora de alcance/timeout).
+// Imprime a distancia. Leitura descartada sai como eNN (codigo de status do
+// VL53L0X, ver ToFSensor::STATUS_VALIDO) ou t/o (timeout / falha de I2C).
 static void imprimirDistancia(bool ok, ToFSensor &sensor) {
     if(!ok) {
         Serial.print("   off");
         return;
     }
     uint16_t mm = sensor.leituraRaw();
-    Serial.printf(" %5u", mm);
+    if(mm != ToFSensor::LEITURA_INVALIDA_MM) {
+        Serial.printf(" %5u", mm);
+    }
+    else if(sensor.ultimoStatus() == ToFSensor::STATUS_TIMEOUT) {
+        Serial.print("   t/o");
+    }
+    else {
+        Serial.printf("   e%02u", sensor.ultimoStatus());
+    }
 }
 
 static void imprimirCabecalho() {
