@@ -54,7 +54,8 @@ namespace Config {
             {"id": 2, "name": "SEM SAQUE"}
         ],
         "searches": [
-            {"id": 1, "name": "BUSCA PADRÃO"}
+            {"id": 1, "name": "BUSCA UM SENSOR"},
+            {"id": 2, "name": "BUSCA DOIS SENSORES"}
         ],
         "has_weapons": true
     })";
