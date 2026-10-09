@@ -47,12 +47,19 @@ class CaiporaAuto : public CombatStrategy {
     static constexpr int VEL_BUSCA_CUIDADOSA = 40;
     static constexpr int VEL_ATAQUE = 100;
 
-    // Espaçamento entre leituras dos VL laterais. readRangeContinuousMillimeters()
-    // gira no I2C até sair amostra nova — ler os dois todo frame prenderia o loop.
+    // Espaçamento entre leituras dos VL. readRangeContinuousMillimeters() gira no
+    // I2C até sair amostra nova — ler os quatro todo frame prenderia o loop.
     static constexpr unsigned long INTERVALO_TOF_MS = 25;
     unsigned long _ultimaLeituraToF = 0;
-    bool _viuLateralEsq = false;
-    bool _viuLateralDir = false;
 
-    void _busca(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
+    // Última distância raw (mm) de cada VL. SEM_LEITURA_MM enquanto não leu ou
+    // se o sensor falhou no init() — fica acima de qualquer limiar de detecção.
+    static constexpr uint16_t SEM_LEITURA_MM = UINT16_MAX;
+    uint16_t _rawFrenteEsq = SEM_LEITURA_MM;
+    uint16_t _rawLateralEsq = SEM_LEITURA_MM;
+    uint16_t _rawFrenteDir = SEM_LEITURA_MM;
+    uint16_t _rawLateralDir = SEM_LEITURA_MM;
+
+    void _busca(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                uint16_t rawLateralDir, int rawLdr);
 };
