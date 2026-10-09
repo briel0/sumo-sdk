@@ -1,11 +1,19 @@
 #pragma once
 
-class ServoMechanism;
+class Mechanism;
+struct ServoConfig;
 
 class WeaponSystem {
   public:
     void init();
-    void addServo(ServoMechanism *servo);
+    void addServo(Mechanism *servo);
+
+    /**
+    @brief Cria o mecanismo certo pro tipo declarado no profile (posição ou contínuo) e adiciona. Não inicializa
+   — chamar init() depois de adicionar todos.
+    */
+    void addServo(const ServoConfig &config);
+
     void deploy();
     void retract();
     void update();
@@ -17,16 +25,12 @@ class WeaponSystem {
 
   private:
     static constexpr int MAX = 4;
-    static constexpr unsigned long RELAX_TIMEOUT_MS = 1000;
 
-    ServoMechanism *servos[MAX] = {nullptr};
+    Mechanism *servos[MAX] = {nullptr};
     int servoCount = 0;
 
     bool isDeployedFlag = false;
-    bool isRelaxedFlag = false;
-    unsigned long deployTimeStart = 0;
 
     void deployAll();
     void retractAll();
-    void relaxAll();
 };
