@@ -1,4 +1,4 @@
-#include "hardware/sensors/TSSP4038.hpp"
+#include "TSSP4038.hpp"
 
 TSSP4038::TSSP4038(uint8_t pin) : _pin(pin) {}
 
@@ -8,8 +8,8 @@ void TSSP4038::init() const {
     pinMode(_pin, INPUT);
 }
 
-bool TSSP4038::temOponente() const {
-    // Abstração da lógica Active LOW: se a leitura for 0 (LOW), oponente detectado.
+bool TSSP4038::temSinal() const {
+    // Abstração da lógica Active LOW: se a leitura for 0 (LOW), tem portadora.
     return digitalRead(_pin) == LOW;
 }
 

@@ -5,9 +5,15 @@
     @class TSSP4038
     @brief Driver digital para o receptor infravermelho Vishay TSSP4038.
 
-    Lê a saída do sensor de proximidade. O TSSP4038 opera com lógica invertida
-    (Active LOW). Quando o reflexo do IR modulado a 38kHz é detectado, a saída
-    vai para GND (0V). Quando não há obstáculo, o pull-up interno mantém em VCC (3.3V/5V).
+    Uso PASSIVO: o robô não emite nada por este sensor. O TSSP4038 demodula a
+    portadora de 38kHz, então o que ele enxerga é o IR modulado que o sensor do
+    ADVERSÁRIO (ex.: JSUMO) está emitindo pra nos procurar.
+
+    A saída opera com lógica invertida (Active LOW): com portadora de 38kHz
+    chegando, vai para GND (0V); sem sinal, o pull-up interno mantém em VCC.
+
+    A leitura é instantânea, sem filtro nem retenção: se o emissor do adversário
+    trabalhar em rajadas, temSinal() pisca junto.
 */
 class TSSP4038 {
   public:
@@ -23,10 +29,10 @@ class TSSP4038 {
     void init() const;
 
     /**
-    @brief Retorna true se um obstáculo (oponente) foi detectado.
+    @brief Retorna true se há IR modulado a 38kHz chegando neste instante.
            Resolve automaticamente a inversão de lógica (Active LOW).
     */
-    bool temOponente() const;
+    bool temSinal() const;
 
     /**
     @brief Retorna o estado lógico cru (0 ou 1) da porta digital.

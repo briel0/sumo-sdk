@@ -25,6 +25,10 @@ namespace Config {
     static constexpr int PIN_JS_DIR = 14;
     static constexpr int PIN_JS_FRONT = 15;
 
+    static constexpr int IR_DIR = 23;
+    static constexpr int IR_ESQ = 27;
+    static constexpr int IR_FRONT = 36;
+
     // Transistor na placa que liga a alimentação dos três JS40F. Precisa ir
     // pra HIGH o mais cedo possível no boot (ver main.cpp/SmokerSensorTest.cpp)
     // pra dar o máximo de tempo de estabilização antes de ler qualquer sensor.
@@ -37,13 +41,8 @@ namespace Config {
 
     // Limiares separados de proposito: os dois QRE nunca leem igual no mesmo
     // dojo. Calibre cada um pelo painel /sensors antes da luta.
-    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 2800;
-    static constexpr uint16_t LINHA_THRESHOLD_DIR = 2800;
-
-    // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
-    // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
-    // disputarem o mesmo espectro e derrubarem o portal um do outro.
-    static constexpr int WIFI_CHANNEL = 6;
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 1000;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 1000;
 
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
@@ -53,10 +52,12 @@ namespace Config {
         // MG90 360 (rotação contínua): os dois números não são ângulo, são
         // velocidade/sentido (90 = parado), e o quanto a peça anda é o tempo
         // de giro. Formato: {pino, recolhe, arma, tipo, ms armando, ms recolhendo}.
-        {26, 23, 180, ServoKind::Continuous, 1000, 1000},
+        // Recolhe e arma ficam um de cada lado do neutro (~95), à mesma
+        // distância: é isso que faz o desarmar voltar o que o armar andou.
+        {26, 120, 60, ServoKind::Continuous, 800, 250},
         // Sentidos espelhados do servo do 26 (montado do lado oposto) —
         // ainda não conferido na peça, nem os tempos.
-        {32, 157, 0, ServoKind::Continuous, 1000, 1000},
+        {32, 60, 120, ServoKind::Continuous, 800, 250},
     };
 
     // -----------------------------------------------------------------------
@@ -66,8 +67,8 @@ namespace Config {
     // Formato do passo: {velocidade esquerda, velocidade direita, duracao em ms}.
     // -----------------------------------------------------------------------
 
-    // Desativadas temporariamente: só FRENTÃO e FRENTINHO ficam disponíveis
-    // no Smoker por enquanto. Definições e tabelas mantidas comentadas pra
+    // Desativadas temporariamente: só FRENTÃO, FRENTINHO e SEM SAQUE ficam
+    // disponíveis no Smoker por enquanto. Definições e tabelas mantidas comentadas pra
     // religar rápido depois, sem precisar reescrever nada.
     /*
     static const MotionSequence CURVA_ESQ = MACRO(
@@ -181,21 +182,34 @@ namespace Config {
 
     // FRENTINHO, portado do frentinho: {127, 127, 200} -> {50, 50, 200}.
     // Mesmo avanço reto, meia força: ~1/4 do dohyo.
-    // Desativada junto com as outras aberturas acima: FRENTÃO passa a ser a
-    // única estratégia inicial na config.
-    // static const MotionSequence ABERTURA_FRENTINHO = MACRO({50, 50, 200});
+    static const MotionSequence ABERTURA_FRENTINHO = MACRO({50, 50, 200});
 
     // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
-    // Desativada junto com as outras aberturas acima — ver comentário lá em cima.
-    // static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
+    static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
+
+    // Fugas de borda: o SmokerAuto toca uma delas quando um QRE1113 ve a
+    // linha branca. O nome e o lado do sensor que viu — a fuga gira pro lado
+    // oposto. Tempos copiados do Arruela, ainda nao calibrados no Smoker.
+    static const MotionSequence MACRO_FUGA_LINHA_ESQUERDA = MACRO(
+        {-100, -100, 150}, // Da re com tudo
+        {100, -100, 180}   // Gira pra direita pra fugir
+    );
+
+    static const MotionSequence MACRO_FUGA_LINHA_DIREITA = MACRO(
+        {-100, -100, 150}, // Da re com tudo
+        {-100, 100, 180}   // Gira pra esquerda pra fugir
+    );
 
     static constexpr const char *UI_PROFILE_JSON = R"({
         "robot_name": "Smoker",
         "macros": [
-            {"id": 0, "name": "FRENTÃO"}
+            {"id": 0, "name": "FRENTÃO"},
+            {"id": 1, "name": "FRENTINHO"},
+            {"id": 2, "name": "SEM SAQUE"}
         ],
         "searches": [
-            {"id": 1, "name": "BUSCA PADRAO"}
+            {"id": 1, "name": "BUSCA PADRAO"},
+            {"id": 2, "name": "BUSCA IR"}
         ],
         "has_weapons": true
     })";
@@ -204,32 +218,33 @@ namespace Config {
     // tamanho (tem um static_assert no AutoMode.cpp cobrando isso). As aberturas
     // sem lado — FRENTÃO, FRENTINHO e SEM SAQUE — repetem nas duas.
     //
-    // FRENTÃO é a única estratégia inicial — as demais entradas (e suas
-    // MotionSequence lá em cima) ficam comentadas pra religar rápido depois.
+    // Só FRENTÃO, FRENTINHO e SEM SAQUE estão ligadas — as demais entradas (e
+    // suas MotionSequence lá em cima) ficam comentadas pra religar rápido
+    // depois. Ao religar, o id na tabela tem que bater com o do UI_PROFILE_JSON.
     static const MotionSequence *const TABELA_MACROS_ESQ[] = {
-        &ABERTURA_FRENTAO, // 0 - FRENTÃO
-        // &ABERTURA_FRENTINHO, // 1 - FRENTINHO
-        // &CURVA_ESQ,          // 2 - CURVA
-        // &CURVAO_ESQ,         // 3 - CURVÃO
-        // &EM_V_ESQ,           // 4 - EM V
-        // &VZINHO_ESQ,         // 5 - VZINHO
-        // &VZAO_ESQ,           // 6 - VZÃO
-        // &RECUO_LADO_ESQ,     // 7 - RECUO
-        // &DESEMPATE_LADO_ESQ, // 8 - DESEMPATE
-        // &MACRO_SEM_SAQUE     // 9 - SEM SAQUE
+        &ABERTURA_FRENTAO,   // 0 - FRENTÃO
+        &ABERTURA_FRENTINHO, // 1 - FRENTINHO
+        &MACRO_SEM_SAQUE,    // 2 - SEM SAQUE
+        // &CURVA_ESQ,          // 3 - CURVA
+        // &CURVAO_ESQ,         // 4 - CURVÃO
+        // &EM_V_ESQ,           // 5 - EM V
+        // &VZINHO_ESQ,         // 6 - VZINHO
+        // &VZAO_ESQ,           // 7 - VZÃO
+        // &RECUO_LADO_ESQ,     // 8 - RECUO
+        // &DESEMPATE_LADO_ESQ, // 9 - DESEMPATE
     };
 
     static const MotionSequence *const TABELA_MACROS_DIR[] = {
-        &ABERTURA_FRENTAO, // 0 - FRENTÃO
-        // &ABERTURA_FRENTINHO, // 1 - FRENTINHO
-        // &CURVA_DIR,          // 2 - CURVA
-        // &CURVAO_DIR,         // 3 - CURVÃO
-        // &EM_V_DIR,           // 4 - EM V
-        // &VZINHO_DIR,         // 5 - VZINHO
-        // &VZAO_DIR,           // 6 - VZÃO
-        // &RECUO_LADO_DIR,     // 7 - RECUO
-        // &DESEMPATE_LADO_DIR, // 8 - DESEMPATE
-        // &MACRO_SEM_SAQUE     // 9 - SEM SAQUE
+        &ABERTURA_FRENTAO,   // 0 - FRENTÃO
+        &ABERTURA_FRENTINHO, // 1 - FRENTINHO
+        &MACRO_SEM_SAQUE,    // 2 - SEM SAQUE
+        // &CURVA_DIR,          // 3 - CURVA
+        // &CURVAO_DIR,         // 4 - CURVÃO
+        // &EM_V_DIR,           // 5 - EM V
+        // &VZINHO_DIR,         // 6 - VZINHO
+        // &VZAO_DIR,           // 7 - VZÃO
+        // &RECUO_LADO_DIR,     // 8 - RECUO
+        // &DESEMPATE_LADO_DIR, // 9 - DESEMPATE
     };
 
 }

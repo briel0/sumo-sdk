@@ -25,8 +25,9 @@ class ContinuousServoMechanism : public Mechanism {
     ContinuousServoMechanism(int pin, int retractCmd, int deployCmd, unsigned long retractMs, unsigned long deployMs);
 
     /**
-    @brief Reserva os timers e segura a linha de sinal em LOW. Não manda comando nenhum: servo contínuo sem
-   sinal fica parado, e um retract() aqui faria ele girar no boot.
+    @brief Reserva os timers, recolhe (gira no comando de recolher por retractMs, bloqueando) e deixa a linha de
+   sinal em LOW. Como não há realimentação de posição, o giro acontece mesmo se a peça já estiver recolhida —
+   sem batente ela passa do ponto.
     */
     void init() override;
 
