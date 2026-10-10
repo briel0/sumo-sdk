@@ -19,7 +19,7 @@ namespace Config {
     static constexpr int NUM_SERVOS = 0;
 
     static constexpr int PIN_JS_ESQ = 27;
-    static constexpr int PIN_JS_DIR = 36;
+    static constexpr int PIN_JS_DIR = 14;
     static constexpr int PIN_JS_FRONT = 4;
 
     // Transistor na placa que liga a alimentação dos três JS40F. Precisa ir
@@ -37,13 +37,8 @@ namespace Config {
 
     // Limiares separados de proposito: os dois QRE nunca leem igual no mesmo
     // dojo. Calibre cada um na bancada antes da luta.
-    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 2800;
-    static constexpr uint16_t LINHA_THRESHOLD_DIR = 2800;
-
-    // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
-    // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
-    // disputarem o mesmo espectro e derrubarem o portal um do outro.
-    static constexpr int WIFI_CHANNEL = 11;
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 1000;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 1000;
 
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
@@ -64,28 +59,24 @@ namespace Config {
     // linha branca. O nome e o lado do sensor que viu — a fuga gira pro lado
     // oposto.
     static const MotionSequence MACRO_FUGA_LINHA_ESQUERDA = MACRO(
-        {-100, -100, 60}, // Da re com tudo
-        {100, -100, 60}   // Gira pra direita pra fugir
+        {-100, -100, 150}, // Da re com tudo
+        {100, -100, 180}   // Gira pra direita pra fugir
     );
 
     static const MotionSequence MACRO_FUGA_LINHA_DIREITA = MACRO(
-        {-100, -100, 60}, // Da re com tudo
-        {-100, 100, 60}   // Gira pra esquerda pra fugir
+        {-100, -100, 150}, // Da re com tudo
+        {-100, 100, 180}   // Gira pra esquerda pra fugir
     );
-
-    static const MotionSequence MACRO_DIAGONAL = MACRO(
-        {-100, 100, 50},
-        {100, 100, 100});
-
-    static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
-        {100, -100, 70},
-        {60, 100, 150}, 
-        {-100, 100, 70});
 
     static const MotionSequence MACRO_CURVINHA_ESQUERDA = MACRO(
         {-100, 100, 70},
-        {100, 60, 150}, 
-        {100, -100, 70});
+        {100, 50, 180}, 
+        {100, -100, 180});
+
+    static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
+        {-100, 100, 70},
+        {50, 100, 180}, 
+        {-100, 100, 180});
 
     static const MotionSequence MACRO_CURVAO_ESQUERDA = MACRO(
         {-100, 100, 70},
