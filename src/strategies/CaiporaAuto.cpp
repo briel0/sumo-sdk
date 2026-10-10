@@ -35,16 +35,16 @@ void CaiporaAuto::init() {
 }
 
 void CaiporaAuto::configure(const AutoStrategy &cfg) {
-    // Id desconhecido cai na UM SENSOR pelo default — nunca deixa o robô sem busca.
+    // Id desconhecido cai na RAPIDA pelo default — nunca deixa o robô sem busca.
     switch(cfg.search) {
-        case BUSCA_DOIS_SENSORES:
-            _buscaAtual = &CaiporaAuto::_buscaDoisSensores;
-            Serial.println("[CAIPORA] Busca DOIS SENSORES.");
+        case BUSCA_LENTA:
+            _buscaAtual = &CaiporaAuto::_buscaLenta;
+            Serial.println("[CAIPORA] Busca LENTA.");
             break;
-        case BUSCA_UM_SENSOR:
+        case BUSCA_RAPIDA:
         default:
-            _buscaAtual = &CaiporaAuto::_buscaUmSensor;
-            Serial.println("[CAIPORA] Busca UM SENSOR.");
+            _buscaAtual = &CaiporaAuto::_buscaRapida;
+            Serial.println("[CAIPORA] Busca RAPIDA.");
             break;
     }
 }
@@ -73,24 +73,8 @@ void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
     (this->*_buscaAtual)(motores, _rawFrenteEsq, _rawLateralEsq, _rawFrenteDir, _rawLateralDir, rawLdr);
 }
 
-void CaiporaAuto::_buscaUmSensor(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
-                                 uint16_t rawLateralDir, int rawLdr) {
-
-    if(rawLdr < LIMIAR_LDR) {
-        motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
-        return;
-    }
-
-    if(rawFrenteEsq <= 500 && rawFrenteDir <= 500) {
-        motores.setSpeed(50, 50);
-        return;
-    }
-
-    motores.setSpeed(0, 0);
-}
-
-void CaiporaAuto::_buscaDoisSensores(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq,
-                                     uint16_t rawFrenteDir, uint16_t rawLateralDir, int rawLdr) {
+void CaiporaAuto::_buscaRapida(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                               uint16_t rawLateralDir, int rawLdr) {
 
     if(rawLdr < LIMIAR_LDR) {
         motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
@@ -112,6 +96,48 @@ void CaiporaAuto::_buscaDoisSensores(Drive &motores, uint16_t rawFrenteEsq, uint
         motores.setSpeed(55, -55);
         _ultimoLado = Direction::right;
         return;
+    }
+
+    if(_ultimoLado == Direction::right) {
+        motores.setSpeed(30, -30);
+    }
+    else {
+        motores.setSpeed(-30, 30);
+    }
+
+    motores.setSpeed(0, 0);
+}
+
+void CaiporaAuto::_buscaLenta(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                              uint16_t rawLateralDir, int rawLdr) {
+
+    if(rawLdr < LIMIAR_LDR) {
+        motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
+        return;
+    }
+
+    if(rawFrenteEsq <= 500 && rawFrenteDir <= 500) {
+        motores.setSpeed(35, 35);
+        return;
+    }
+
+    if(rawFrenteEsq <= 500) {
+        motores.setSpeed(-55, 55);
+        _ultimoLado = Direction::left;
+        return;
+    }
+
+    if(rawFrenteDir <= 500) {
+        motores.setSpeed(55, -55);
+        _ultimoLado = Direction::right;
+        return;
+    }
+
+    if(_ultimoLado == Direction::right) {
+        motores.setSpeed(30, -30);
+    }
+    else {
+        motores.setSpeed(-30, 30);
     }
 
     motores.setSpeed(0, 0);
