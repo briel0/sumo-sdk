@@ -23,6 +23,14 @@ class WeaponSystem {
 
     void setServoAngle(int index, int angle);
 
+    /**
+    @brief Marca as armas como desarmadas sem mexer em servo nenhum. Pra quem já levou o servo pra posição de
+   recolhido por fora (setServoAngle()), que sozinho deixa o sistema como "armado".
+    */
+    void markRetracted() {
+        isDeployedFlag = false;
+    }
+
   private:
     static constexpr int MAX = 4;
 
