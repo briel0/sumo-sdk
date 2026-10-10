@@ -12,6 +12,11 @@ void ContinuousServoMechanism::init() {
 
     _servo.setPeriodHertz(50);
 
+    // Recolhe no boot. Bloqueia de proposito: quem corta o giro e o update(),
+    // que so comeca a rodar no loop() — sem o delay o servo ficaria girando
+    // pelo resto do setup() inteiro, bem alem do _retractMs.
+    spin(_retractCmd, _retractMs);
+    delay(_retractMs);
     stop();
 }
 
