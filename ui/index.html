@@ -607,6 +607,7 @@
             TRIGGER_MACRO: 0x05,
             SET_WEAPON: 0x06,
             CYCLE_MOTOR_POLARITY: 0x07,
+            GET_PROFILE_CHUNK: 0x08,
         };
 
         const Transport = (() => {
@@ -649,8 +650,39 @@
                 return bytes.length > 0 && bytes[0] === 0x00;
             }
 
+            // Perfil em pedaços: cada resposta é total:u16 LE + um trecho do
+            // JSON a partir do offset pedido. Firmware antigo não conhece o
+            // comando e devolve só o byte de erro — aí cai no GET_PROFILE de
+            // uma leitura só (que corta em 512 bytes).
+            async function getProfile() {
+                const parts = [];
+                let received = 0;
+                let total = Infinity;
+                while (received < total) {
+                    const bytes = await command(new Uint8Array([
+                        BLE_CMD.GET_PROFILE_CHUNK, received & 0xff, (received >> 8) & 0xff,
+                    ]));
+                    if (bytes.length < 2) {
+                        if (received > 0) throw new Error('perfil interrompido');
+                        return asJson(await command(new Uint8Array([BLE_CMD.GET_PROFILE])));
+                    }
+                    total = bytes[0] | (bytes[1] << 8);
+                    const data = bytes.slice(2);
+                    if (data.length === 0 && received < total) throw new Error('perfil incompleto');
+                    parts.push(data);
+                    received += data.length;
+                }
+                const all = new Uint8Array(received);
+                let pos = 0;
+                for (const part of parts) {
+                    all.set(part, pos);
+                    pos += part.length;
+                }
+                return asJson(all);
+            }
+
             return {
-                getProfile: () => command(new Uint8Array([BLE_CMD.GET_PROFILE])).then(asJson),
+                getProfile,
                 getSensors: () => command(new Uint8Array([BLE_CMD.GET_SENSORS])).then(asJson),
 
                 setStrategy: (macro, direction, search, weapon) => {
@@ -750,11 +782,17 @@
             function renderProfile(profile) {
                 el.robotName.textContent = 'SUMO AUTO // ' + profile.robot_name.toUpperCase();
 
-                el.macroGrid.innerHTML = profile.macros.map(m =>
+                // Formato compacto: macro é só o nome (o id é a posição na
+                // lista) e busca é [id, nome]. O formato antigo, com objetos
+                // {id, name}, continua valendo pra firmware que ainda manda ele.
+                const macros = profile.macros.map((m, i) => (typeof m === 'string' ? { id: i, name: m } : m));
+                const searches = profile.searches.map(s => (Array.isArray(s) ? { id: s[0], name: s[1] } : s));
+
+                el.macroGrid.innerHTML = macros.map(m =>
                     `<button class="btn-macro" data-category="macro" data-val="${m.id}" data-label="${m.name}">${m.name}</button>`
                 ).join('');
 
-                el.searchGrid.innerHTML = profile.searches.map(s =>
+                el.searchGrid.innerHTML = searches.map(s =>
                     `<button class="btn-search" data-category="search" data-val="${s.id}" data-label="${s.name}">${s.name}</button>`
                 ).join('');
 

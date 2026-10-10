@@ -114,25 +114,13 @@ namespace Config {
     // erro) e o app lê o valor antigo. Indentado, esse mesmo JSON passava
     // de 600 bytes com 6 macros + 5 buscas. Se for adicionar itens, prefira
     // nomes curtos a reindentar.
-    static constexpr const char *UI_PROFILE_JSON = R"({
-"robot_name": "Arruela",
-"macros": [
-{"id": 0, "name": "FRENTÃO"},
-{"id": 1, "name": "CURVÃO"},
-{"id": 2, "name": "SEM SAQUE"},
-{"id": 3, "name": "FRENTINHA"},
-{"id": 4, "name": "RECUO"},
-{"id": 5, "name": "CURVINHA"},
-{"id": 6, "name": "REVENGE"}
-],
-"searches": [
-{"id": 1, "name": "BUSCA PADRÃO"},
-{"id": 2, "name": "BUSCA LENTA"},
-{"id": 3, "name": "BUSCA POR DISTÂNCIA"},
-{"id": 4, "name": "BUSCA GATO PRETO"},
-{"id": 5, "name": "BUSCA BALA TENSA"}
-],
-"has_weapons": false
-})";
+    // Formato compacto, sem espaço nenhum: em "macros" o id é a posição na lista
+    // (a mesma das TABELA_MACROS_*), e em "searches" cada item é [id, nome].
+    static constexpr const char *UI_PROFILE_JSON =
+        R"({"robot_name":"Arruela",)"
+        R"("macros":["FRENTÃO","CURVÃO","SEM SAQUE","FRENTINHA","RECUO","CURVINHA","REVENGE"],)"
+        R"("searches":[[1,"BUSCA PADRÃO"],[2,"BUSCA LENTA"],[3,"BUSCA POR DISTÂNCIA"],[4,"BUSCA GATO PRETO"],)"
+        R"([5,"BUSCA BALA TENSA"]],)"
+        R"("has_weapons":false})";
 
 }
