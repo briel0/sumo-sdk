@@ -5,7 +5,9 @@ class Drive;
 
 class MotionPlayer {
   public:
-    void play(const MotionSequence &seq);
+    // distancePercent estica/encurta só os passos com scalesWithDistance
+    // (100 = tempo original).
+    void play(const MotionSequence &seq, int distancePercent = 100);
     void update(Drive &motores);
 
     bool isPlaying() const {
@@ -18,6 +20,7 @@ class MotionPlayer {
   private:
     MotionSequence sequence = {nullptr, 0};
     int currentStep = 0;
+    int distancePercent = 100;
     unsigned long stepStartTime = 0;
     bool active = false;
 };

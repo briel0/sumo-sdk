@@ -127,6 +127,8 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
             _currentAutoStrategy.direction = (char)buffer[2];
             _currentAutoStrategy.search = buffer[3];
             _currentAutoStrategy.weapon = buffer[4];
+            // Byte opcional: app antigo manda só 5 e cai no médio.
+            _currentAutoStrategy.distance = bufferSize >= 6 ? (char)buffer[5] : 'M';
             _currentAutoStrategy.isNew = true;
             break;
 
@@ -166,6 +168,7 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
                 _macroTestSteps[i].leftSpeed = (int8_t)step[0];
                 _macroTestSteps[i].rightSpeed = (int8_t)step[1];
                 _macroTestSteps[i].durationMs = (unsigned long)(step[2] | (step[3] << 8));
+                _macroTestSteps[i].scalesWithDistance = false;
             }
             if(_macroTestCallback) {
                 MotionSequence seq = {_macroTestSteps, numSteps};

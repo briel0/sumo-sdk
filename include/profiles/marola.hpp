@@ -41,8 +41,15 @@ namespace Config {
         {26, 125, 15}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
+    // Distância até o adversário na largada, escolhida no site. O coeficiente
+    // (em %) multiplica só o tempo dos passos marcados com `true` no fim —
+    // {esq, dir, ms, true} —, que são os avanços e rés; giros e paradas ficam
+    // no tempo fixo. MÉDIO é sempre 100%. Aplicado pelo AutoMode na largada.
+    static constexpr int DISTANCIA_PERTO_PCT = 70;
+    static constexpr int DISTANCIA_LONGE_PCT = 160;
+
     static const MotionSequence MACRO_FRENTAO = MACRO(
-        {100, 100, 300});
+        {100, 100, 300, true});
 
     static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
         {100, -100, 72},
@@ -69,18 +76,19 @@ namespace Config {
     // Aberturas portadas do firmware antigo (o switch de saques por letra).
     // Velocidade convertida de 0-255 pra 0-100; os tempos são os originais,
     // com o multiplicador de distância (multDist) em 1.0 — ainda não
-    // calibrados no Marola. Os passos {0, 0, ms} são as paradas do original.
+    // calibrados no Marola. Os passos {0, 0, ms} são as paradas do original,
+    // e os marcados com `true` são os que o original multiplicava por multDist.
     // -----------------------------------------------------------------------
 
     // 'f': rampa de aceleração até o talo, depois segue reto.
     static const MotionSequence MACRO_FRENTAO_PROGRESSIVO = MACRO(
         {19, 19, 4}, {24, 24, 4}, {28, 28, 4}, {33, 33, 4}, {38, 38, 4},
         {50, 50, 8}, {63, 63, 8}, {77, 77, 8}, {89, 89, 12},
-        {100, 100, 200});
+        {100, 100, 200, true});
 
     // 'F': frentão anti pescador, no talo desde o primeiro instante.
     static const MotionSequence MACRO_FRENTAO_BOLADO = MACRO(
-        {100, 100, 250});
+        {100, 100, 250, true});
 
     // 'e': fica parado antes de cair no combate.
     static const MotionSequence MACRO_ESPERA = MACRO(
@@ -88,33 +96,33 @@ namespace Config {
 
     // 'b' com o lado "frente": só a ré.
     static const MotionSequence MACRO_COSTAS_RETO = MACRO(
-        {-100, -100, 150},
+        {-100, -100, 150, true},
         {0, 0, 10});
 
     // 'b': ré, giro curto pro lado escolhido e avanço.
     static const MotionSequence MACRO_COSTAS_ESQUERDA = MACRO(
-        {-100, -100, 120},
+        {-100, -100, 120, true},
         {-100, 100, 30},
-        {100, 100, 160},
+        {100, 100, 160, true},
         {0, 0, 10});
 
     static const MotionSequence MACRO_COSTAS_DIREITA = MACRO(
-        {-100, -100, 120},
+        {-100, -100, 120, true},
         {100, -100, 30},
-        {100, 100, 160},
+        {100, 100, 160, true},
         {0, 0, 10});
 
     // 'c': curva leve.
     static const MotionSequence MACRO_CURVA_LEVE_ESQUERDA = MACRO(
         {-100, 100, 20},
-        {100, 100, 120},
+        {100, 100, 120, true},
         {0, 0, 10},
         {100, -100, 70},
         {0, 0, 10});
 
     static const MotionSequence MACRO_CURVA_LEVE_DIREITA = MACRO(
         {100, -100, 20},
-        {100, 100, 120},
+        {100, 100, 120, true},
         {0, 0, 10},
         {-100, 100, 70},
         {0, 0, 10});
@@ -122,61 +130,61 @@ namespace Config {
     // 'C': curva pesada, com bote no final.
     static const MotionSequence MACRO_CURVA_PESADA_ESQUERDA = MACRO(
         {-100, 100, 40},
-        {100, 100, 170},
+        {100, 100, 170, true},
         {0, 0, 10},
         {100, -100, 100},
-        {100, 100, 50},
+        {100, 100, 50, true},
         {0, 0, 10});
 
     static const MotionSequence MACRO_CURVA_PESADA_DIREITA = MACRO(
         {100, -100, 40},
-        {100, 100, 170},
+        {100, 100, 170, true},
         {0, 0, 10},
         {-100, 100, 100},
-        {100, 100, 50},
+        {100, 100, 50, true},
         {0, 0, 10});
 
     // 'd': diagonal.
     static const MotionSequence MACRO_DIAGONAL_ESQUERDA = MACRO(
         {-100, 100, 70},
-        {100, 100, 150},
+        {100, 100, 150, true},
         {0, 0, 10},
         {100, -100, 70});
 
     static const MotionSequence MACRO_DIAGONAL_DIREITA = MACRO(
         {100, -100, 70},
-        {100, 100, 150},
+        {100, 100, 150, true},
         {0, 0, 10},
         {-100, 100, 70});
 
     // 'v': movimento em V.
     static const MotionSequence MACRO_V_ESQUERDA = MACRO(
         {-100, 100, 40},
-        {100, 100, 140},
+        {100, 100, 140, true},
         {0, 0, 10},
         {100, -100, 190},
         {0, 0, 10},
-        {100, 100, 180});
+        {100, 100, 180, true});
 
     static const MotionSequence MACRO_V_DIREITA = MACRO(
         {100, -100, 40},
-        {100, 100, 140},
+        {100, 100, 140, true},
         {0, 0, 10},
         {-100, 100, 190},
         {0, 0, 10},
-        {100, 100, 180});
+        {100, 100, 180, true});
 
     // 'a': aquele lá.
     static const MotionSequence MACRO_AQUELE_LA_ESQUERDA = MACRO(
         {-100, 100, 60},
-        {100, 100, 110},
+        {100, 100, 110, true},
         {0, 0, 20},
         {100, -100, 130},
         {0, 0, 10});
 
     static const MotionSequence MACRO_AQUELE_LA_DIREITA = MACRO(
         {100, -100, 60},
-        {100, 100, 110},
+        {100, 100, 110, true},
         {0, 0, 20},
         {-100, 100, 130},
         {0, 0, 10});
@@ -230,7 +238,7 @@ namespace Config {
         R"("macros":["FRENTAO","SEM SAQUE","CURVAO","FRENTAO PROGRESSIVO","FRENTAO BOLADO","ESPERA",)"
         R"("COSTAS RETO","COSTAS","CURVA LEVE","CURVA PESADA","DIAGONAL","V","AQUELE LA","GIRO 45","DESEMPATE"],)"
         R"("searches":[[1,"ASA 100MS"],[2,"ASA 500MS"],[3,"ASA 100MS + GIRO"],[4,"BUSCA SENSOR DE LINHA"]],)"
-        R"("has_weapons":true})";
+        R"("has_weapons":true,"has_distance":true})";
 
     // As duas tabelas andam juntas: a posição é o id que o site manda, na mesma
     // ordem do "macros" do UI_PROFILE_JSON. As aberturas sem lado repetem nas duas.

@@ -245,6 +245,7 @@
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
         .grid.grid-tight { margin-bottom: var(--space-2); }
+        .grid.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
         .btn-diag-standalone { margin-top: var(--space-3); }
 
@@ -568,6 +569,16 @@
                 <button class="btn-direction" data-category="direction" data-val="D" data-label="DIREITA">DIREITA</button>
             </div>
 
+            <!-- Só aparece pra robô cujo perfil manda has_distance. Nada marcado = MÉDIO. -->
+            <div id="distance-section" hidden>
+                <h2>DISTÂNCIA</h2>
+                <div class="grid grid-3">
+                    <button class="btn-direction" data-category="distance" data-val="P" data-label="PERTO">PERTO</button>
+                    <button class="btn-direction" data-category="distance" data-val="M" data-label="MÉDIO">MÉDIO</button>
+                    <button class="btn-direction" data-category="distance" data-val="L" data-label="LONGE">LONGE</button>
+                </div>
+            </div>
+
             <h2>BUSCA E TÁTICA</h2>
             <div class="grid" id="search-grid"><!-- Renderizado dinamicamente --></div>
 
@@ -685,13 +696,15 @@
                 getProfile,
                 getSensors: () => command(new Uint8Array([BLE_CMD.GET_SENSORS])).then(asJson),
 
-                setStrategy: (macro, direction, search, weapon) => {
+                // O 6º byte (distância) é opcional no firmware: quem não conhece ignora.
+                setStrategy: (macro, direction, search, weapon, distance) => {
                     const bytes = new Uint8Array([
                         BLE_CMD.SET_STRATEGY,
                         macro & 0xff,
                         direction.charCodeAt(0),
                         search & 0xff,
                         weapon & 0xff,
+                        distance.charCodeAt(0),
                     ]);
                     return command(bytes).then(asAck);
                 },
@@ -740,6 +753,7 @@
                 modalActions: document.getElementById('modal-actions'),
                 weaponBtn: document.getElementById('btn-weapon-toggle'),
                 macroGrid: document.getElementById('macro-grid'),
+                distanceSection: document.getElementById('distance-section'),
                 searchGrid: document.getElementById('search-grid'),
                 weaponGrid: document.getElementById('weapon-grid'),
                 readoutBox: document.getElementById('test-readout'),
@@ -795,6 +809,10 @@
                 el.searchGrid.innerHTML = searches.map(s =>
                     `<button class="btn-search" data-category="search" data-val="${s.id}" data-label="${s.name}">${s.name}</button>`
                 ).join('');
+
+                el.distanceSection.hidden = !profile.has_distance;
+                document.querySelectorAll('button[data-category="distance"]').forEach(b => b.classList.remove('selected'));
+                State.tactic.distance = { val: '', label: 'NENHUM' };
 
                 el.weaponBtn.disabled = !profile.has_weapons;
                 el.weaponBtn.style.opacity = profile.has_weapons ? '1' : '0.5';
@@ -864,6 +882,7 @@
             tactic: {
                 macro: { val: '', label: 'NENHUM' },
                 direction: { val: '', label: 'NENHUM' },
+                distance: { val: '', label: 'NENHUM' },
                 search: { val: '', label: 'NENHUM' },
                 weapon: { val: '', label: 'NENHUM' },
             },
@@ -1165,6 +1184,7 @@
 
                 let reportHtml = `<div class="modal-chip btn-macro selected">${State.tactic.macro.label}</div>`;
                 if (State.tactic.direction.val) reportHtml += `<div class="modal-chip btn-direction selected">${State.tactic.direction.label}</div>`;
+                if (State.tactic.distance.val) reportHtml += `<div class="modal-chip btn-direction selected">${State.tactic.distance.label}</div>`;
                 if (State.tactic.search.val) reportHtml += `<div class="modal-chip btn-search selected">${State.tactic.search.label}</div>`;
                 if (State.tactic.weapon.val) reportHtml += `<div class="modal-chip btn-weapon selected">${State.tactic.weapon.label}</div>`;
                 reportHtml += `<div class="modal-prompt">Transmitir parâmetros para o robô?</div>`;
@@ -1190,10 +1210,11 @@
 
                 const macro = State.tactic.macro.val ? parseInt(State.tactic.macro.val, 10) : 0;
                 const direction = State.tactic.direction.val || 'X';
+                const distance = State.tactic.distance.val || 'M';
                 const search = State.tactic.search.val ? parseInt(State.tactic.search.val, 10) : 1;
                 const weapon = State.tactic.weapon.val ? parseInt(State.tactic.weapon.val, 10) : 0;
 
-                UI.withBusy(document.getElementById('btn-submit-tatica'), Transport.setStrategy(macro, direction, search, weapon))
+                UI.withBusy(document.getElementById('btn-submit-tatica'), Transport.setStrategy(macro, direction, search, weapon, distance))
                     .then(ok => {
                         if (ok) {
                             UI.alertBox('UPLINK SUCCESS', 'Configuração salva com sucesso!', false);
