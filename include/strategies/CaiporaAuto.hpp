@@ -62,17 +62,17 @@ class CaiporaAuto : public CombatStrategy {
     uint16_t _rawLateralDir = SEM_LEITURA_MM;
 
     // Ids de busca que chegam do site (AutoStrategy::search).
-    static constexpr int BUSCA_UM_SENSOR = 1;
-    static constexpr int BUSCA_DOIS_SENSORES = 2;
+    static constexpr int BUSCA_RAPIDA = 2;
+    static constexpr int BUSCA_LENTA = 3;
 
     // Mesmo esquema do ArruelaAuto: o configure() escolhe a função uma única vez
     // e o autoEngage() só desreferencia o ponteiro.
     using BuscaFn = void (CaiporaAuto::*)(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq,
                                           uint16_t rawFrenteDir, uint16_t rawLateralDir, int rawLdr);
-    BuscaFn _buscaAtual = &CaiporaAuto::_buscaUmSensor;
+    BuscaFn _buscaAtual = &CaiporaAuto::_buscaRapida;
 
-    void _buscaUmSensor(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
-                        uint16_t rawLateralDir, int rawLdr);
-    void _buscaDoisSensores(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
-                            uint16_t rawLateralDir, int rawLdr);
+    void _buscaRapida(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                      uint16_t rawLateralDir, int rawLdr);
+    void _buscaLenta(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                     uint16_t rawLateralDir, int rawLdr);
 };
