@@ -1,0 +1,8 @@
+; Copie este arquivo para platformio.local.ini (que esta no .gitignore) e
+; ajuste pra sua maquina. O platformio.ini puxa ele via extra_configs.
+
+[platformio]
+; Windows: core curto na raiz do disco. O padrao (C:\Users\<nome>\.platformio)
+; estoura o limite de 260 caracteres de caminho e quebra com espaco ou acento
+; no nome do usuario.
+core_dir = C:/pio

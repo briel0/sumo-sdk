@@ -26,3 +26,5 @@ repomix-output.xml
 # O platformio puxa as bibliotecas de locais diferentes no windows e no linux. Isso serve pra resolver essa questão
 C:/pio/
 C:/Users/*/AppData/Local/Programs/platformio/
+# Ajustes locais do PlatformIO (ver platformio.local.ini.example)
+platformio.local.ini
