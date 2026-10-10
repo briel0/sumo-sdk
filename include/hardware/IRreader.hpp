@@ -6,12 +6,6 @@ class IRReader {
 
     void update();
 
-    bool modeRC() const {
-        return _modeRC;
-    }
-    bool modeAuto() const {
-        return _modeAuto;
-    }
     bool ready() const {
         return _ready;
     }
@@ -24,8 +18,6 @@ class IRReader {
     void shutdown();
 
   private:
-    bool _modeRC = false;
-    bool _modeAuto = false;
     bool _ready = false;
     bool _start = false;
     bool _stop = false;

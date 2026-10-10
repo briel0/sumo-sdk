@@ -46,12 +46,6 @@ class StatusLed {
     void setState(CRGB color);
 
     /**
-    @brief Non-blocking heartbeat pulse on the debug LED. Call once per loop() iteration.
-        Blinks slowly to indicate the robot is alive and waiting.
-    */
-    void heartbeat();
-
-    /**
     @brief Non-blocking wave animation: green base with one LED pulsing orange.
         Call once per loop() iteration while waiting for controller pairing.
     */
@@ -68,7 +62,6 @@ class StatusLed {
     int _debugPin = 0;
     int _numLeds = 0;
     int _currentStep = 0;
-    unsigned long _lastHeartbeatMs = 0;
     unsigned long _lastWaveMs = 0;
     int _waveIndex = 0;
     bool _pingpongForward = true;

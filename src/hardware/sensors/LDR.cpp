@@ -13,16 +13,3 @@ void LDR::init() {
 int LDR::readRaw() const {
     return analogRead(_pin);
 }
-
-int LDR::getPercentage() const {
-    int rawValue = analogRead(_pin);
-
-    // Mapeia a resolução de 12-bits do ESP32 (0-4095) para 0-100%
-    // Atenção: Se o teu circuito físico for invertido (LDR no GND em vez do VCC),
-    // basta inverter os dois últimos parâmetros: map(rawValue, 0, 4095, 100, 0);
-    return map(rawValue, 0, 4095, 0, 100);
-}
-
-bool LDR::isDark(int threshold) const {
-    return analogRead(_pin) < threshold;
-}

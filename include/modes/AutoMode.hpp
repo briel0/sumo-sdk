@@ -2,9 +2,7 @@
 #include "BleConfigServer.hpp"
 #include "CombatStrategy.hpp"
 #include "Drive.hpp"
-#include "JS40F.hpp"
 #include "MotionPlayer.hpp"
-#include "QRE1113.hpp"
 #include "RobotTypes.hpp"
 #include "WeaponSystem.hpp"
 
