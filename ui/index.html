@@ -569,14 +569,13 @@
                 <button class="btn-direction" data-category="direction" data-val="D" data-label="DIREITA">DIREITA</button>
             </div>
 
-            <!-- Só aparece pra robô cujo perfil manda has_distance. Nada marcado = MÉDIO. -->
-            <div id="distance-section" hidden>
-                <h2>DISTÂNCIA</h2>
-                <div class="grid grid-3">
-                    <button class="btn-direction" data-category="distance" data-val="P" data-label="PERTO">PERTO</button>
-                    <button class="btn-direction" data-category="distance" data-val="M" data-label="MÉDIO">MÉDIO</button>
-                    <button class="btn-direction" data-category="distance" data-val="L" data-label="LONGE">LONGE</button>
-                </div>
+            <!-- Vale pra todos os robôs; só muda algo em quem tem passos marcados
+                 com scalesWithDistance no profile. Nada marcado = MÉDIO. -->
+            <h2>DISTÂNCIA</h2>
+            <div class="grid grid-3">
+                <button class="btn-direction" data-category="distance" data-val="P" data-label="PERTO">PERTO</button>
+                <button class="btn-direction" data-category="distance" data-val="M" data-label="MÉDIO">MÉDIO</button>
+                <button class="btn-direction" data-category="distance" data-val="L" data-label="LONGE">LONGE</button>
             </div>
 
             <h2>BUSCA E TÁTICA</h2>
@@ -753,7 +752,6 @@
                 modalActions: document.getElementById('modal-actions'),
                 weaponBtn: document.getElementById('btn-weapon-toggle'),
                 macroGrid: document.getElementById('macro-grid'),
-                distanceSection: document.getElementById('distance-section'),
                 searchGrid: document.getElementById('search-grid'),
                 weaponGrid: document.getElementById('weapon-grid'),
                 readoutBox: document.getElementById('test-readout'),
@@ -810,7 +808,6 @@
                     `<button class="btn-search" data-category="search" data-val="${s.id}" data-label="${s.name}">${s.name}</button>`
                 ).join('');
 
-                el.distanceSection.hidden = !profile.has_distance;
                 document.querySelectorAll('button[data-category="distance"]').forEach(b => b.classList.remove('selected'));
                 State.tactic.distance = { val: '', label: 'NENHUM' };
 
