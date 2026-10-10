@@ -1,8 +1,6 @@
 #include "Receiver.hpp"
 #include <esp_mac.h>
 
-// TO DO: REMOVER PREFS
-
 Receiver *Receiver::instance = nullptr;
 
 Receiver::Receiver() {
@@ -18,21 +16,6 @@ void Receiver::init() {
 
     BP32.setup(&Receiver::onConnected, &Receiver::onDisconnected);
     Serial.println("[Receiver] Bluetooth Stack started. Looking for controllers...");
-}
-
-void Receiver::lockToSavedController() {
-    isPairingMode = false;
-    Serial.println("[Receiver] SECURE MODE ACTIVATED: Only the owner can connect.");
-}
-
-void Receiver::openForNewController() {
-    isPairingMode = true;
-
-    if(controller && controller->isConnected()) {
-        controller->disconnect();
-        controller = nullptr;
-    }
-    Serial.println("[Receiver] OPEN MODE: Waiting to pair a NEW controller...");
 }
 
 void Receiver::onConnected(ControllerPtr ctl) {
@@ -69,8 +52,7 @@ void Receiver::update() {
     // Opcional: Descomente para debugar os eixos na serial
     static unsigned long lastPrint = 0;
     if(millis() - lastPrint > 2000) {
-        Serial.printf("LX: %d | LY: %d | RX: %d | RY: %d | LT: %d | RT: %d\n", leftStickXVal, leftStickYVal,
-                      rightStickXVal, rightStickYVal, leftTriggerVal, rightTriggerVal);
+        Serial.printf("LX: %d | LT: %d | RT: %d\n", leftStickXVal, leftTriggerVal, rightTriggerVal);
         lastPrint = millis();
     }
     */
@@ -80,26 +62,18 @@ void Receiver::updateAxes() {
     int rawLT = controller->brake();
     int rawRT = controller->throttle();
     int rawLX = controller->axisX();
-    int rawLY = controller->axisY();
-    int rawRX = controller->axisRX();
-    int rawRY = controller->axisRY();
 
     // Mapeamento idêntico à versão mais recente (compatível com os getters do RCMode)
     leftTriggerVal = (rawLT < TRIGGER_DEADZONE) ? 0 : (rawLT * 100) / 1023;
     rightTriggerVal = (rawRT < TRIGGER_DEADZONE) ? 0 : (rawRT * 100) / 1023;
 
     leftStickXVal = (abs(rawLX) < STICKER_DEADZONE) ? 0 : constrain((rawLX * 100) / 511, -100, 100);
-    leftStickYVal = (abs(rawLY) < STICKER_DEADZONE) ? 0 : constrain((rawLY * 100) / 511, -100, 100);
-    rightStickXVal = (abs(rawRX) < STICKER_DEADZONE) ? 0 : constrain((rawRX * 100) / 511, -100, 100);
-    rightStickYVal = (abs(rawRY) < STICKER_DEADZONE) ? 0 : constrain((rawRY * 100) / 511, -100, 100);
 }
 
 void Receiver::updateButtons() {
     uint8_t currentDpad = controller->dpad();
     dpadUpFlag = (currentDpad & DPAD_UP) && !(lastDpad & DPAD_UP);
     dpadDownFlag = (currentDpad & DPAD_DOWN) && !(lastDpad & DPAD_DOWN);
-    dpadLeftFlag = (currentDpad & DPAD_LEFT) && !(lastDpad & DPAD_LEFT);
-    dpadRightFlag = (currentDpad & DPAD_RIGHT) && !(lastDpad & DPAD_RIGHT);
     lastDpad = currentDpad;
 
     uint16_t currentBtns = controller->buttons();
@@ -109,7 +83,6 @@ void Receiver::updateButtons() {
     lastCircle = currentCircle;
 
     bool currentCross = currentBtns & BUTTON_A;
-    crossFlag = currentCross && !lastCross;
     lastCross = currentCross;
 
     bool currentSquare = currentBtns & BUTTON_X;
@@ -120,13 +93,13 @@ void Receiver::updateButtons() {
     triangleFlag = currentTriangle && !lastTriangle;
     lastTriangle = currentTriangle;
 
-    bool currentR3 = currentBtns & BUTTON_THUMB_R;
-    r3Flag = currentR3 && !lastR3;
-    lastR3 = currentR3;
-
     bool currentL3 = currentBtns & BUTTON_THUMB_L;
     l3Flag = currentL3 && !lastL3;
     lastL3 = currentL3;
+
+    bool currentR3 = currentBtns & BUTTON_THUMB_R;
+    r3Flag = currentR3 && !lastR3;
+    lastR3 = currentR3;
 
     bool currentR1 = currentBtns & BUTTON_SHOULDER_R;
     r1Flag = currentR1 && !lastR1;
@@ -145,9 +118,6 @@ void Receiver::applyFailsafe() {
     leftTriggerVal = 0;
     rightTriggerVal = 0;
     leftStickXVal = 0;
-    leftStickYVal = 0;
-    rightStickXVal = 0;
-    rightStickYVal = 0;
 
     lastDpad = 0;
     lastCircle = false;
@@ -157,18 +127,15 @@ void Receiver::applyFailsafe() {
 
     dpadUpFlag = false;
     dpadDownFlag = false;
-    dpadLeftFlag = false;
-    dpadRightFlag = false;
     circleFlag = false;
-    crossFlag = false;
     squareFlag = false;
     triangleFlag = false;
 
-    lastR3 = false;
-    r3Flag = false;
-
     lastL3 = false;
     l3Flag = false;
+
+    lastR3 = false;
+    r3Flag = false;
 
     lastR1 = false;
     r1Flag = false;

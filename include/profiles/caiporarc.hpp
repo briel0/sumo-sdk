@@ -3,7 +3,7 @@
 
 // Perfil do firmware RC do Caipora (src/tools/RCFirmware/main.cpp) —
 // separado de profiles/caipora.hpp (o do AUTO) porque o RC não usa nada de
-// estratégia autônoma: sem UI_PROFILE_JSON, WIFI_CHANNEL nem os pinos de
+// estratégia autônoma: sem UI_PROFILE_JSON nem os pinos de
 // sensor (ToF/linha/LDR), só o que RCMode/Receiver realmente tocam. Valores
 // físicos (pinos de motor, servo, throttle) são os mesmos do Caipora real —
 // se calibrar diferente pro manual, mexe só aqui, não afeta o AUTO.

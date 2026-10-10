@@ -24,10 +24,12 @@ AutoMode modoAuto;
 ActiveAuto taticaAtual;
 
 void setup() {
-#if defined(ROBOT_SMOKER) || defined(ROBOT_ARRUELA)
-    // Liga o transistor dos JS40F antes de qualquer outra coisa: quanto mais
-    // cedo ele sobe, mais tempo de estabilização o sensor tem até o combate —
-    // e o teste de sensores do painel já lê eles alimentados antes da luta.
+#if defined(ROBOT_SMOKER) || defined(ROBOT_ARRUELA) || defined(ROBOT_MAROLA)
+    // Liga o transistor dos JS40F (no Marola, dos sensores da placa) antes de
+    // qualquer outra coisa: quanto mais cedo ele sobe, mais tempo de
+    // estabilização o sensor tem até o combate — e o teste de sensores do
+    // painel já lê eles alimentados antes da luta. Os TSSP4038 do Smoker não
+    // passam por esse transistor.
     pinMode(Config::PIN_JS_POWER, OUTPUT);
     digitalWrite(Config::PIN_JS_POWER, HIGH);
 #endif
@@ -61,8 +63,8 @@ void setup() {
 void loop() {
     ir.update();
 
-    // Feedback visual para códigos IRs válidos (menos '1')
-    if(ir.modeRC() || ir.modeAuto() || ir.stop()) {
+    // Feedback visual do stop (o '1' e o '2' piscam mais abaixo)
+    if(ir.stop()) {
         statusLed.blinkDebug(5, 20);
     }
 
