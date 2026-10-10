@@ -21,8 +21,15 @@ void MarolaAuto::init() {
 
 void MarolaAuto::configure(const AutoStrategy &cfg) {
     _giroInicialMacro = nullptr;
+    _velAvanco = VEL_ATAQUE_MAX;
 
     switch(cfg.search) {
+        case BUSCA_LINHA:
+            _atrasoAbrirAsaMs = 100;
+            _bloqueiaAteAbrir = false;
+            _velAvanco = VEL_BUSCA_LINHA;
+            Serial.printf("[MAROLA] Busca SENSOR DE LINHA (avanca a %d%%).\n", VEL_BUSCA_LINHA);
+            break;
         case ASA_DELAY_500:
             _atrasoAbrirAsaMs = 500;
             _bloqueiaAteAbrir = true;
@@ -62,8 +69,26 @@ void MarolaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         armas.deploy();
     }
 
-    // Giro inicial (ASA_DELAY_100_GIRO) tem prioridade total sobre os motores
-    // até a macro terminar — só então o fluxo normal abaixo assume.
+    // Prioridade maxima sobre os motores: LINHA BRANCA. Vem antes do giro
+    // inicial, da espera da asa e do avanco — nao adianta ganhar o alvo e
+    // perder o dojo.
+    bool leuEsq = _linhaEsq.temLinhaBranca();
+    bool leuDir = _linhaDir.temLinhaBranca();
+
+    if(leuEsq || leuDir) {
+        // Reinicia o movimento sempre que ve a linha: fica preso no primeiro
+        // passo (re) ate a linha sumir.
+        if(leuEsq) {
+            _player.play(Config::MACRO_FUGA_LINHA_ESQUERDA);
+        }
+        else if(leuDir) {
+            _player.play(Config::MACRO_FUGA_LINHA_DIREITA);
+        }
+    }
+
+    // Com a fuga de borda ou o giro inicial (ASA_DELAY_100_GIRO) tocando, o
+    // player e' dono dos motores até a macro terminar — só então o fluxo
+    // normal abaixo assume.
     if(_player.isPlaying()) {
         _player.update(motores);
         return;
@@ -78,8 +103,15 @@ void MarolaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         return;
     }
 
+    // Igual ao LDR do Caipora: abaixo do limiar, algo bloqueou a luz — alvo
+    // na cara, ataca com tudo. Qualquer um dos três LDRs serve de gatilho.
+    if(_ldrEsq.readRaw() < LIMIAR_LDR || _ldrDir.readRaw() < LIMIAR_LDR || _ldrFront.readRaw() < LIMIAR_LDR) {
+        motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
+        return;
+    }
+
     // Auto simplificado: anda pra frente até o STOP do IR (botão 3, ver main.cpp).
-    motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
+    motores.setSpeed(_velAvanco, _velAvanco);
 }
 
 String MarolaAuto::getSensorStatusJSON() {

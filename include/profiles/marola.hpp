@@ -21,32 +21,28 @@ namespace Config {
     static constexpr int PIN_LDR_ESQ = 34;
     static constexpr int PIN_LDR_DIR = 36;
     static constexpr int PIN_LDR_FRONT = 39;
-    static constexpr int LDR_THRESHOLD = 2500; // abaixo disso: oponente bloqueando a luz
+
+    // Transistor na placa que liga a alimentação dos sensores (mesma placa
+    // do Arruela, por isso o nome PIN_JS_POWER mesmo sem JS40F aqui). Precisa
+    // ir pra HIGH o mais cedo possível no boot (ver main.cpp) pra dar o
+    // máximo de tempo de estabilização antes de ler qualquer sensor.
+    static constexpr int PIN_JS_POWER = 25;
 
     static constexpr uint8_t PIN_LINHA_ESQ = 15;
     static constexpr uint8_t PIN_LINHA_DIR = 14;
-    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 1700;
-    static constexpr uint16_t LINHA_THRESHOLD_DIR = 1700;
-
-    // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
-    // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
-    // disputarem o mesmo espectro e derrubarem o portal um do outro.
-    static constexpr int WIFI_CHANNEL = 1;
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 1000;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 1000;
 
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        {26, 125, 35}, // Pino 22 | Começa em 15° | Arma em 120°
+        {26, 125, 15}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
     static const MotionSequence MACRO_FRENTAO = MACRO(
         {100, 100, 300});
-
-    static const MotionSequence MACRO_DIAGONAL = MACRO(
-        {-100, 100, 30},
-        {100, 100, 200},);
 
     static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
         {100, -100, 72},
@@ -69,6 +65,19 @@ namespace Config {
     // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
     static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
 
+    // Fugas de borda: o MarolaAuto toca uma delas quando um QRE1113 ve a
+    // linha branca. O nome e o lado do sensor que viu — a fuga gira pro lado
+    // oposto.
+    static const MotionSequence MACRO_FUGA_LINHA_ESQUERDA = MACRO(
+        {-100, -100, 125}, // Da re com tudo
+        {100, -100, 120}   // Gira pra direita pra fugir
+    );
+
+    static const MotionSequence MACRO_FUGA_LINHA_DIREITA = MACRO(
+        {-100, -100, 125}, // Da re com tudo
+        {-100, 100, 120}   // Gira pra esquerda pra fugir
+    );
+
     // Giro inicial da ASA 100MS + GIRO (MarolaAuto::ASA_DELAY_100_GIRO): toca uma
     // vez ao entrar em combate, antes do avanço reto — o lado vem da direção
     // escolhida no site (cfg.direction), igual ao saque cego. Ajuste
@@ -90,7 +99,8 @@ namespace Config {
         "searches": [
             {"id": 1, "name": "ASA 100MS"},
             {"id": 2, "name": "ASA 500MS"},
-            {"id": 3, "name": "ASA 100MS + GIRO"}
+            {"id": 3, "name": "ASA 100MS + GIRO"},
+            {"id": 4, "name": "BUSCA SENSOR DE LINHA"}
         ],
         "has_weapons": true
     })";
