@@ -238,7 +238,7 @@ namespace Config {
         R"("macros":["FRENTAO","SEM SAQUE","CURVAO","FRENTAO PROGRESSIVO","FRENTAO BOLADO","ESPERA",)"
         R"("COSTAS RETO","COSTAS","CURVA LEVE","CURVA PESADA","DIAGONAL","V","AQUELE LA","GIRO 45","DESEMPATE"],)"
         R"("searches":[[1,"ASA 100MS"],[2,"ASA 500MS"],[3,"ASA 100MS + GIRO"],[4,"BUSCA SENSOR DE LINHA"]],)"
-        R"("has_weapons":true,"has_distance":true})";
+        R"("has_weapons":true})";
 
     // As duas tabelas andam juntas: a posição é o id que o site manda, na mesma
     // ordem do "macros" do UI_PROFILE_JSON. As aberturas sem lado repetem nas duas.
