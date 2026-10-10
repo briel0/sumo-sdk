@@ -40,11 +40,15 @@ class SmokerAuto : public CombatStrategy {
     // Ids de busca que chegam do site (AutoStrategy::search).
     static constexpr int BUSCA_PADRAO = 1;
     static constexpr int BUSCA_IR = 2;
+    static constexpr int BUSCA_PINBALL = 3;
 
     // BUSCA IR: mesma logica da PADRAO, mas quem decide sao os tres TSSP4038
     // no lugar dos JS40F, e o transistor do PIN_JS_POWER fica desligado. O
     // configure() resolve isso uma unica vez, antes da largada.
     bool _buscaIr = false;
+
+    // BUSCA PINBALL: usa os JS40F como a PADRAO; so troca a rotina de busca.
+    bool _pinball = false;
 
     // Nao arma nada aqui: quem abre a arma e o AutoMode na largada, conforme
     // a config do site. Decide busca/ataque frame a frame, igual a
@@ -56,5 +60,6 @@ class SmokerAuto : public CombatStrategy {
     static constexpr int VEL_ATAQUE_MAX = 100;
 
     void _busca(Drive &motores, bool viuEsq, bool viuDir);
+    void _buscaPinball(Drive &motores, bool viuEsq, bool viuDir);
     void _ataque(Drive &motores);
 };

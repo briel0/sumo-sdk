@@ -209,7 +209,8 @@ namespace Config {
         ],
         "searches": [
             {"id": 1, "name": "BUSCA PADRAO"},
-            {"id": 2, "name": "BUSCA IR"}
+            {"id": 2, "name": "BUSCA IR"},
+            {"id": 3, "name": "BUSCA PINBALL"}
         ],
         "has_weapons": true
     })";

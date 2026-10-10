@@ -28,12 +28,20 @@ void SmokerAuto::configure(const AutoStrategy &cfg) {
     switch(cfg.search) {
         case BUSCA_IR:
             _buscaIr = true;
+            _pinball = false;
             digitalWrite(Config::PIN_JS_POWER, LOW);
             Serial.println("[SMOKER] Busca IR.");
+            break;
+        case BUSCA_PINBALL:
+            _buscaIr = false;
+            _pinball = true;
+            digitalWrite(Config::PIN_JS_POWER, HIGH);
+            Serial.println("[SMOKER] Busca PINBALL.");
             break;
         case BUSCA_PADRAO:
         default:
             _buscaIr = false;
+            _pinball = false;
             digitalWrite(Config::PIN_JS_POWER, HIGH);
             Serial.println("[SMOKER] Busca PADRAO.");
             break;
@@ -92,6 +100,11 @@ void SmokerAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         return;
     }
 
+    if(_pinball) {
+        _buscaPinball(motores, viuEsq, viuDir);
+        return;
+    }
+
     _busca(motores, viuEsq, viuDir);
 }
 
@@ -107,11 +120,25 @@ void SmokerAuto::_busca(Drive &motores, bool viuEsq, bool viuDir) {
 
 
     if(_ultimoLado == Direction::right) {
-        motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
+        motores.setSpeed(45, -45);
     }
     else {
-        motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
+        motores.setSpeed(-45, 45);
     }
+}
+
+// Copia da _busca() — ponto de partida da PINBALL, ainda sem comportamento proprio.
+void SmokerAuto::_buscaPinball(Drive &motores, bool viuEsq, bool viuDir) {
+    if(viuEsq) {
+        motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
+        return;
+    }
+    if(viuDir) {
+        motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
+        return;
+    }
+
+    motores.setSpeed(20, 20);
 }
 
 void SmokerAuto::_ataque(Drive &motores) {
