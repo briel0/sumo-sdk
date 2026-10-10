@@ -19,6 +19,9 @@ class MarolaAuto : public CombatStrategy {
     LDR _ldrFront;
     QRE1113 _linhaEsq;
     QRE1113 _linhaDir;
+
+    // Toca o giro inicial e as fugas de borda. E o unico dono dos motores
+    // enquanto estiver ativo.
     MotionPlayer _player;
 
     // Ids de busca que chegam do site — aqui reaproveitados como escolha do
@@ -26,6 +29,7 @@ class MarolaAuto : public CombatStrategy {
     static constexpr int ASA_DELAY_100 = 1;
     static constexpr int ASA_DELAY_500 = 2;
     static constexpr int ASA_DELAY_100_GIRO = 3;
+    static constexpr int BUSCA_LINHA = 4;
 
     unsigned long _atrasoAbrirAsaMs = 100;
     unsigned long _tempoEntradaCombate = 0;
@@ -40,7 +44,19 @@ class MarolaAuto : public CombatStrategy {
     const MotionSequence *_giroInicialMacro = nullptr;
 
     // Auto simplificado: anda pra frente até o STOP do IR (botão 3, ver
-    // main.cpp) — sem lógica de busca/ataque, fora a espera pra abrir a asa.
-    // LDRs e QRE1113 continuam lidos só pro getSensorStatusJSON().
+    // main.cpp) — sem lógica de busca, fora a espera pra abrir a asa, a fuga
+    // de borda pelos QRE1113 (MACRO_FUGA_LINHA_*, via _player) e o ataque
+    // pelos LDRs (LIMIAR_LDR).
     static constexpr int VEL_ATAQUE_MAX = 100;
+
+    // Qualquer LDR abaixo disso (algo bloqueando a luz) dispara o avanco a
+    // VEL_ATAQUE_MAX.
+    static constexpr int LIMIAR_LDR = 100;
+
+    // BUSCA_LINHA: avanca devagar o tempo todo, deixando a fuga de borda
+    // decidir pra onde ir. A asa abre igual ao ASA_DELAY_100.
+    static constexpr int VEL_BUSCA_LINHA = 55;
+
+    // Velocidade do avanco reto, escolhida no configure() conforme a busca.
+    int _velAvanco = VEL_ATAQUE_MAX;
 };
