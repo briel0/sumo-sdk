@@ -203,11 +203,24 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
                                   NUM_MACROS - 1, macroIdx);
                 }
 
+                // Distância até o adversário, escolhida no site: muda o tempo dos
+                // passos marcados com scalesWithDistance. Só o Marola tem os
+                // coeficientes no profile e passos marcados.
+                int escalaDistancia = 100;
+#if defined(ROBOT_MAROLA)
+                if(autoConfig.distance == 'P') {
+                    escalaDistancia = Config::DISTANCIA_PERTO_PCT;
+                }
+                else if(autoConfig.distance == 'L') {
+                    escalaDistancia = Config::DISTANCIA_LONGE_PCT;
+                }
+#endif
+
                 if(autoConfig.direction == 'D') {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[macroIdx]);
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[macroIdx], escalaDistancia);
                 }
                 else {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[macroIdx]);
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[macroIdx], escalaDistancia);
                 }
                 Serial.println("[AUTO] LARGADA! Executando estratégia.");
             }

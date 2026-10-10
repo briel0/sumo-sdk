@@ -2,7 +2,7 @@
 #include "Drive.hpp"
 #include <Arduino.h>
 
-void MotionPlayer::play(const MotionSequence &seq) {
+void MotionPlayer::play(const MotionSequence &seq, int distancePercent) {
     // Macro vazia = "sem saque". Nem chega a tocar: o AutoMode ve isPlaying() falso
     // no primeiro frame e cai direto no combate.
     if(seq.numSteps <= 0 || seq.steps == nullptr) {
@@ -13,6 +13,7 @@ void MotionPlayer::play(const MotionSequence &seq) {
     }
 
     sequence = seq;
+    this->distancePercent = distancePercent;
     currentStep = 0;
     stepStartTime = millis();
     active = true;
@@ -26,7 +27,12 @@ void MotionPlayer::update(Drive &motores) {
     unsigned long elapsed = millis() - stepStartTime;
     const MotionStep &step = sequence.steps[currentStep];
 
-    if(elapsed < step.durationMs) {
+    unsigned long duration = step.durationMs;
+    if(step.scalesWithDistance) {
+        duration = duration * distancePercent / 100;
+    }
+
+    if(elapsed < duration) {
         // Ainda estamos dentro do tempo deste passo
         motores.setSpeed(step.leftSpeed, step.rightSpeed);
     }
