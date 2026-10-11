@@ -22,8 +22,17 @@ void MarolaAuto::init() {
 void MarolaAuto::configure(const AutoStrategy &cfg) {
     _giroInicialMacro = nullptr;
     _velAvanco = VEL_ATAQUE_MAX;
+    _frentaoAposTempo = false;
 
     switch(cfg.search) {
+        case BUSCA_LINHA_FRENTAO:
+            _atrasoAbrirAsaMs = 100;
+            _bloqueiaAteAbrir = false;
+            _velAvanco = VEL_BUSCA_LINHA;
+            _frentaoAposTempo = true;
+            Serial.printf("[MAROLA] Busca SENSOR DE LINHA + FRENTAO (avanca a %d%%, no talo apos %lums).\n",
+                          VEL_BUSCA_LINHA, FRENTAO_APOS_MS);
+            break;
         case BUSCA_LINHA:
             _atrasoAbrirAsaMs = 100;
             _bloqueiaAteAbrir = false;
@@ -103,9 +112,8 @@ void MarolaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         return;
     }
 
-    // Igual ao LDR do Caipora: abaixo do limiar, algo bloqueou a luz — alvo
-    // na cara, ataca com tudo. Qualquer um dos três LDRs serve de gatilho.
-    if(_ldrEsq.readRaw() < LIMIAR_LDR || _ldrDir.readRaw() < LIMIAR_LDR || _ldrFront.readRaw() < LIMIAR_LDR) {
+    // BUSCA_LINHA_FRENTAO: passado o tempo, larga a velocidade de busca e vai no talo.
+    if(_frentaoAposTempo && decorrido >= FRENTAO_APOS_MS) {
         motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
         return;
     }
