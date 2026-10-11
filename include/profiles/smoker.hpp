@@ -41,8 +41,8 @@ namespace Config {
 
     // Limiares separados de proposito: os dois QRE nunca leem igual no mesmo
     // dojo. Calibre cada um pelo painel /sensors antes da luta.
-    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 1000;
-    static constexpr uint16_t LINHA_THRESHOLD_DIR = 1000;
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 3000;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 3000;
 
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
@@ -191,12 +191,12 @@ namespace Config {
     // linha branca. O nome e o lado do sensor que viu — a fuga gira pro lado
     // oposto. Tempos copiados do Arruela, ainda nao calibrados no Smoker.
     static const MotionSequence MACRO_FUGA_LINHA_ESQUERDA = MACRO(
-        {-100, -100, 150}, // Da re com tudo
+        {-100, -100, 280}, // Da re com tudo
         {100, -100, 180}   // Gira pra direita pra fugir
     );
 
     static const MotionSequence MACRO_FUGA_LINHA_DIREITA = MACRO(
-        {-100, -100, 150}, // Da re com tudo
+        {-100, -100, 280}, // Da re com tudo
         {-100, 100, 180}   // Gira pra esquerda pra fugir
     );
 
