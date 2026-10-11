@@ -38,7 +38,7 @@ namespace Config {
 
     // Cada linha { } é um servo físico!
     static constexpr ServoConfig SERVOS[] = {
-        {26, 125, 15}, // Pino 22 | Começa em 15° | Arma em 120°
+        {26, 100, 15}, // Pino 22 | Começa em 15° | Arma em 120°
     };
 
     // Distância até o adversário na largada, escolhida no site. O coeficiente
@@ -100,27 +100,31 @@ namespace Config {
         {0, 0, 10});
 
     // 'b': ré, giro curto pro lado escolhido e avanço.
-    static const MotionSequence MACRO_COSTAS_ESQUERDA = MACRO(
+    static const MotionSequence MACRO_COSTAS_ESQUERDA =
+        MACRO(
         {-100, -100, 120, true},
         {-100, 100, 30},
         {100, 100, 160, true},
         {0, 0, 10});
 
-    static const MotionSequence MACRO_COSTAS_DIREITA = MACRO(
+    static const MotionSequence MACRO_COSTAS_DIREITA =
+        MACRO(
         {-100, -100, 120, true},
         {100, -100, 30},
         {100, 100, 160, true},
         {0, 0, 10});
 
     // 'c': curva leve.
-    static const MotionSequence MACRO_CURVA_LEVE_ESQUERDA = MACRO(
+    static const MotionSequence MACRO_CURVA_LEVE_ESQUERDA =
+        MACRO(
         {-100, 100, 20},
         {100, 100, 120, true},
         {0, 0, 10},
         {100, -100, 70},
         {0, 0, 10});
 
-    static const MotionSequence MACRO_CURVA_LEVE_DIREITA = MACRO(
+    static const MotionSequence MACRO_CURVA_LEVE_DIREITA =
+        MACRO(
         {100, -100, 20},
         {100, 100, 120, true},
         {0, 0, 10},
@@ -128,7 +132,8 @@ namespace Config {
         {0, 0, 10});
 
     // 'C': curva pesada, com bote no final.
-    static const MotionSequence MACRO_CURVA_PESADA_ESQUERDA = MACRO(
+    static const MotionSequence MACRO_CURVA_PESADA_ESQUERDA =
+        MACRO(
         {-100, 100, 40},
         {100, 100, 170, true},
         {0, 0, 10},
@@ -136,7 +141,8 @@ namespace Config {
         {100, 100, 50, true},
         {0, 0, 10});
 
-    static const MotionSequence MACRO_CURVA_PESADA_DIREITA = MACRO(
+    static const MotionSequence MACRO_CURVA_PESADA_DIREITA =
+        MACRO(
         {100, -100, 40},
         {100, 100, 170, true},
         {0, 0, 10},
@@ -145,7 +151,8 @@ namespace Config {
         {0, 0, 10});
 
     // 'd': diagonal.
-    static const MotionSequence MACRO_DIAGONAL_ESQUERDA = MACRO(
+    static const MotionSequence MACRO_DIAGONAL_ESQUERDA =
+        MACRO(
         {-100, 100, 70},
         {100, 100, 150, true},
         {0, 0, 10},
@@ -158,7 +165,8 @@ namespace Config {
         {-100, 100, 70});
 
     // 'v': movimento em V.
-    static const MotionSequence MACRO_V_ESQUERDA = MACRO(
+    static const MotionSequence MACRO_V_ESQUERDA =
+        MACRO(
         {-100, 100, 40},
         {100, 100, 140, true},
         {0, 0, 10},
@@ -166,7 +174,8 @@ namespace Config {
         {0, 0, 10},
         {100, 100, 180, true});
 
-    static const MotionSequence MACRO_V_DIREITA = MACRO(
+    static const MotionSequence MACRO_V_DIREITA =
+        MACRO(
         {100, -100, 40},
         {100, 100, 140, true},
         {0, 0, 10},
@@ -175,14 +184,16 @@ namespace Config {
         {100, 100, 180, true});
 
     // 'a': aquele lá.
-    static const MotionSequence MACRO_AQUELE_LA_ESQUERDA = MACRO(
+    static const MotionSequence MACRO_AQUELE_LA_ESQUERDA =
+        MACRO(
         {-100, 100, 60},
         {100, 100, 110, true},
         {0, 0, 20},
         {100, -100, 130},
         {0, 0, 10});
 
-    static const MotionSequence MACRO_AQUELE_LA_DIREITA = MACRO(
+    static const MotionSequence MACRO_AQUELE_LA_DIREITA =
+        MACRO(
         {100, -100, 60},
         {100, 100, 110, true},
         {0, 0, 20},
@@ -237,7 +248,8 @@ namespace Config {
         R"({"robot_name":"Marola",)"
         R"("macros":["FRENTAO","SEM SAQUE","CURVAO","FRENTAO PROGRESSIVO","FRENTAO BOLADO","ESPERA",)"
         R"("COSTAS RETO","COSTAS","CURVA LEVE","CURVA PESADA","DIAGONAL","V","AQUELE LA","GIRO 45","DESEMPATE"],)"
-        R"("searches":[[1,"ASA 100MS"],[2,"ASA 500MS"],[3,"ASA 100MS + GIRO"],[4,"BUSCA SENSOR DE LINHA"]],)"
+        R"("searches":[[1,"ASA 100MS"],[2,"ASA 500MS"],[3,"ASA 100MS + GIRO"],[4,"BUSCA SENSOR DE LINHA"],)"
+        R"([5,"BUSCA SENSOR DE LINHA + FRENTAO"]],)"
         R"("has_weapons":true})";
 
     // As duas tabelas andam juntas: a posição é o id que o site manda, na mesma
