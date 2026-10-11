@@ -94,8 +94,10 @@ namespace Config {
     // Placeholder pra calibrar em bancada: dá ré e volta com tudo. Valores
     // (velocidade/duração) ainda não ajustados.
     static const MotionSequence MACRO_REVENGE = MACRO(
-        {100, 100, 300},
-        {100, -100, 100}, {100, 100, 180}, {100,-100,110});
+        {100, 100, 460},
+        {100, -100, 150},
+        {100, 100, 250}, 
+        {100,-100,150});
 
     // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão, 2 = Sem Saque, 3 = Frentinha,
     // 4 = Recuo, 5 = Curvinha, 6 = Revenge)
@@ -120,7 +122,8 @@ namespace Config {
         R"({"robot_name":"Arruela",)"
         R"("macros":["FRENTÃO","CURVÃO","SEM SAQUE","FRENTINHA","RECUO","CURVINHA","REVENGE"],)"
         R"("searches":[[1,"BUSCA PADRÃO"],[2,"BUSCA LENTA"],[3,"BUSCA POR DISTÂNCIA"],[4,"BUSCA GATO PRETO"],)"
-        R"([5,"BUSCA BALA TENSA"]],)"
+        R"([5,"BUSCA BALA TENSA"],[6,"BUSCA PINBALL"],)"
+        R"([7,"BUSCA PINBALL ASA"]],)"
         R"("has_weapons":false})";
 
 }
