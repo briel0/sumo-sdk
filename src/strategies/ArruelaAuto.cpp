@@ -310,6 +310,11 @@ void ArruelaAuto::_ataque(Drive &motores, bool viuEsq, bool viuDir, bool viuFren
     motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
 }
 
+// Qualquer um dos tres JS40F.
+bool ArruelaAuto::alvoNaEspera() {
+    return _sensorFrontal.temAlvo() || _sensorEsq.temAlvo() || _sensorDir.temAlvo();
+}
+
 String ArruelaAuto::getSensorStatusJSON() {
     String json = "{";
     json += "\"Frontal (JS40F)\": " + String(_sensorFrontal.temAlvo() ? 1 : 0) + ", ";
