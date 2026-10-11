@@ -143,6 +143,11 @@ void CaiporaAuto::_buscaLenta(Drive &motores, uint16_t rawFrenteEsq, uint16_t ra
     motores.setSpeed(0, 0);
 }
 
+// So o LDR: e o gatilho de ataque das duas buscas e a leitura e instantanea.
+bool CaiporaAuto::alvoNaEspera() {
+    return _ldr.readRaw() < LIMIAR_LDR;
+}
+
 String CaiporaAuto::getSensorStatusJSON() {
     // -1 pra sensor que falhou no init() — sem isso o painel de bancada (lido
     // a cada 150ms por AutoMode::run(), ver o comentário lá sobre o portal

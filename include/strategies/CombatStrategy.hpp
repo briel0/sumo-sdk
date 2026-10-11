@@ -47,6 +47,17 @@ class CombatStrategy {
     virtual void autoEngage(Drive &motores, WeaponSystem &armas) = 0;
 
     /**
+    @brief Diz se o robô está vendo o adversário AGORA, sem mexer em motor nenhum.
+
+    Consultado pelo AutoMode a cada frame da espera inicial (o atraso digitado
+    no site): se voltar true, a espera e a movimentação inicial são abandonadas
+    e o robô cai direto no combate. O padrão é nunca interromper.
+    */
+    virtual bool alvoNaEspera() {
+        return false;
+    }
+
+    /**
     @brief Retorna o estado atual dos sensores do robô no formato JSON.
     Pode ser sobrescrito por cada robô para expor seus sensores na interface web de debug.
     */

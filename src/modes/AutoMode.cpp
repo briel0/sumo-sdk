@@ -245,6 +245,15 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
 }
 
 void AutoMode::executingEstrategia(Drive &motores) {
+    // Durante a espera inicial os sensores continuam valendo: se a estratégia
+    // vir o adversário, larga a espera e a movimentação inicial e vai lutar.
+    if(estrategiaPlayer.isWaiting() && _estrategia && _estrategia->alvoNaEspera()) {
+        estrategiaPlayer.stop();
+        subState = SubState::FIGHTING;
+        Serial.println("[AUTO] Alvo visto na espera inicial. Pulando o saque, iniciando caçada.");
+        return;
+    }
+
     // Futuramente vamos colocar aqui pra interromper a macro caso o sensor de linha enxergue e etc.
     if(estrategiaPlayer.isPlaying()) {
         estrategiaPlayer.update(motores);

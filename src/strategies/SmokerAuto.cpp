@@ -145,6 +145,15 @@ void SmokerAuto::_ataque(Drive &motores) {
     motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
 }
 
+// Os mesmos sensores que a busca escolhida usa: os tres TSSP4038 na BUSCA IR
+// (os JS40F estao desligados nela), os tres JS40F nas outras.
+bool SmokerAuto::alvoNaEspera() {
+    if(_buscaIr) {
+        return _irFrontal.temSinal() || _irEsq.temSinal() || _irDir.temSinal();
+    }
+    return _sensorFrontal.temAlvo() || _sensorEsq.temAlvo() || _sensorDir.temAlvo();
+}
+
 String SmokerAuto::getSensorStatusJSON() {
     String json = "{";
     json += "\"Frontal (JS40F)\": " + String(_sensorFrontal.temAlvo() ? 1 : 0) + ", ";
