@@ -17,7 +17,6 @@ class CaiporaAuto : public CombatStrategy {
     void init() override;
     void configure(const AutoStrategy &cfg) override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
-    bool alvoNaEspera() override;
     String getSensorStatusJSON() override;
 
   private:
@@ -63,8 +62,17 @@ class CaiporaAuto : public CombatStrategy {
     uint16_t _rawLateralDir = SEM_LEITURA_MM;
 
     // Ids de busca que chegam do site (AutoStrategy::search).
-    static constexpr int BUSCA_RAPIDA = 2;
-    static constexpr int BUSCA_LENTA = 3;
+    // As OFENSIVAS sao as mesmas buscas; so muda o que o robo faz sem alvo
+    // nenhum a vista (ver _velSemAlvo).
+    static constexpr int BUSCA_RAPIDA = 2; // RAPIDA DEFENSIVA
+    static constexpr int BUSCA_LENTA = 3;  // LENTA DEFENSIVA
+    static constexpr int BUSCA_RAPIDA_OFENSIVA = 4;
+    static constexpr int BUSCA_LENTA_OFENSIVA = 5;
+
+    // Sem alvo a vista: a DEFENSIVA fica parada esperando (0), a OFENSIVA
+    // avanca reto nessa velocidade. Escolhido no configure().
+    static constexpr int VEL_OFENSIVA = 50;
+    int _velSemAlvo = 0;
 
     // Mesmo esquema do ArruelaAuto: o configure() escolhe a função uma única vez
     // e o autoEngage() só desreferencia o ponteiro.

@@ -45,7 +45,7 @@ namespace Config {
     static constexpr const char *UI_PROFILE_JSON =
         R"({"robot_name":"Caipora",)"
         R"("macros":["FRENTÃO","DIAGONAL","SEM SAQUE"],)"
-        R"("searches":[[2,"BUSCA RÁPIDA"],[3,"BUSCA LENTA"]],)"
+        R"("searches":[[2,"RÁPIDA DEFENSIVA"],[3,"LENTA DEFENSIVA"],[4,"RÁPIDA OFENSIVA"],[5,"LENTA OFENSIVA"]],)"
         R"("has_weapons":true})";
 
     static const MotionSequence *const TABELA_MACROS_ESQ[] = {&MACRO_FRENTAO, &MACRO_DIAGONAL, &MACRO_SEM_SAQUE};
