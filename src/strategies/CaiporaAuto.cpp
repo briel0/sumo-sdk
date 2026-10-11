@@ -35,16 +35,34 @@ void CaiporaAuto::init() {
 }
 
 void CaiporaAuto::configure(const AutoStrategy &cfg) {
+    // A busca comeca pelo lado OPOSTO ao da estrategia inicial escolhida no
+    // site: quem sai pra direita termina com o adversario a esquerda, e
+    // vice-versa. Sem lado escolhido ('X') o saque toca a esquerda, entao a
+    // busca comeca pela direita.
+    _ultimoLado = cfg.direction == 'D' ? Direction::left : Direction::right;
+
     // Id desconhecido cai na RAPIDA pelo default — nunca deixa o robô sem busca.
+    _velSemAlvo = 0;
+
     switch(cfg.search) {
+        case BUSCA_LENTA_OFENSIVA:
+            _buscaAtual = &CaiporaAuto::_buscaLenta;
+            _velSemAlvo = VEL_OFENSIVA;
+            Serial.println("[CAIPORA] Busca LENTA OFENSIVA.");
+            break;
+        case BUSCA_RAPIDA_OFENSIVA:
+            _buscaAtual = &CaiporaAuto::_buscaRapida;
+            _velSemAlvo = VEL_OFENSIVA;
+            Serial.println("[CAIPORA] Busca RAPIDA OFENSIVA.");
+            break;
         case BUSCA_LENTA:
             _buscaAtual = &CaiporaAuto::_buscaLenta;
-            Serial.println("[CAIPORA] Busca LENTA.");
+            Serial.println("[CAIPORA] Busca LENTA DEFENSIVA.");
             break;
         case BUSCA_RAPIDA:
         default:
             _buscaAtual = &CaiporaAuto::_buscaRapida;
-            Serial.println("[CAIPORA] Busca RAPIDA.");
+            Serial.println("[CAIPORA] Busca RAPIDA DEFENSIVA.");
             break;
     }
 }
@@ -99,13 +117,13 @@ void CaiporaAuto::_buscaRapida(Drive &motores, uint16_t rawFrenteEsq, uint16_t r
     }
 
     if(_ultimoLado == Direction::right) {
-        motores.setSpeed(30, -30);
+        motores.setSpeed(50, -50);
     }
     else {
-        motores.setSpeed(-30, 30);
+        motores.setSpeed(-50, 50);
     }
 
-    motores.setSpeed(0, 0);
+    motores.setSpeed(_velSemAlvo, _velSemAlvo);
 }
 
 void CaiporaAuto::_buscaLenta(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
@@ -134,18 +152,13 @@ void CaiporaAuto::_buscaLenta(Drive &motores, uint16_t rawFrenteEsq, uint16_t ra
     }
 
     if(_ultimoLado == Direction::right) {
-        motores.setSpeed(30, -30);
+        motores.setSpeed(50, -50);
     }
     else {
-        motores.setSpeed(-30, 30);
+        motores.setSpeed(-50, 50);
     }
 
-    motores.setSpeed(0, 0);
-}
-
-// So o LDR: e o gatilho de ataque das duas buscas e a leitura e instantanea.
-bool CaiporaAuto::alvoNaEspera() {
-    return _ldr.readRaw() < LIMIAR_LDR;
+    motores.setSpeed(_velSemAlvo, _velSemAlvo);
 }
 
 String CaiporaAuto::getSensorStatusJSON() {
