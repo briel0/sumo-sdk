@@ -14,10 +14,6 @@ class MotionPlayer {
     bool isPlaying() const {
         return active;
     }
-    // true só durante a espera inicial pedida no play(), antes do primeiro passo.
-    bool isWaiting() const {
-        return active && startDelayMs > 0;
-    }
     void stop() {
         active = false;
     }
