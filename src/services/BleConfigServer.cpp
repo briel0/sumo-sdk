@@ -129,6 +129,8 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
             _currentAutoStrategy.weapon = buffer[4];
             // Byte opcional: app antigo manda só 5 e cai no médio.
             _currentAutoStrategy.distance = bufferSize >= 6 ? (char)buffer[5] : 'M';
+            // Idem: u16 little-endian, em ms. Quem não manda larga sem espera.
+            _currentAutoStrategy.startDelayMs = bufferSize >= 8 ? (unsigned int)(buffer[6] | (buffer[7] << 8)) : 0;
             _currentAutoStrategy.isNew = true;
             break;
 

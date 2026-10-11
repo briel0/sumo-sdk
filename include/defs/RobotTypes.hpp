@@ -40,6 +40,7 @@ struct AutoStrategy {
     int search = 1;       // 1 = busca padrão, 2 = busca lenta
     int weapon = 0;       // 0 = não armar, 1 = armar no começo da luta
     char distance = 'M';  // 'P' = perto, 'M' = médio, 'L' = longe (só escala passos marcados)
+    unsigned int startDelayMs = 0; // Espera parado (ms) entre a largada e a estratégia inicial
     bool isNew = false;   // Sinaliza que chegou novos dados do celular
 };
 
