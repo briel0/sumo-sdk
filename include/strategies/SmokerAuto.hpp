@@ -12,7 +12,6 @@ class SmokerAuto : public CombatStrategy {
     void init() override;
     void configure(const AutoStrategy &cfg) override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
-    bool alvoNaEspera() override;
     String getSensorStatusJSON() override;
 
   private:

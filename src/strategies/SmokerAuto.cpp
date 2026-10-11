@@ -24,6 +24,12 @@ void SmokerAuto::init() {
 }
 
 void SmokerAuto::configure(const AutoStrategy &cfg) {
+    // A busca comeca pelo lado OPOSTO ao da estrategia inicial escolhida no
+    // site: quem sai pra direita termina com o adversario a esquerda, e
+    // vice-versa. Sem lado escolhido ('X') o saque toca a esquerda, entao a
+    // busca comeca pela direita.
+    _ultimoLado = cfg.direction == 'D' ? Direction::left : Direction::right;
+
     // Id desconhecido cai na PADRAO pelo default — nunca deixa o robô sem busca.
     switch(cfg.search) {
         case BUSCA_IR:
@@ -95,7 +101,8 @@ void SmokerAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         _ultimoLado = Direction::right;
 
     // Frontal manda: alvo na frente ataca reto, sem girar.
-    if(viuFrente) {
+    // TESTE: a PINBALL esta sem ataque — tirar o !_pinball pra religar.
+    if(viuFrente && !_pinball) {
         _ataque(motores);
         return;
     }
@@ -138,20 +145,11 @@ void SmokerAuto::_buscaPinball(Drive &motores, bool viuEsq, bool viuDir) {
         return;
     }
 
-    motores.setSpeed(20, 20);
+    motores.setSpeed(37, 37);
 }
 
 void SmokerAuto::_ataque(Drive &motores) {
     motores.setSpeed(VEL_ATAQUE_MAX, VEL_ATAQUE_MAX);
-}
-
-// Os mesmos sensores que a busca escolhida usa: os tres TSSP4038 na BUSCA IR
-// (os JS40F estao desligados nela), os tres JS40F nas outras.
-bool SmokerAuto::alvoNaEspera() {
-    if(_buscaIr) {
-        return _irFrontal.temSinal() || _irEsq.temSinal() || _irDir.temSinal();
-    }
-    return _sensorFrontal.temAlvo() || _sensorEsq.temAlvo() || _sensorDir.temAlvo();
 }
 
 String SmokerAuto::getSensorStatusJSON() {
