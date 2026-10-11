@@ -578,6 +578,11 @@
                 <button class="btn-direction" data-category="distance" data-val="L" data-label="LONGE">LONGE</button>
             </div>
 
+            <!-- Espera parado entre a largada e a movimentação inicial. Vazio = 0.
+                 A arma abre na largada de qualquer forma. -->
+            <h2>ATRASO INICIAL (MS)</h2>
+            <input type="text" inputmode="numeric" class="step-input" id="start-delay" placeholder="0 A 5000 MS" maxlength="4">
+
             <h2>BUSCA E TÁTICA</h2>
             <div class="grid" id="search-grid"><!-- Renderizado dinamicamente --></div>
 
@@ -695,8 +700,9 @@
                 getProfile,
                 getSensors: () => command(new Uint8Array([BLE_CMD.GET_SENSORS])).then(asJson),
 
-                // O 6º byte (distância) é opcional no firmware: quem não conhece ignora.
-                setStrategy: (macro, direction, search, weapon, distance) => {
+                // Do 6º byte em diante (distância, atraso inicial em u16 LE) é
+                // opcional no firmware: quem não conhece ignora.
+                setStrategy: (macro, direction, search, weapon, distance, startDelayMs) => {
                     const bytes = new Uint8Array([
                         BLE_CMD.SET_STRATEGY,
                         macro & 0xff,
@@ -704,6 +710,8 @@
                         search & 0xff,
                         weapon & 0xff,
                         distance.charCodeAt(0),
+                        startDelayMs & 0xff,
+                        (startDelayMs >> 8) & 0xff,
                     ]);
                     return command(bytes).then(asAck);
                 },
@@ -1172,7 +1180,30 @@
                 UI.log('SEL: ' + category.toUpperCase() + ' -> ' + label);
             }
 
+            const START_DELAY_MAX_MS = 5000;
+
+            // Campo vazio vale 0. Devolve null se não for um inteiro de 0 a 5000.
+            function readStartDelay() {
+                const text = document.getElementById('start-delay').value.trim();
+                if (text === '') return 0;
+                if (!/^\d+$/.test(text)) return null;
+                const ms = parseInt(text, 10);
+                return ms <= START_DELAY_MAX_MS ? ms : null;
+            }
+
+            document.getElementById('start-delay').addEventListener('input', (e) => {
+                e.target.classList.toggle('invalid', readStartDelay() === null);
+            });
+
             function openTacticalConfirm() {
+                const startDelay = readStartDelay();
+                document.getElementById('start-delay').classList.toggle('invalid', startDelay === null);
+                if (startDelay === null) {
+                    UI.alertBox('[!] ERRO', 'Atraso inicial inválido. Use um número inteiro de 0 a ' + START_DELAY_MAX_MS + ' ms.', true);
+                    UI.log('ERRO: ATRASO INICIAL INVÁLIDO', true);
+                    return;
+                }
+
                 if (!State.tactic.macro.val) {
                     UI.alertBox('[!] ERRO CRÍTICO', 'Selecione obrigatoriamente a Movimentação Inicial antes de realizar o Uplink.', true);
                     UI.log('ERRO: PREENCHIMENTO INCOMPLETO', true);
@@ -1182,6 +1213,7 @@
                 let reportHtml = `<div class="modal-chip btn-macro selected">${State.tactic.macro.label}</div>`;
                 if (State.tactic.direction.val) reportHtml += `<div class="modal-chip btn-direction selected">${State.tactic.direction.label}</div>`;
                 if (State.tactic.distance.val) reportHtml += `<div class="modal-chip btn-direction selected">${State.tactic.distance.label}</div>`;
+                if (startDelay > 0) reportHtml += `<div class="modal-chip btn-direction selected">ATRASO ${startDelay} MS</div>`;
                 if (State.tactic.search.val) reportHtml += `<div class="modal-chip btn-search selected">${State.tactic.search.label}</div>`;
                 if (State.tactic.weapon.val) reportHtml += `<div class="modal-chip btn-weapon selected">${State.tactic.weapon.label}</div>`;
                 reportHtml += `<div class="modal-prompt">Transmitir parâmetros para o robô?</div>`;
@@ -1208,10 +1240,11 @@
                 const macro = State.tactic.macro.val ? parseInt(State.tactic.macro.val, 10) : 0;
                 const direction = State.tactic.direction.val || 'X';
                 const distance = State.tactic.distance.val || 'M';
+                const startDelay = readStartDelay() || 0;
                 const search = State.tactic.search.val ? parseInt(State.tactic.search.val, 10) : 1;
                 const weapon = State.tactic.weapon.val ? parseInt(State.tactic.weapon.val, 10) : 0;
 
-                UI.withBusy(document.getElementById('btn-submit-tatica'), Transport.setStrategy(macro, direction, search, weapon, distance))
+                UI.withBusy(document.getElementById('btn-submit-tatica'), Transport.setStrategy(macro, direction, search, weapon, distance, startDelay))
                     .then(ok => {
                         if (ok) {
                             UI.alertBox('UPLINK SUCCESS', 'Configuração salva com sucesso!', false);

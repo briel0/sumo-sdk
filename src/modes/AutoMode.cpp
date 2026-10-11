@@ -11,6 +11,9 @@
 static_assert(sizeof(Config::TABELA_MACROS_ESQ) == sizeof(Config::TABELA_MACROS_DIR),
               "TABELA_MACROS_ESQ e TABELA_MACROS_DIR precisam ter o mesmo numero de macros!");
 
+// Teto da espera antes da estrategia inicial (o mesmo do campo no site).
+static constexpr unsigned long ATRASO_INICIAL_MAX_MS = 5000;
+
 static constexpr int NUM_MACROS = (int)(sizeof(Config::TABELA_MACROS_ESQ) / sizeof(Config::TABELA_MACROS_ESQ[0]));
 
 // Cadencia do painel /sensors. Ver a justificativa no SELECTING_ESTRATEGIA.
@@ -216,11 +219,16 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
                 }
 #endif
 
+                // Espera parado antes da estrategia inicial, digitada no site. A
+                // arma ja abriu ali em cima: ela sempre abre na largada. O site
+                // ja limita, mas o valor chega cru pelo BLE.
+                const unsigned long atrasoInicialMs = min((unsigned long)autoConfig.startDelayMs, ATRASO_INICIAL_MAX_MS);
+
                 if(autoConfig.direction == 'D') {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[macroIdx], escalaDistancia);
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[macroIdx], escalaDistancia, atrasoInicialMs);
                 }
                 else {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[macroIdx], escalaDistancia);
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[macroIdx], escalaDistancia, atrasoInicialMs);
                 }
                 Serial.println("[AUTO] LARGADA! Executando estratégia.");
             }
