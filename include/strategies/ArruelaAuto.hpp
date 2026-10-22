@@ -2,6 +2,7 @@
 #include "CombatStrategy.hpp"
 #include "JS40F.hpp"
 #include "MotionPlayer.hpp"
+#include "QRE1113.hpp"
 #include "RobotTypes.hpp"
 #include "ToFSensor.hpp"
 
@@ -20,6 +21,13 @@ class ArruelaAuto : public CombatStrategy {
     JS40F _sensorFrontal;
     ToFSensor _sensorDistancia;
 
+    // Borda do dojo: dois QRE1113 analogicos, um por lado da frente.
+    QRE1113 _linhaEsq;
+    QRE1113 _linhaDir;
+
+    // Toca as fugas de borda (e a curvinha da BALA TENSA). E o unico dono dos
+    // motores enquanto estiver ativo, inclusive por cima da busca escolhida no
+    // site.
     MotionPlayer _player;
 
     Direction _ultimoLado = Direction::left;
@@ -30,9 +38,12 @@ class ArruelaAuto : public CombatStrategy {
     static constexpr int BUSCA_TOF = 3;
     static constexpr int BUSCA_GATO_PRETO = 4;
     static constexpr int BUSCA_BALA_TENSA = 5;
+    static constexpr int BUSCA_PINBALL = 6;
+    static constexpr int BUSCA_PINBALL_ASA = 7;
 
     static constexpr int VEL_BUSCA_GIRO = 65;  // BUSCA PADRAO: varre rapido
     static constexpr int VEL_BUSCA_LENTA = 55; // BUSCA LENTA: demora em cima do alvo
+    static constexpr int VEL_PINBALL = 45;     // BUSCA PINBALL: avanco reto enquanto nao ve ninguem
     static constexpr int VEL_ATAQUE_MAX = 100;
     static constexpr int VEL_ATAQUE_REDUZIDA = 60;
 
@@ -58,6 +69,12 @@ class ArruelaAuto : public CombatStrategy {
     static constexpr uint16_t LIMIAR_GATO_PRETO_MM = 380;
     unsigned long _inicioGatoPreto = 0;
 
+    // BUSCA_PINBALL_ASA: ate bater esse tanto de vezes na linha, ignora os
+    // JS40F e so anda reto rebatendo na borda; dai em diante vira a PINBALL.
+    // _batidasLinha conta cada fuga de borda que comeca (o autoEngage soma).
+    static constexpr int BATIDAS_PINBALL_ASA = 3;
+    int _batidasLinha = 0;
+
     // Cada busca do site e uma funcao propria com esta assinatura, e ela recebe o
     // frame inteiro — inclusive viuFrente. Isso e de proposito: quando atacar e
     // decisao do modo, nao regra global, e e o que deixa a BUSCA_TOF ignorar o
@@ -68,9 +85,11 @@ class ArruelaAuto : public CombatStrategy {
 
     void _buscaPadrao(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
     void _buscaLenta(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
+    void _buscaPinball(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
+    void _buscaPinballAsa(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
     void _buscaToF(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
     void _buscaGatoPreto(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
-    
+
     // BUSCA_BALA_TENSA: mesma deteccao da BUSCA_TOF (reaproveita LIMIAR_TOF_MM,
     // INTERVALO_TOF_MS e o cache _ultimaLeituraToF/_toFViuAlvo), mas em vez de
     // atacar reto na confirmacao ela dispara uma MACRO_CURVINHA (Config.hpp)

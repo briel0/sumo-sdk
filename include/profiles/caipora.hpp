@@ -24,12 +24,6 @@ namespace Config {
 
     static constexpr uint8_t PIN_LINHA_ESQ = 34;
     static constexpr uint8_t PIN_LINHA_DIR = 35;
-    static constexpr uint16_t LINHA_THRESHOLD = 2800;
-
-    // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
-    // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
-    // disputarem o mesmo espectro e derrubarem o portal um do outro.
-    static constexpr int WIFI_CHANNEL = 1;
 
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
@@ -46,18 +40,13 @@ namespace Config {
     // Macro vazia: o MotionPlayer pula o saque cego e o robo cai direto no combate.
     static const MotionSequence MACRO_SEM_SAQUE = {nullptr, 0};
 
-    static constexpr const char *UI_PROFILE_JSON = R"({
-        "robot_name": "Caipora",
-        "macros": [
-            {"id": 0, "name": "FRENTÃO"},
-            {"id": 1, "name": "DIAGONAL"},
-            {"id": 2, "name": "SEM SAQUE"}
-        ],
-        "searches": [
-            {"id": 1, "name": "BUSCA PADRÃO"}
-        ],
-        "has_weapons": true
-    })";
+    // Formato compacto, sem espaço nenhum: em "macros" o id é a posição na lista
+    // (a mesma das TABELA_MACROS_*), e em "searches" cada item é [id, nome].
+    static constexpr const char *UI_PROFILE_JSON =
+        R"({"robot_name":"Caipora",)"
+        R"("macros":["FRENTÃO","DIAGONAL","SEM SAQUE"],)"
+        R"("searches":[[2,"RÁPIDA DEFENSIVA"],[3,"LENTA DEFENSIVA"],[4,"RÁPIDA OFENSIVA"],[5,"LENTA OFENSIVA"]],)"
+        R"("has_weapons":true})";
 
     static const MotionSequence *const TABELA_MACROS_ESQ[] = {&MACRO_FRENTAO, &MACRO_DIAGONAL, &MACRO_SEM_SAQUE};
 

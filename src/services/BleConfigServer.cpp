@@ -23,7 +23,13 @@ namespace {
         CMD_TRIGGER_MACRO = 0x05,
         CMD_SET_WEAPON = 0x06,
         CMD_CYCLE_MOTOR_POLARITY = 0x07,
+        CMD_GET_PROFILE_CHUNK = 0x08,
     };
+
+    // Quantos bytes do UI_PROFILE_JSON vão em cada resposta do
+    // CMD_GET_PROFILE_CHUNK. Um valor de characteristic não passa de 512
+    // bytes, e o perfil de um robô com muitas aberturas passa disso.
+    constexpr size_t PROFILE_CHUNK_SIZE = 240;
 
     enum BleAck : uint8_t {
         ACK_OK = 0x00,
@@ -82,6 +88,28 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
             characteristic->setValue((uint8_t *)Config::UI_PROFILE_JSON, strlen(Config::UI_PROFILE_JSON));
             return;
 
+        case CMD_GET_PROFILE_CHUNK: {
+            // Payload: offset:u16 little-endian. Resposta: total:u16
+            // little-endian (tamanho do JSON inteiro) + até PROFILE_CHUNK_SIZE
+            // bytes a partir do offset. O app pede de novo, somando o que já
+            // recebeu, até juntar `total` bytes. O CMD_GET_PROFILE acima fica
+            // só pra app antigo, e corta perfil maior que 512 bytes.
+            if(bufferSize < 3) {
+                ack = ACK_ERROR;
+                break;
+            }
+            const size_t total = strlen(Config::UI_PROFILE_JSON);
+            const size_t offset = min((size_t)(buffer[1] | (buffer[2] << 8)), total);
+            const size_t len = min(PROFILE_CHUNK_SIZE, total - offset);
+
+            uint8_t chunk[2 + PROFILE_CHUNK_SIZE];
+            chunk[0] = total & 0xff;
+            chunk[1] = (total >> 8) & 0xff;
+            memcpy(chunk + 2, Config::UI_PROFILE_JSON + offset, len);
+            characteristic->setValue(chunk, 2 + len);
+            return;
+        }
+
         case CMD_GET_SENSORS:
             portENTER_CRITICAL(&s_readoutMux);
             strncpy(s_sensorSnapshot, _testReadoutJson.c_str(), sizeof(s_sensorSnapshot) - 1);
@@ -99,6 +127,10 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
             _currentAutoStrategy.direction = (char)buffer[2];
             _currentAutoStrategy.search = buffer[3];
             _currentAutoStrategy.weapon = buffer[4];
+            // Byte opcional: app antigo manda só 5 e cai no médio.
+            _currentAutoStrategy.distance = bufferSize >= 6 ? (char)buffer[5] : 'M';
+            // Idem: u16 little-endian, em ms. Quem não manda larga sem espera.
+            _currentAutoStrategy.startDelayMs = bufferSize >= 8 ? (unsigned int)(buffer[6] | (buffer[7] << 8)) : 0;
             _currentAutoStrategy.isNew = true;
             break;
 
@@ -138,6 +170,7 @@ void BleConfigServer::handleWrite(BLECharacteristic *characteristic) {
                 _macroTestSteps[i].leftSpeed = (int8_t)step[0];
                 _macroTestSteps[i].rightSpeed = (int8_t)step[1];
                 _macroTestSteps[i].durationMs = (unsigned long)(step[2] | (step[3] << 8));
+                _macroTestSteps[i].scalesWithDistance = false;
             }
             if(_macroTestCallback) {
                 MotionSequence seq = {_macroTestSteps, numSteps};

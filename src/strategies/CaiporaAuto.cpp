@@ -10,19 +10,12 @@ CaiporaAuto::CaiporaAuto()
 void CaiporaAuto::init() {
     _ldr.init();
 
-    // Para evitar conflito I2C, precisamos garantir que todos os VL53L0X
-    // comecem desligados antes de inicializá-los um a um.
     _vlFrenteEsq.disable();
     _vlLateralEsq.disable();
     _vlFrenteDir.disable();
     _vlLateralDir.disable();
     delay(20);
 
-    // Agora liga e inicializa um por um (trocando o endereço). Guarda o
-    // retorno de cada um — sem isso, um sensor que falhe (crosstalk entre os
-    // 4 no mesmo barramento é suspeita aberta neste robô) fica sendo lido
-    // como se estivesse saudável, e temOponente() nele arrisca o timeout de
-    // 500ms (ver ToFSensor::init()) travando autoEngage() no meio da luta.
     _frenteEsqOk = _vlFrenteEsq.init();
     _lateralEsqOk = _vlLateralEsq.init();
     _frenteDirOk = _vlFrenteDir.init();
@@ -41,14 +34,40 @@ void CaiporaAuto::init() {
     _player.stop();
 }
 
-void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
-    armas.update();
+void CaiporaAuto::configure(const AutoStrategy &cfg) {
+    // A busca comeca pelo lado OPOSTO ao da estrategia inicial escolhida no
+    // site: quem sai pra direita termina com o adversario a esquerda, e
+    // vice-versa. Sem lado escolhido ('X') o saque toca a esquerda, entao a
+    // busca comeca pela direita.
+    _ultimoLado = cfg.direction == 'D' ? Direction::left : Direction::right;
 
-    // Mesmo auto-armamento do RCMode: liga o servo assim que o robô entra em
-    // ação e deixa o próprio WeaponSystem relaxar depois de RELAX_TIMEOUT_MS.
-    if(!armas.isDeployed()) {
-        armas.deploy();
+    // Id desconhecido cai na RAPIDA pelo default — nunca deixa o robô sem busca.
+    _velSemAlvo = 0;
+
+    switch(cfg.search) {
+        case BUSCA_LENTA_OFENSIVA:
+            _buscaAtual = &CaiporaAuto::_buscaLenta;
+            _velSemAlvo = VEL_OFENSIVA;
+            Serial.println("[CAIPORA] Busca LENTA OFENSIVA.");
+            break;
+        case BUSCA_RAPIDA_OFENSIVA:
+            _buscaAtual = &CaiporaAuto::_buscaRapida;
+            _velSemAlvo = VEL_OFENSIVA;
+            Serial.println("[CAIPORA] Busca RAPIDA OFENSIVA.");
+            break;
+        case BUSCA_LENTA:
+            _buscaAtual = &CaiporaAuto::_buscaLenta;
+            Serial.println("[CAIPORA] Busca LENTA DEFENSIVA.");
+            break;
+        case BUSCA_RAPIDA:
+        default:
+            _buscaAtual = &CaiporaAuto::_buscaRapida;
+            Serial.println("[CAIPORA] Busca RAPIDA DEFENSIVA.");
+            break;
     }
+}
+
+void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
 
     // 1. Se o MotionPlayer estiver tocando alguma macro (ex: largada), ele assume o controle
     if(_player.isPlaying()) {
@@ -56,46 +75,90 @@ void CaiporaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
         return;
     }
 
-    // 2. VL laterais: leitura espaçada (ver INTERVALO_TOF_MS) — sem isso os dois
-    // reads bloqueantes travariam o loop. O && curto-circuita: um sensor que
-    // falhou no init() nunca chega a ser lido, então não paga o timeout dele.
     unsigned long agora = millis();
     if(agora - _ultimaLeituraToF >= INTERVALO_TOF_MS) {
         _ultimaLeituraToF = agora;
-        _viuLateralEsq = _lateralEsqOk && _vlLateralEsq.temOponente(LIMIAR_BUSCA_MM);
-        _viuLateralDir = _lateralDirOk && _vlLateralDir.temOponente(LIMIAR_BUSCA_MM);
+        _rawFrenteEsq = _frenteEsqOk ? _vlFrenteEsq.leituraRaw() : SEM_LEITURA_MM;
+        _rawLateralEsq = _lateralEsqOk ? _vlLateralEsq.leituraRaw() : SEM_LEITURA_MM;
+        _rawFrenteDir = _frenteDirOk ? _vlFrenteDir.leituraRaw() : SEM_LEITURA_MM;
+        _rawLateralDir = _lateralDirOk ? _vlLateralDir.leituraRaw() : SEM_LEITURA_MM;
     }
 
     // 3. LDR faz o papel do JS40F frontal do Arruela: abaixo do limiar, algo
     // bloqueou a luz de cima — alvo na cara.
-    bool viuFrente = _ldr.readRaw() < LIMIAR_LDR;
+    int rawLdr = _ldr.readRaw();
 
-    _busca(motores, _viuLateralEsq, _viuLateralDir, viuFrente);
+    (this->*_buscaAtual)(motores, _rawFrenteEsq, _rawLateralEsq, _rawFrenteDir, _rawLateralDir, rawLdr);
 }
 
-void CaiporaAuto::_busca(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
-    // Alvo na cara (LDR): vai com tudo.
-    if(viuFrente) {
+void CaiporaAuto::_buscaRapida(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                               uint16_t rawLateralDir, int rawLdr) {
+
+    if(rawLdr < LIMIAR_LDR) {
         motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
         return;
     }
-    // Só a esquerda ve: gira pra esquerda devagarinho.
-    if(viuEsq) {
+
+    if(rawFrenteEsq <= 500 && rawFrenteDir <= 500) {
+        motores.setSpeed(50, 50);
+        return;
+    }
+
+    if(rawFrenteEsq <= 500) {
+        motores.setSpeed(-55, 55);
         _ultimoLado = Direction::left;
-        motores.setSpeed(-VEL_BUSCA_CUIDADOSA, VEL_BUSCA_CUIDADOSA);
         return;
     }
-    // Só a direita ve: gira pra direita devagarinho.
-    if(viuDir) {
+
+    if(rawFrenteDir <= 500) {
+        motores.setSpeed(55, -55);
         _ultimoLado = Direction::right;
-        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
         return;
     }
-    // Nenhum dos dois ve nada: continua girando pro lado que viu por último.
-    if(_ultimoLado == Direction::right)
-        motores.setSpeed(VEL_BUSCA_CUIDADOSA, -VEL_BUSCA_CUIDADOSA);
-    else
-        motores.setSpeed(-VEL_BUSCA_CUIDADOSA, VEL_BUSCA_CUIDADOSA);
+
+    if(_ultimoLado == Direction::right) {
+        motores.setSpeed(50, -50);
+    }
+    else {
+        motores.setSpeed(-50, 50);
+    }
+
+    motores.setSpeed(_velSemAlvo, _velSemAlvo);
+}
+
+void CaiporaAuto::_buscaLenta(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                              uint16_t rawLateralDir, int rawLdr) {
+
+    if(rawLdr < LIMIAR_LDR) {
+        motores.setSpeed(VEL_ATAQUE, VEL_ATAQUE);
+        return;
+    }
+
+    if(rawFrenteEsq <= 500 && rawFrenteDir <= 500) {
+        motores.setSpeed(35, 35);
+        return;
+    }
+
+    if(rawFrenteEsq <= 500) {
+        motores.setSpeed(-55, 55);
+        _ultimoLado = Direction::left;
+        return;
+    }
+
+    if(rawFrenteDir <= 500) {
+        motores.setSpeed(55, -55);
+        _ultimoLado = Direction::right;
+        return;
+    }
+
+    if(_ultimoLado == Direction::right) {
+        motores.setSpeed(50, -50);
+    }
+    else {
+        motores.setSpeed(-50, 50);
+    }
+
+    motores.setSpeed(_velSemAlvo, _velSemAlvo);
 }
 
 String CaiporaAuto::getSensorStatusJSON() {

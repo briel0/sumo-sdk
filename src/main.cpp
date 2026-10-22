@@ -2,7 +2,6 @@
 #include "Config.hpp"
 #include "Drive.hpp"
 #include "IRreader.hpp"
-#include "ServoMechanism.hpp"
 #include "StatusLED.hpp"
 #include "WeaponSystem.hpp"
 #include <Arduino.h>
@@ -25,17 +24,14 @@ AutoMode modoAuto;
 ActiveAuto taticaAtual;
 
 void setup() {
-#if defined(ROBOT_SMOKER)
-    // Liga o transistor dos JS40F antes de qualquer outra coisa: quanto mais
-    // cedo ele sobe, mais tempo de estabilização o sensor tem até o combate.
+#if defined(ROBOT_SMOKER) || defined(ROBOT_ARRUELA) || defined(ROBOT_MAROLA)
+    // Liga o transistor dos JS40F (no Marola, dos sensores da placa) antes de
+    // qualquer outra coisa: quanto mais cedo ele sobe, mais tempo de
+    // estabilização o sensor tem até o combate — e o teste de sensores do
+    // painel já lê eles alimentados antes da luta. Os TSSP4038 do Smoker não
+    // passam por esse transistor.
     pinMode(Config::PIN_JS_POWER, OUTPUT);
     digitalWrite(Config::PIN_JS_POWER, HIGH);
-#elif defined(ROBOT_ARRUELA)
-    // Fica desligado durante a estratégia inicial (saque cego) — evita
-    // qualquer interferência dos JS40F nesse trecho. ArruelaAuto::autoEngage()
-    // liga assim que o combate de verdade começa.
-    pinMode(Config::PIN_JS_POWER, OUTPUT);
-    digitalWrite(Config::PIN_JS_POWER, LOW);
 #endif
 
     Serial.begin(115200);
@@ -51,11 +47,9 @@ void setup() {
     statusLed.confirmStep();
 
     for(int i = 0; i < Config::NUM_SERVOS; i++) {
-        ServoMechanism *s =
-            new ServoMechanism(Config::SERVOS[i].pin, Config::SERVOS[i].retractAngle, Config::SERVOS[i].deployAngle);
-        s->init();
-        sistemaDeArmas.addServo(s);
+        sistemaDeArmas.addServo(Config::SERVOS[i]);
     }
+    sistemaDeArmas.init();
     statusLed.confirmStep();
 
     modoAuto.init(taticaAtual, motores);
@@ -69,8 +63,8 @@ void setup() {
 void loop() {
     ir.update();
 
-    // Feedback visual para códigos IRs válidos (menos '1')
-    if(ir.modeRC() || ir.modeAuto() || ir.stop()) {
+    // Feedback visual do stop (o '1' e o '2' piscam mais abaixo)
+    if(ir.stop()) {
         statusLed.blinkDebug(5, 20);
     }
 

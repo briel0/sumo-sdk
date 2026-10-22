@@ -6,12 +6,15 @@
 
 ArruelaAuto::ArruelaAuto()
     : _sensorEsq(Config::PIN_JS_ESQ), _sensorDir(Config::PIN_JS_DIR), _sensorFrontal(Config::PIN_JS_FRONT),
-      _sensorDistancia() {}
+      _sensorDistancia(), _linhaEsq(Config::PIN_LINHA_ESQ, Config::LINHA_THRESHOLD_ESQ),
+      _linhaDir(Config::PIN_LINHA_DIR, Config::LINHA_THRESHOLD_DIR) {}
 
 void ArruelaAuto::init() {
     _sensorEsq.init();
     _sensorDir.init();
     _sensorFrontal.init();
+    _linhaEsq.init();
+    _linhaDir.init();
 
     // O retorno importa: sem ele a falha do VL53L0X e silenciosa e a BUSCA_TOF
     // gira a luta inteira sem nunca atacar. O configure() consulta este flag.
@@ -28,6 +31,12 @@ void ArruelaAuto::init() {
 }
 
 void ArruelaAuto::configure(const AutoStrategy &cfg) {
+    // A busca comeca pelo lado OPOSTO ao da estrategia inicial escolhida no
+    // site: quem sai pra direita termina com o adversario a esquerda, e
+    // vice-versa. Sem lado escolhido ('X') o saque toca a esquerda, entao a
+    // busca comeca pela direita.
+    _ultimoLado = cfg.direction == 'D' ? Direction::left : Direction::right;
+
     // Cada id do site aponta para uma funcao de busca. Id desconhecido cai no
     // padrao pelo default — nunca deixa o robo sem busca.
     switch(cfg.search) {
@@ -67,6 +76,15 @@ void ArruelaAuto::configure(const AutoStrategy &cfg) {
             Serial.printf("[ARRUELA] Busca GATO PRETO (%lums, ataca abaixo de %umm) -> PADRAO.\n",
                           DURACAO_GATO_PRETO_MS, LIMIAR_GATO_PRETO_MM);
             break;
+        case BUSCA_PINBALL:
+            _buscaAtual = &ArruelaAuto::_buscaPinball;
+            Serial.println("[ARRUELA] Busca PINBALL.");
+            break;
+        case BUSCA_PINBALL_ASA:
+            _buscaAtual = &ArruelaAuto::_buscaPinballAsa;
+            Serial.printf("[ARRUELA] Busca PINBALL ASA (JS40F so depois de %d batidas na linha).\n",
+                          BATIDAS_PINBALL_ASA);
+            break;
         case BUSCA_PADRAO:
         default:
             _buscaAtual = &ArruelaAuto::_buscaPadrao;
@@ -79,22 +97,39 @@ void ArruelaAuto::configure(const AutoStrategy &cfg) {
     _ultimaLeituraToF = 0;
     _toFViuAlvo = false;
     _inicioGatoPreto = 0;
+    _batidasLinha = 0;
 }
 
 void ArruelaAuto::autoEngage(Drive &motores, WeaponSystem &armas) {
-    // Liga o transistor dos JS40F só agora — ficou desligado de propósito
-    // durante a estratégia inicial (ver main.cpp). Chamada redundante frame a
-    // frame de propósito: é um digitalWrite, custa nada, e dispensa flag de
-    // "já liguei".
-    digitalWrite(Config::PIN_JS_POWER, HIGH);
+    // 1. Prioridade maxima absoluta: LINHA BRANCA. Vem antes de qualquer busca —
+    // nao adianta ganhar o alvo e perder o dojo.
+    bool leuEsq = _linhaEsq.temLinhaBranca();
+    bool leuDir = _linhaDir.temLinhaBranca();
 
-    // 1. Com a fuga tocando, ela e dona dos motores: nem busca nem ataque opinam.
+    if(leuEsq || leuDir) {
+        // Batida nova na linha so conta quando nao ha fuga em andamento: os
+        // reinicios abaixo, com a linha ainda a vista, sao a mesma batida.
+        if(!_player.isPlaying() && _batidasLinha < BATIDAS_PINBALL_ASA) {
+            _batidasLinha++;
+        }
+
+        // Reinicia o movimento sempre que ve a linha: fica preso no primeiro
+        // passo (re) ate a linha sumir.
+        if(leuEsq) {
+            _player.play(Config::MACRO_FUGA_LINHA_ESQUERDA);
+        }
+        else if(leuDir) {
+            _player.play(Config::MACRO_FUGA_LINHA_DIREITA);
+        }
+    }
+
+    // 2. Com a fuga tocando, ela e dona dos motores: nem busca nem ataque opinam.
     if(_player.isPlaying()) {
         _player.update(motores);
         return;
     }
 
-    // 2. Snapshot único — todos os métodos usam o mesmo estado
+    // 3. Snapshot único — todos os métodos usam o mesmo estado
 
     bool viuEsq = _sensorEsq.temAlvo();
     bool viuDir = _sensorDir.temAlvo();
@@ -131,6 +166,36 @@ void ArruelaAuto::_buscaPadrao(Drive &motores, bool viuEsq, bool viuDir, bool vi
     else {
         motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
     }
+}
+
+// Igual a PINBALL do Smoker: em vez de girar parado quando nao ve ninguem,
+// anda reto devagar ate a fuga de borda (la no autoEngage) rebater pra dentro.
+void ArruelaAuto::_buscaPinball(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
+    if(viuFrente) {
+        _ataque(motores, viuEsq, viuDir, viuFrente);
+        return;
+    }
+    if(viuEsq) {
+        motores.setSpeed(-VEL_BUSCA_GIRO, VEL_BUSCA_GIRO);
+        return;
+    }
+    if(viuDir) {
+        motores.setSpeed(VEL_BUSCA_GIRO, -VEL_BUSCA_GIRO);
+        return;
+    }
+
+    motores.setSpeed(VEL_PINBALL, VEL_PINBALL);
+}
+
+// PINBALL que comeca cega: ate a terceira batida na linha so anda reto e
+// deixa a fuga de borda rebater. Depois disso e a PINBALL normal.
+void ArruelaAuto::_buscaPinballAsa(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
+    if(_batidasLinha < BATIDAS_PINBALL_ASA) {
+        motores.setSpeed(VEL_PINBALL, VEL_PINBALL);
+        return;
+    }
+
+    _buscaPinball(motores, viuEsq, viuDir, viuFrente);
 }
 
 void ArruelaAuto::_buscaLenta(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente) {
@@ -302,7 +367,9 @@ String ArruelaAuto::getSensorStatusJSON() {
     json += "\"Frontal (JS40F)\": " + String(_sensorFrontal.temAlvo() ? 1 : 0) + ", ";
     json += "\"Esquerda (JS40F)\": " + String(_sensorEsq.temAlvo() ? 1 : 0) + ", ";
     json += "\"Direita (JS40F)\": " + String(_sensorDir.temAlvo() ? 1 : 0) + ", ";
-    json += "\"Distancia (ToF)\": " + String(_sensorDistancia.leituraRaw());
+    json += "\"Distancia (ToF)\": " + String(_sensorDistancia.leituraRaw()) + ", ";
+    json += "\"Linha Esq\": " + String(_linhaEsq.leituraRaw()) + ", ";
+    json += "\"Linha Dir\": " + String(_linhaDir.leituraRaw());
     json += "}";
     return json;
 }

@@ -27,23 +27,18 @@ namespace Config {
     // de tempo de estabilização antes de ler qualquer sensor.
     static constexpr int PIN_JS_POWER = 25;
 
-    // Os dois QRE1113 (linha, analogico). Por enquanto so o teste de bancada
-    // (ArruelaSensorTest) le eles — o ArruelaAuto ainda nao usa linha.
-    // ATENCAO: 26 e ADC2, que morre enquanto o WiFi do painel esta de pe. Na
-    // bancada (sem WiFi) le normal; pra usar em combate, mover pro ADC1
-    // (32-39). O 32 ja e ADC1.
+    // Os dois QRE1113 (linha, analogico), usados pela fuga de borda do
+    // ArruelaAuto.
+    // ATENCAO: 26 e ADC2, que morre com WiFi ligado. O painel hoje e BLE (sem
+    // WiFi), entao le normal; se o WiFi voltar, mover pro ADC1 (32-39). O 32
+    // ja e ADC1.
     static constexpr uint8_t PIN_LINHA_ESQ = 26;
     static constexpr uint8_t PIN_LINHA_DIR = 32;
 
     // Limiares separados de proposito: os dois QRE nunca leem igual no mesmo
     // dojo. Calibre cada um na bancada antes da luta.
-    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 2800;
-    static constexpr uint16_t LINHA_THRESHOLD_DIR = 2800;
-
-    // Canal do AP de configuracao. Espalhados entre 1/6/11 (os tres
-    // nao-sobrepostos) pra dois robos ligados na mesma bancada nao
-    // disputarem o mesmo espectro e derrubarem o portal um do outro.
-    static constexpr int WIFI_CHANNEL = 11;
+    static constexpr uint16_t LINHA_THRESHOLD_ESQ = 1000;
+    static constexpr uint16_t LINHA_THRESHOLD_DIR = 1000;
 
     static constexpr int PIN_STATUS_LED = 33;
     static constexpr int STATUS_LED_COUNT = 5;
@@ -60,19 +55,28 @@ namespace Config {
     static const MotionSequence MACRO_RECUO = MACRO(
         {-80, -80, 60},);
 
-    static const MotionSequence MACRO_DIAGONAL = MACRO(
-        {-100, 100, 50},
-        {100, 100, 100});
+    // Fugas de borda: o ArruelaAuto toca uma delas quando um QRE1113 ve a
+    // linha branca. O nome e o lado do sensor que viu — a fuga gira pro lado
+    // oposto.
+    static const MotionSequence MACRO_FUGA_LINHA_ESQUERDA = MACRO(
+        {-100, -100, 150}, // Da re com tudo
+        {100, -100, 180}   // Gira pra direita pra fugir
+    );
 
-    static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
-        {100, -100, 70},
-        {60, 100, 150}, 
-        {-100, 100, 70});
+    static const MotionSequence MACRO_FUGA_LINHA_DIREITA = MACRO(
+        {-100, -100, 150}, // Da re com tudo
+        {-100, 100, 180}   // Gira pra esquerda pra fugir
+    );
 
     static const MotionSequence MACRO_CURVINHA_ESQUERDA = MACRO(
         {-100, 100, 70},
-        {100, 60, 150}, 
-        {100, -100, 70});
+        {100, 50, 180}, 
+        {100, -100, 180});
+
+    static const MotionSequence MACRO_CURVINHA_DIREITA = MACRO(
+        {-100, 100, 70},
+        {50, 100, 180}, 
+        {-100, 100, 180});
 
     static const MotionSequence MACRO_CURVAO_ESQUERDA = MACRO(
         {-100, 100, 70},
@@ -90,8 +94,10 @@ namespace Config {
     // Placeholder pra calibrar em bancada: dá ré e volta com tudo. Valores
     // (velocidade/duração) ainda não ajustados.
     static const MotionSequence MACRO_REVENGE = MACRO(
-        {100, 100, 300},
-        {100, -100, 100}, {100, 100, 180}, {100,-100,110});
+        {100, 100, 460},
+        {100, -100, 150},
+        {100, 100, 250}, 
+        {100,-100,150});
 
     // Tabela de macros mapeadas pelo ID que vem do site (0 = Frentão, 1 = Curvão, 2 = Sem Saque, 3 = Frentinha,
     // 4 = Recuo, 5 = Curvinha, 6 = Revenge)
@@ -110,25 +116,14 @@ namespace Config {
     // erro) e o app lê o valor antigo. Indentado, esse mesmo JSON passava
     // de 600 bytes com 6 macros + 5 buscas. Se for adicionar itens, prefira
     // nomes curtos a reindentar.
-    static constexpr const char *UI_PROFILE_JSON = R"({
-"robot_name": "Arruela",
-"macros": [
-{"id": 0, "name": "FRENTÃO"},
-{"id": 1, "name": "CURVÃO"},
-{"id": 2, "name": "SEM SAQUE"},
-{"id": 3, "name": "FRENTINHA"},
-{"id": 4, "name": "RECUO"},
-{"id": 5, "name": "CURVINHA"},
-{"id": 6, "name": "REVENGE"}
-],
-"searches": [
-{"id": 1, "name": "BUSCA PADRÃO"},
-{"id": 2, "name": "BUSCA LENTA"},
-{"id": 3, "name": "BUSCA POR DISTÂNCIA"},
-{"id": 4, "name": "BUSCA GATO PRETO"},
-{"id": 5, "name": "BUSCA BALA TENSA"}
-],
-"has_weapons": false
-})";
+    // Formato compacto, sem espaço nenhum: em "macros" o id é a posição na lista
+    // (a mesma das TABELA_MACROS_*), e em "searches" cada item é [id, nome].
+    static constexpr const char *UI_PROFILE_JSON =
+        R"({"robot_name":"Arruela",)"
+        R"("macros":["FRENTÃO","CURVÃO","SEM SAQUE","FRENTINHA","RECUO","CURVINHA","REVENGE"],)"
+        R"("searches":[[1,"BUSCA PADRÃO"],[2,"BUSCA LENTA"],[3,"BUSCA POR DISTÂNCIA"],[4,"BUSCA GATO PRETO"],)"
+        R"([5,"BUSCA BALA TENSA"],[6,"BUSCA PINBALL"],)"
+        R"([7,"BUSCA PINBALL ASA"]],)"
+        R"("has_weapons":false})";
 
 }

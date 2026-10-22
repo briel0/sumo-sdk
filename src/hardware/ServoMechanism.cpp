@@ -16,7 +16,7 @@ void ServoMechanism::init() {
     retract();
 }
 
-void ServoMechanism::setAngle(int angle) {
+void ServoMechanism::write(int angle) {
     if(!_servo.attached()) {
         _servo.attach(_pin, 500, 2400);
     }
@@ -24,12 +24,26 @@ void ServoMechanism::setAngle(int angle) {
     _servo.write(angle);
 }
 
+void ServoMechanism::setAngle(int angle) {
+    write(angle);
+    _relaxPending = true;
+    _relaxTimerStart = millis();
+}
+
 void ServoMechanism::deploy() {
     setAngle(_deployAngle);
 }
 
 void ServoMechanism::retract() {
-    setAngle(_retractAngle);
+    write(_retractAngle);
+    _relaxPending = false;
+}
+
+void ServoMechanism::update() {
+    if(_relaxPending && (millis() - _relaxTimerStart > RELAX_TIMEOUT_MS)) {
+        relax();
+        _relaxPending = false;
+    }
 }
 
 void ServoMechanism::relax() {

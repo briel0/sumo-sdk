@@ -32,9 +32,12 @@ void RCMode::handleWeapons(WeaponSystem &armas, int throttle, int steer) {
     // Só o Caipora RC tem esse override — os outros robôs não têm esse uso
     // pro servo 0 no controle manual.
 #else
-    if(receptor.l3()) {
+    if(receptor.r3()) {
         armas.setServoAngle(0, 0);
-        Serial.println("[SUMÔ] L3: joga a arma pro 0");
+        // O setServoAngle() marca como armado; aqui o 0 é arma recolhida.
+        armas.markRetracted();
+        weaponsArmed = false;
+        Serial.println("[SUMÔ] R3: joga a arma pro 0 (desarmada)");
     }
 #endif
 
@@ -57,12 +60,16 @@ void RCMode::handleMacros(Drive &motores, WeaponSystem &armas) {
     int numMacros = sizeof(Config::TABELA_MACROS_ESQ) / sizeof(Config::TABELA_MACROS_ESQ[0]);
 
     if(receptor.square()) {
-        if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_ESQ[1]);
+        if(numMacros > 1)
+            triggerMacro(*Config::TABELA_MACROS_ESQ[1]);
     }
-    
+
     else if(receptor.triangle()) {
-        if(numMacros > 1) triggerMacro(*Config::TABELA_MACROS_DIR[1]);
+        if(numMacros > 1)
+            triggerMacro(*Config::TABELA_MACROS_DIR[1]);
     }
+
+
 #if defined(ROBOT_MAROLA) || defined(ROBOT_ARRUELA)
     // MACRO_CURVINHA_DIREITA/ESQUERDA só existem nesses dois profiles (ver
     // include/profiles/) — sem esse guard, o RC do Caipora/Smoker não compila.

@@ -6,8 +6,6 @@ void IRReader::init(int pin) {
 }
 
 void IRReader::update() {
-    _modeRC = false;
-    _modeAuto = false;
     _ready = false;
     _start = false;
     _stop = false;
@@ -28,12 +26,6 @@ void IRReader::update() {
     }
     if(code == 0x82) { // Botão 3: stop
         _stop = true;
-    }
-    if(code == 0x87) { // Botão 8: modo auto
-        _modeAuto = true;
-    }
-    if(code == 0x88) { // Botão 9: modo RC
-        _modeRC = true;
     }
 }
 

@@ -59,20 +59,6 @@ void StatusLed::setState(CRGB color) {
         FastLED.show();
 }
 
-void StatusLed::heartbeat() {
-    unsigned long now = millis();
-    if(now - _lastHeartbeatMs < 20)
-        return; // ~50fps
-    _lastHeartbeatMs = now;
-
-    uint8_t brilho = beatsin8(40, 10, 200);
-
-    for(int i = 0; i < _numLeds; i++) {
-        _leds[i] = CRGB(0, brilho, 0);
-    }
-    FastLED.show();
-}
-
 void StatusLed::pairingWave() {
     unsigned long now = millis();
     if(now - _lastWaveMs < 120)

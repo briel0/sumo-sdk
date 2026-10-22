@@ -46,10 +46,35 @@ class ToFSensor {
      */
     bool temOponente(uint16_t thresholdMm = 400);
 
+    // Devolvido por leituraRaw() quando não há distância confiável: timeout,
+    // falha de I2C ou medição que o próprio sensor marcou como ruim.
+    static constexpr uint16_t LEITURA_INVALIDA_MM = UINT16_MAX;
+
+    // Campo DeviceRangeStatus do RESULT_RANGE_STATUS (bits 6:3). 11 é o único
+    // valor que o VL53L0X dá pra medição completa e sem erro; os outros são
+    // falha de sinal, de fase, de alcance mínimo ou de hardware.
+    static constexpr uint8_t STATUS_VALIDO = 11;
+    // Fora da faixa de 4 bits do sensor: não chegou amostra ou o I2C falhou.
+    static constexpr uint8_t STATUS_TIMEOUT = 0xFF;
+
     /**
-     * @brief Retorna a distância pura lida em milímetros.
+     * @brief Retorna a distância lida em milímetros, ou LEITURA_INVALIDA_MM se
+     * o sensor não marcou a medição como válida (ver STATUS_VALIDO).
+     *
+     * Sem alvo ao alcance também pode cair aqui: sem retorno suficiente o
+     * sensor acusa falha de sinal em vez de medição válida. De um jeito ou de
+     * outro o valor fica acima de qualquer limiar de detecção.
      */
     uint16_t leituraRaw();
+
+    /**
+     * @brief Status da última leituraRaw(): STATUS_VALIDO, STATUS_TIMEOUT ou o
+     * código de erro do sensor. Serve pra diagnosticar na bancada por que uma
+     * leitura foi descartada.
+     */
+    uint8_t ultimoStatus() const {
+        return _ultimoStatus;
+    }
 
     /**
      * @brief Ajusta em runtime a taxa mínima de sinal de retorno aceita (Mcps).
@@ -68,4 +93,5 @@ class ToFSensor {
     uint8_t _address;
     float _signalRateLimitMcps;
     unsigned long _ultimaLeituraMs = 0;
+    uint8_t _ultimoStatus = STATUS_TIMEOUT;
 };

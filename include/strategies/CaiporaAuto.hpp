@@ -15,6 +15,7 @@ class CaiporaAuto : public CombatStrategy {
 
     CaiporaAuto();
     void init() override;
+    void configure(const AutoStrategy &cfg) override;
     void autoEngage(Drive &motores, WeaponSystem &armas) override;
     String getSensorStatusJSON() override;
 
@@ -43,16 +44,44 @@ class CaiporaAuto : public CombatStrategy {
     // JS40F frontal — abaixo do limiar (algo bloqueando a luz de cima) é alvo na
     // cara, ataca com tudo.
     static constexpr uint16_t LIMIAR_BUSCA_MM = 250;
-    static constexpr uint16_t LIMIAR_LDR = 4000;
+    static constexpr uint16_t LIMIAR_LDR = 300;
     static constexpr int VEL_BUSCA_CUIDADOSA = 40;
     static constexpr int VEL_ATAQUE = 100;
 
-    // Espaçamento entre leituras dos VL laterais. readRangeContinuousMillimeters()
-    // gira no I2C até sair amostra nova — ler os dois todo frame prenderia o loop.
+    // Espaçamento entre leituras dos VL. readRangeContinuousMillimeters() gira no
+    // I2C até sair amostra nova — ler os quatro todo frame prenderia o loop.
     static constexpr unsigned long INTERVALO_TOF_MS = 25;
     unsigned long _ultimaLeituraToF = 0;
-    bool _viuLateralEsq = false;
-    bool _viuLateralDir = false;
 
-    void _busca(Drive &motores, bool viuEsq, bool viuDir, bool viuFrente);
+    // Última distância raw (mm) de cada VL. SEM_LEITURA_MM enquanto não leu ou
+    // se o sensor falhou no init() — fica acima de qualquer limiar de detecção.
+    static constexpr uint16_t SEM_LEITURA_MM = UINT16_MAX;
+    uint16_t _rawFrenteEsq = SEM_LEITURA_MM;
+    uint16_t _rawLateralEsq = SEM_LEITURA_MM;
+    uint16_t _rawFrenteDir = SEM_LEITURA_MM;
+    uint16_t _rawLateralDir = SEM_LEITURA_MM;
+
+    // Ids de busca que chegam do site (AutoStrategy::search).
+    // As OFENSIVAS sao as mesmas buscas; so muda o que o robo faz sem alvo
+    // nenhum a vista (ver _velSemAlvo).
+    static constexpr int BUSCA_RAPIDA = 2; // RAPIDA DEFENSIVA
+    static constexpr int BUSCA_LENTA = 3;  // LENTA DEFENSIVA
+    static constexpr int BUSCA_RAPIDA_OFENSIVA = 4;
+    static constexpr int BUSCA_LENTA_OFENSIVA = 5;
+
+    // Sem alvo a vista: a DEFENSIVA fica parada esperando (0), a OFENSIVA
+    // avanca reto nessa velocidade. Escolhido no configure().
+    static constexpr int VEL_OFENSIVA = 50;
+    int _velSemAlvo = 0;
+
+    // Mesmo esquema do ArruelaAuto: o configure() escolhe a função uma única vez
+    // e o autoEngage() só desreferencia o ponteiro.
+    using BuscaFn = void (CaiporaAuto::*)(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq,
+                                          uint16_t rawFrenteDir, uint16_t rawLateralDir, int rawLdr);
+    BuscaFn _buscaAtual = &CaiporaAuto::_buscaRapida;
+
+    void _buscaRapida(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                      uint16_t rawLateralDir, int rawLdr);
+    void _buscaLenta(Drive &motores, uint16_t rawFrenteEsq, uint16_t rawLateralEsq, uint16_t rawFrenteDir,
+                     uint16_t rawLateralDir, int rawLdr);
 };

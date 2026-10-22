@@ -11,6 +11,9 @@
 static_assert(sizeof(Config::TABELA_MACROS_ESQ) == sizeof(Config::TABELA_MACROS_DIR),
               "TABELA_MACROS_ESQ e TABELA_MACROS_DIR precisam ter o mesmo numero de macros!");
 
+// Teto da espera antes da estrategia inicial (o mesmo do campo no site).
+static constexpr unsigned long ATRASO_INICIAL_MAX_MS = 5000;
+
 static constexpr int NUM_MACROS = (int)(sizeof(Config::TABELA_MACROS_ESQ) / sizeof(Config::TABELA_MACROS_ESQ[0]));
 
 // Cadencia do painel /sensors. Ver a justificativa no SELECTING_ESTRATEGIA.
@@ -203,11 +206,29 @@ void AutoMode::run(Drive &motores, WeaponSystem &armas, bool irStart, bool irRea
                                   NUM_MACROS - 1, macroIdx);
                 }
 
+                // Distância até o adversário, escolhida no site: muda o tempo dos
+                // passos marcados com scalesWithDistance. Só o Marola tem os
+                // coeficientes no profile e passos marcados.
+                int escalaDistancia = 100;
+#if defined(ROBOT_MAROLA)
+                if(autoConfig.distance == 'P') {
+                    escalaDistancia = Config::DISTANCIA_PERTO_PCT;
+                }
+                else if(autoConfig.distance == 'L') {
+                    escalaDistancia = Config::DISTANCIA_LONGE_PCT;
+                }
+#endif
+
+                // Espera parado antes da estrategia inicial, digitada no site. A
+                // arma ja abriu ali em cima: ela sempre abre na largada. O site
+                // ja limita, mas o valor chega cru pelo BLE.
+                const unsigned long atrasoInicialMs = min((unsigned long)autoConfig.startDelayMs, ATRASO_INICIAL_MAX_MS);
+
                 if(autoConfig.direction == 'D') {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[macroIdx]);
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_DIR[macroIdx], escalaDistancia, atrasoInicialMs);
                 }
                 else {
-                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[macroIdx]);
+                    estrategiaPlayer.play(*Config::TABELA_MACROS_ESQ[macroIdx], escalaDistancia, atrasoInicialMs);
                 }
                 Serial.println("[AUTO] LARGADA! Executando estratégia.");
             }

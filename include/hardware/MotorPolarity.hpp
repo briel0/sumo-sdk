@@ -15,8 +15,8 @@
     fixos do profile, sempre.
 
     Por que sobrevive a reflash AUTO<->RC: todos os envs do platformio.ini usam
-    o partition table padrão do esp32dev (nenhum define board_build.partitions
-    próprio) — a partição NVS fica no mesmo offset/tamanho em qualquer
+    o mesmo partition table (huge_app.csv, definido uma vez no [env], nenhum
+    env sobrescreve) — a partição NVS fica no mesmo offset/tamanho em qualquer
     firmware, e o upload normal (`pio run -t upload`) não mexe nela, só
     reescreve bootloader+partições+app. Só um `erase_flash` completo apaga.
 */
