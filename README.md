@@ -1,236 +1,154 @@
 # SUMO-SDK
 
-Framework modular para robôs de Mini Sumô baseados em ESP32. Construído com foco absoluto em determinismo de tempo real, ele combina leitura de registradores em bare-metal e isolamento de rotinas via FreeRTOS para garantir latência zero no dohyo. Sua arquitetura orientada a objetos, guiada por Máquinas de Estados Finitos (FSM) não-bloqueantes, permite compilar um único codebase para múltiplos robôs através de perfis de hardware independentes.
+Firmware modular para os robôs de Mini Sumô da **TamanduTech**, baseados em ESP32. Um único codebase compila para vários robôs (Caipora, Smoker, Arruela e Marola) através de perfis de hardware independentes: cada robô é um arquivo de configuração, e o resto do código lê de `Config::` sem saber qual robô está compilando.
+
+Cada robô tem dois firmwares: **AUTO** (autônomo, configurado pelo celular via Bluetooth Low Energy antes do round) e **RC** (pilotado com controle de PS4/Xbox via Bluepad32). Toda a lógica de combate roda em máquinas de estados não bloqueantes.
 
 ---
 
-## Estrutura de Diretórios
+## Robôs
 
-A arquitetura do projeto segue a separação estrita entre definições (headers) e implementações (sources), mantendo o código modular e escalável.
+| Robô | Sensores | Arma |
+|---|---|---|
+| **Caipora** | 4× VL53L0X (ToF), LDR frontal | 1 servo |
+| **Smoker** | 3× JS40F, TSSP4038 (IR), 2× QRE1113 (linha) | 2 servos |
+| **Arruela** | 3× JS40F, VL53L0X, 2× QRE1113 (linha) | sem arma |
+| **Marola** | 3× LDR, 2× QRE1113 (linha) | 1 servo |
+
+## Como compilar e gravar
+
+Requer [PlatformIO](https://platformio.org/). Cada robô tem três *environments*:
+
+| Env | O que é |
+|---|---|
+| `<robo>` | Firmware AUTO (`src/main.cpp`) |
+| `<robo>_rc` | Firmware RC (`src/tools/RCFirmware/main.cpp`) |
+| `<robo>_sensores` | Teste de bancada: lê todos os sensores e imprime no serial |
+
+```sh
+pio run -e arruela -t upload        # AUTO da Arruela
+pio run -e arruela_rc -t upload     # RC da Arruela
+pio device monitor -b 115200
+```
+
+O `Makefile` tem atalhos (`make caipora`, `make sensores-smoker`, `make monitor`...).
+
+**Windows:** copie `platformio.local.ini.example` para `platformio.local.ini`. Ele aponta o `core_dir` do PlatformIO para `C:/pio`, porque o caminho padrão estoura o limite de 260 caracteres e quebra com espaço ou acento no nome do usuário.
+
+> AUTO e RC usam frameworks diferentes: o Arduino-ESP32 padrão no AUTO (precisa do Bluedroid para o BLE) e o fork do Bluepad32 no RC (BTstack). Alternar entre envs AUTO e RC faz o PlatformIO trocar o framework instalado, então o primeiro build depois da troca demora mais.
+
+## Usando o robô
+
+### Modo AUTO
+
+1. Ligue o robô. Os LEDs ficam em onda enquanto ele espera a configuração.
+2. Abra o site de configuração (`ui/index.html`, publicado no GitHub Pages) num navegador com Web Bluetooth (Chrome/Edge) e conecte no robô pelo nome.
+3. Escolha a estratégia de saque, o lado, a distância, o atraso de largada e se a arma abre. O site também testa motores, macros e sensores ao vivo.
+4. Envie. O robô desliga o rádio e fica em `READY`, esperando o IR do juiz.
+
+Controle IR:
+
+| Botão | Ação |
+|---|---|
+| 1 | Ready |
+| 2 | Largada |
+| 3 | Stop (para os motores e reinicia o robô) |
+
+### Modo RC
+
+Ligue o robô e pareie o controle (o primeiro controle que conectar é aceito). Gatilho direito acelera, esquerdo dá ré, stick esquerdo vira. X é acelerador digital a 100%. Os botões disparam macros e controlam a arma conforme o perfil do robô.
+
+Segurar **Start** por 0,7 s alterna a polaridade dos motores (ver `MotorPolarity` abaixo).
+
+## Estrutura
 
 ```text
 📦 SUMO-SDK
-├── 📂 include/              
-│   ├── 📂 defs/             
-│   │   ├── 📄 Config.hpp 
-│   │   └── 📄 RobotTypes.hpp 
-│   ├── 📂 hardware/         
-│   │   ├── 📂 sensors/
-│   │   │   └── 📄 JS40F.hpp 
-│   │   ├── 📄 Drive.hpp
-│   │   ├── 📄 IRreader.hpp
-│   │   ├── 📄 Receiver.hpp
-│   │   ├── 📄 ServoMechanism.hpp
-│   │   └── 📄 WeaponSystem.hpp
-│   ├── 📂 modes/            
-│   │   ├── 📄 AutoMode.hpp
-│   │   └── 📄 RCMode.hpp
-│   ├── 📂 profiles/         
-│   │   ├── 📄 arruela.hpp
-│   │   ├── 📄 caipora.hpp
-│   │   ├── 📄 marola.hpp
-│   │   ├── 📄 smoker.hpp
-│   │   └── 📄 smokerAuto.hpp
-│   └── 📂 services/         
-│       ├── 📄 ConfigServer.hpp
-│       ├── 📄 MotionPlayer.hpp
-│       └── 📄 WebUI.hpp
-│
-├── 📂 lib/                  
-│   └── 📄 README
-│
-├── 📂 src/                  
-│   ├── 📂 hardware/
-│   │   ├── 📂 sensors/
-│   │   │   └── 📄 JS40F.cpp
-│   │   ├── 📄 Drive.cpp
-│   │   ├── 📄 IRreader.cpp
-│   │   ├── 📄 Receiver.cpp
-│   │   ├── 📄 ServoMechanism.cpp
-│   │   └── 📄 WeaponSystem.cpp
-│   ├── 📂 modes/
-│   │   ├── 📄 AutoMode.cpp
-│   │   └── 📄 RCMode.cpp
-│   ├── 📂 services/
-│   │   ├── 📄 ConfigServer.cpp
-│   │   └── 📄 MotionPlayer.cpp
-│   └── 📄 main.cpp          
-│
-├── 📂 test/                 
-│   ├── 📄 DriveClassTest.cpp
-│   └── 📄 README
-│
-├── 📂 ui/                   
-│   └── 📄 index.html
-│
-├── ⚙️ .clang-format         
-├── 👁️ .gitignore            
-├── 🛠️ Makefile              
-└── ⚙️ platformio.ini        
+├── 📂 include/            Headers (contratos)
+│   ├── 📂 defs/           Config.hpp (escolhe o perfil), RobotTypes.hpp (tipos compartilhados)
+│   ├── 📂 hardware/       Drive, MotorPolarity, Receiver, IRreader, StatusLED, servos e armas
+│   │   └── 📂 sensors/    JS40F, LDR, QRE1113, ToFSensor (VL53L0X), TSSP4038
+│   ├── 📂 modes/          AutoMode, RCMode
+│   ├── 📂 profiles/       Um arquivo por robô: pinos, velocidades, macros, limiares
+│   ├── 📂 services/       BleConfigServer (site via BLE), MotionPlayer (macros)
+│   └── 📂 strategies/     CombatStrategy (interface) + uma estratégia por robô
+├── 📂 src/                Implementações, espelhando o include/
+│   └── 📂 tools/          Firmware RC, testes de sensores e teste de BLE
+├── 📂 ui/                 Site de configuração (Web Bluetooth)
+├── 📂 test/               Teste manual dos motores
+├── 📂 brand/              Identidade visual da TamanduTech
+├── 🛠️ Makefile
+└── ⚙️ platformio.ini      Um env por robô e por firmware
 ```
 
-### `include/defs/` — Contratos globais
+### Peças principais
 
-| Arquivo | O que faz |
+| Componente | O que faz |
 |---|---|
-| `Config.hpp` | Dispatcher central de perfis. Lê a flag de compilação (`-DROBOT_CAIPORA`, `-DROBOT_SMOKERAUTO`, etc.) e inclui o perfil correto. Todo o código lê de `Config::` sem saber qual robô está compilando. |
-| `RobotTypes.hpp` | Define os tipos compartilhados por todo o projeto: `MotionStep`, `MotionSequence`, `ServoConfig`, `AutoStrategy` e a macro `MACRO()` para declarar sequências de movimento. |
+| `Config.hpp` | Lê a flag `-DROBOT_*` do env e inclui o perfil e a estratégia do robô. |
+| `profiles/*.hpp` | Tudo que muda entre robôs: pinos, coeficientes de pilotagem, servos, limiares de sensor e tabelas de macros. |
+| `Drive` | Controla os dois motores (ponte H A4950) via MCPWM a 20 kHz. `setSpeed(esq, dir)` de -100 a 100, com freio ativo em 0 e alívio automático na inversão de sentido. |
+| `MotorPolarity` | Corrige motor invertido ou lados trocados sem mexer nos pinos. Guarda a correção na NVS, que sobrevive a reflash. |
+| `MotionPlayer` | Executa sequências de movimento (`{vel esq, vel dir, ms}`) sem bloquear o loop. Usado nas macros do RC e nos saques do AUTO. |
+| `CombatStrategy` | Interface das estratégias autônomas: `init()`, `configure()` (recebe o que veio do site) e `autoEngage()` (um frame de combate). Cada robô implementa a sua. |
+| `BleConfigServer` | Servidor GATT que o site usa para configurar o AUTO e rodar os testes de bancada. |
+| `Receiver` | Lê o controle via Bluepad32: eixos com zona morta e botões com detecção de borda. |
+| `WeaponSystem` | Agrupa os servos da arma e cuida do ciclo armar → relaxar sozinho. |
 
-### `include/hardware/` — Abstração de peças físicas
-
-| Arquivo | O que faz |
-|---|---|
-| `Drive.hpp` | Controla os dois motores via MCPWM. Expõe `setSpeed(left, right)` com valores de -100 a 100. Gerencia internamente inversão de sentido, brake e release. |
-| `IRreader.hpp` | Lê o controle IR e expõe sinais com semântica clara: `modeRC()`, `modeAuto()`, `start()`. Header-only para evitar problema de definição duplicada da biblioteca IRremote. |
-| `Receiver.hpp` | Lê o joystick via Bluepad32. Expõe eixos (`leftStickX`, `rightTrigger`, etc.) e botões com detecção de borda (dispara uma vez por pressão). Gerencia pareamento e segurança por MAC. |
-| `ServoMechanism.hpp` | Abstração de um servo físico. Encapsula os ângulos de deploy, retract e relax. Inicializa o timer LEDC e controla a posição do servo. |
-| `WeaponSystem.hpp` | Gerencia um conjunto de servos como sistema único. Controla o ciclo `deploy → relax` com timer interno — o `RCMode` só chama `deploy()` e `retract()`, sem saber de timings. |
-| `sensors/JS40F.hpp` | Abstração do sensor de presença JS40F. Lê o pino diretamente do registrador GPIO (`GPIO.in`) em vez de `digitalRead()`, garantindo leitura em 1 ciclo de clock. `temAlvo()` retorna `true` quando detecta o adversário. |
-
-### `include/modes/` — Lógica de operação
-
-| Arquivo | O que faz |
-|---|---|
-| `RCMode.hpp` | Cérebro do modo manual. Lê o joystick, aplica expo no steer, mistura throttle + steer para os motores, gerencia o sistema de armas e executa macros pré-programadas. |
-| `AutoMode.hpp` | Cérebro do modo autônomo. Máquina de estados com 6 sub-estados: seleção de estratégia via HUD, desconexão do WiFi, espera de largada, execução do saque, busca e ataque. |
-
-### `include/profiles/` — Configuração por robô
-
-Cada arquivo representa um robô físico. Define pinos de hardware, parâmetros de controle e sequências de movimento. **É o único arquivo que muda entre robôs.**
-
-| Arquivo | Robô |
-|---|---|
-| `caipora.hpp` | Caipora — RC com 1 servo |
-| `smoker.hpp` | Smoker — RC com 2 servos |
-| `smokerAuto.hpp` | SmokerAuto — RC + autônomo com 1 servo |
-| `arruela.hpp` | Arruela — RC sem servo |
-| `marola.hpp` | Marola — RC com 1 servo |
-
-### `include/services/` — Ferramentas dos modos
-
-| Arquivo | O que faz |
-|---|---|
-| `MotionPlayer.hpp` | Executor de sequências de movimento não-bloqueante. Recebe uma `MotionSequence` (array de passos com velocidade e duração), executa passo a passo usando `millis()` sem travar o loop. Compartilhado entre RC (macros) e AUTO (estratégias). |
-| `ConfigServer.hpp` | Servidor web assíncrono que sobe um WiFi AP durante a fase de configuração do modo autônomo. Serve a HUD de seleção de estratégia e expõe a rota `/set-strat` que recebe o payload do celular. |
-| `WebUI.hpp` | O HTML da HUD compilado como string C++ para ser servido diretamente da memória do ESP32. Gerado a partir de `ui/index.html`. |
-
-### `src/` — Implementações
-
-Espelha a estrutura do `include/`. Cada `.cpp` implementa o contrato definido no `.hpp` correspondente. O `main.cpp` instancia todos os objetos, gerencia a FSM principal e chama os modos no loop.
-
-### `test/`
-
-| Arquivo | O que faz |
-|---|---|
-| `DriveClassTest.cpp` | Teste manual dos motores. Grava no robô e observa o comportamento físico para validar direções, velocidades e inversão de sentido. |
-
-### `ui/`
-
-| Arquivo | O que faz |
-|---|---|
-| `index.html` | Código-fonte editável da HUD de configuração autônoma. Interface web com seleção de saque, direção de busca e sistema de armas. Após editar, o conteúdo deve ser atualizado em `WebUI.hpp`. |
-
-### Arquivos raiz
-
-| Arquivo | O que faz |
-|---|---|
-| `.clang-format` | Define as regras de formatação automática do código (indentação, espaçamento, alinhamento). Garante estilo consistente em todo o time. |
-| `.gitignore` | Lista de arquivos ignorados pelo Git: binários compilados, cache do PlatformIO, arquivos de IDE. |
-| `Makefile` | Atalhos para os comandos mais comuns: `make caipora`, `make smokerauto`, `make monitor`. Evita ter que lembrar os comandos do PlatformIO. |
-| `platformio.ini` | Configuração de build do projeto. Define um environment por robô com a flag `-DROBOT_X` correspondente, bibliotecas e parâmetros de compilação. |
-
-## Máquina de Estados Principal
-
-Uma vez ligado, o estado inicial do robô é `IDLE`. A transição ocorre via sinal IR:
+## Máquina de estados do AUTO
 
 ```text
-IDLE ── (IR RC) ──► RCMode
-```
-ou
-```text
-IDLE ── (IR AUTO) ──► AutoMode
-```
-
-Uma vez ativado, o modo é selado na memória. A saída exige reset físico para garantir um estado limpo dos periféricos.
-
-### Máquina de estados do Modo Autônomo
-
-```text
-SELECTING_ESTRATEGIA
-    │ (payload recebido via HUD WiFi)
+SELECTING_ESTRATEGIA ── site conectado por BLE: testes de motor/macro/sensor
+    │ (configuração recebida)
     ▼
-DISCONNECTING_WIFI ── delay tático para resposta HTTP (mantém rádio no Core 0)
-    │ (Conexão encerrada, FSM segue)
+DISCONNECTING_WIFI ── 500 ms para o rádio responder, depois desliga
     ▼
-READY
-    │ (Sinal IR de largada)
+READY ── espera o IR (1 = ready, 2 = largada)
+    │ (largada)
     ▼
-EXECUTING_ESTRATEGIA ── roda a macro
-    │ (Macro finalizada)
+EXECUTING_ESTRATEGIA ── atraso de largada + macro de saque escolhida no site
+    │ (macro terminou)
     ▼
-BUSCA ── varredura reativa ou giro para a última posição conhecida
-    │ (Sensor frontal crava alvo)
-    ▼
-ATTACKING ── força bruta com correção inercial em arco
-    │ (Perdeu contato tático)
-    ▼
-BUSCA ── varredura reativa ou giro para a última posição conhecida
+FIGHTING ── CombatStrategy::autoEngage() do robô: busca, ataque e fuga de borda
 ```
 
-## Dependências
-
-O projeto utiliza o gerenciador de pacotes do PlatformIO. As bibliotecas abaixo são injetadas automaticamente no tempo de compilação (ver `platformio.ini`):
-
-* **[Bluepad32_ESP32](https://github.com/ricardoquesada/bluepad32):** Recebimento de inputs de controle PS4/Xbox via Bluetooth (isolado em background no Core 0).
-* **[IRremote](https://github.com/Arduino-IRremote/Arduino-IRremote) (z3t0):** Leitura dos sinais infravermelhos de largada/parada do juiz via interrupção de hardware.
-* **[ESP32Servo](https://github.com/madhephaestus/ESP32Servo) (madhephaestus):** Geração de PWM estável via hardware (LEDC do ESP32) para o sistema de armas, sem conflito de timers.
-* **[ESPAsyncWebServer](https://github.com/mathieucarbou/ESPAsyncWebServer) (mathieucarbou):** Servidor web assíncrono blindado para rodar exclusivamente no Core 0, evitando falhas de LwIP.
-* **DNSServer:** Biblioteca nativa do ecossistema ESP32 utilizada para levantar o *Captive Portal* da HUD Tática.
+O IR 3 para tudo e reinicia o robô em qualquer estado.
 
 ## Como adicionar um novo robô
 
-1. Copie um perfil existente (ex: `caipora.hpp`) dentro de `include/profiles/` e renomeie.
-2. Ajuste a pinagem física, compensações de motor e macros de saque.
-3. Adicione um novo *environment* no `platformio.ini`:
+1. Copie um perfil de `include/profiles/` e ajuste pinos, coeficientes, servos e macros.
+2. Crie a estratégia em `include/strategies/` + `src/strategies/` implementando `CombatStrategy`.
+3. Registre o robô em `include/defs/Config.hpp`:
+   ```cpp
+   #elif defined(ROBOT_MEUROBO)
+   #include "profiles/meurobo.hpp"
+   #include "strategies/MeuRoboAuto.hpp"
+   using ActiveAuto = MeuRoboAuto;
+   ```
+4. Adicione os envs no `platformio.ini`, copiando os de um robô existente (`meurobo`, `meurobo_rc` e, se quiser, `meurobo_sensores`). Lembre de excluir as estratégias dos outros robôs no `build_src_filter` do AUTO.
 
-```ini
-[env:meurobo]
-build_flags =
-    ${env.build_flags}
-    -DROBOT_MEUROBO
+## Decisões de arquitetura
 
-```
+**Por que AUTO e RC são firmwares separados?**
+O BLE do site usa o Bluedroid; o controle usa o Bluepad32, que roda sobre o BTstack. As duas stacks disputavam o mesmo controlador Bluetooth (o BLE nunca aparecia em nenhum scanner), e o fork do Bluepad32 é compilado sem o Bluedroid. Separar os dois resolveu isso. O custo é que trocar de modo exige reflash.
 
-4. Registre o `#elif defined(ROBOT_MEUROBO)` no arquivo `include/defs/Config.hpp`.
+**Por que o motor invertido não se corrige trocando pino?**
+Os pinos de cada robô são fixos no perfil, e todas as macros e estratégias foram calibradas em cima deles. O `MotorPolarity` aplica a correção (inverter esquerda, inverter direita, trocar lados) sobre a velocidade, logo antes do `Drive`, e guarda na NVS. O `Drive` é um objeto global criado antes do `setup()`, quando a NVS ainda não está garantida, por isso ele salva a correção e não os pinos.
 
+**Por que o JS40F não usa `digitalRead()`?**
+O sensor é lido direto dos registradores `GPIO.in`/`GPIO.in1` do ESP32, sem a validação de pino e o overhead do `digitalRead()` do Arduino.
 
-## Seleção de modo autônomo (HUD Tática)
+**Por que nada de `delay()` no combate?**
+Macros, saques e leituras lentas (como os VL53L0X no I2C) são cadenciados por `millis()` dentro das máquinas de estado. Assim o loop de combate nunca fica parado esperando, e o robô reage aos sensores e ao IR a cada volta.
 
-O `AutoMode` levanta um Access Point WiFi provisório para injeção da tática pré-round:
+## Dependências
 
-1. Selecione a rotina AUTO com o controle remoto.
-2. Conecte no WiFi do robô (Senha: `sumo1234`).
-3. Acesse `4.3.2.1` no navegador.
-4. Defina a macro de saque, direção de varredura e armamento.
-5. Pressione **[SUBMETER]**. O robô responderá, desconectará o cliente e isolará o hardware de rede no Core 0.
-6. A FSM entra em estado de letargia `READY` aguardando apenas a luz do sinal IR.
+Gerenciadas pelo PlatformIO, com versões fixas no `platformio.ini`:
 
-## Estratégia Autônoma de Tempo Real
-
-Em produção.
-
-## Decisões Críticas de Arquitetura
-
-**Por que a classe JS40F não usa `digitalRead()`?**
-O `digitalRead` do framework Arduino adiciona *overhead* de software para validar pinos e timers. Na classe `JS40F`, lemos diretamente os registradores `GPIO.in` e `GPIO.in1.val` do silício do ESP32. Retorno atômico em 1 ciclo de clock. Latência virtualmente zero.
-
-**Por que não desligamos o hardware do WiFi (WIFI_OFF) no AutoMode?**
-Bibliotecas web assíncronas falham catastroficamente ao sofrer *teardown* de rede de forma abrupta, resultando em *Double Exception* no Core 0 (LwIP). Nossa solução tática é a expulsão de clientes (`softAPdisconnect`) e o isolamento total do processo web no Core 0. O combate ocorre no Core 1, sem preempção ou perda de determinismo causados pelo stack de rede ocioso. Se precisarmos do Core 0 no futuro vamos ter um problema :)
-
-**Construtores Explícitos (`explicit`)**
-O hardware exige clareza. Instâncias físicas (Sensores, Ponte H) são inicializadas antes mesmo da função `setup()` via *Initializer Lists* de C++, impedindo instanciar objetos "fantasmas" sem pinos físicos designados.
-
-**Ausência de `delay()`**
-É proibido o uso de `delay()` no Core 1. Toda a inteligência artificial, contagem de saques e leituras ocorrem através do clock do `millis()` gerenciado pela máquina de estados, assegurando um loop de verificação contínuo a mais de 10.000 Hz.
+* **[Bluepad32](https://github.com/ricardoquesada/bluepad32)**: controles PS4/Xbox via Bluetooth (só no firmware RC).
+* **[IRremote](https://github.com/Arduino-IRremote/Arduino-IRremote)**: leitura do controle IR do juiz.
+* **[ESP32Servo](https://github.com/madhephaestus/ESP32Servo)**: PWM dos servos da arma.
+* **[FastLED](https://github.com/FastLED/FastLED)**: fita de LEDs de status.
+* **[VL53L0X](https://github.com/pololu/vl53l0x-arduino)** (Pololu): sensores de distância ToF.
 
 Meus parabéns se chegou até aqui!
